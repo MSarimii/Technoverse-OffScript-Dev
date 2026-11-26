@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TechnoVerse — Complete Folder Structure, Skills Catalog & Master Prompt Guide</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap');
+
+  @page {
+    size: A4;
+    margin: 10mm 10mm;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    color: #0f172a;
+    background: #ffffff;
+    font-size: 8pt;
+    line-height: 1.35;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .header {
+    border-bottom: 2px solid #2563eb;
+    padding-bottom: 6px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  .title-area h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 17pt;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+  }
+
+  .title-area h1 span {
+    color: #2563eb;
+  }
+
+  .subtitle {
+    font-size: 8pt;
+    color: #475569;
+    margin-top: 2px;
+    font-weight: 500;
+  }
+
+  .meta-badge {
+    text-align: right;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 6.8pt;
+    color: #64748b;
+  }
+
+  .badge-tag {
+    display: inline-block;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 10pt;
+    font-weight: 700;
+    color: #0f172a;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 3px;
+    margin-top: 9px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  h2::before {
+    content: "";
+    display: inline-block;
+    width: 4px;
+    height: 11px;
+    background: #2563eb;
+    border-radius: 2px;
+  }
+
+  h3 {
+    font-size: 8.4pt;
+    font-weight: 700;
+    color: #1e293b;
+    margin-top: 4px;
+    margin-bottom: 3px;
+  }
+
+  p {
+    margin-bottom: 4px;
+    color: #334155;
+  }
+
+  .page-break {
+    page-break-before: always;
+  }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+
+  .grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .tree-box {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    padding: 5px 7px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 5.7pt;
+    line-height: 1.18;
+    color: #1e293b;
+    white-space: pre;
+    overflow-x: hidden;
+  }
+
+  .prompt-box {
+    background: #0f172a;
+    color: #f1f5f9;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 7.1pt;
+    line-height: 1.42;
+    white-space: pre-wrap;
+    border: 1px solid #334155;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 5px;
+    font-size: 6.2pt;
+  }
+
+  th, td {
+    padding: 1.6px 3.5px;
+    text-align: left;
+    border: 1px solid #e2e8f0;
+    vertical-align: top;
+  }
+
+  th {
+    background: #f1f5f9;
+    color: #1e293b;
+    font-weight: 600;
+    font-size: 6.2pt;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  tr:nth-child(even) td {
+    background: #f8fafc;
+  }
+
+  .pill {
+    display: inline-block;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 6.2pt;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+  }
+
+  .pill-blue { background: #dbeafe; color: #1e40af; }
+  .pill-indigo { background: #e0e7ff; color: #3730a3; }
+  .pill-purple { background: #f3e8ff; color: #6b21a8; }
+  .pill-emerald { background: #d1fae5; color: #065f46; }
+  .pill-amber { background: #fef3c7; color: #92400e; }
+  .pill-rose { background: #ffe4e6; color: #9f1239; }
+
+  .callout {
+    background: #f8fafc;
+    border-left: 3px solid #2563eb;
+    padding: 5px 8px;
+    border-radius: 0 4px 4px 0;
+    margin: 5px 0;
+    font-size: 7.6pt;
+    color: #334155;
+  }
+
+  .callout strong {
+    color: #0f172a;
+  }
+
+  .file-desc-item {
+    margin-bottom: 4px;
+    font-size: 7.4pt;
+    line-height: 1.3;
+  }
+
+  .file-desc-item strong {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 7.2pt;
+    color: #0369a1;
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= PAGE 1: SYSTEM OVERVIEW & COMPLETE FOLDER STRUCTURE ================= -->
+<div class="header">
+  <div class="title-area">
+    <h1>Techno<span>Verse</span></h1>
+    <div class="subtitle">Complete Folder Structure, Skills Directory & Master Prompt Reference</div>
+  </div>
+  <div class="meta-badge">
+    <div class="badge-tag">HACKATHON PROTOCOL v1.0</div>
+    <div>Decoupled MERN + OpenRouter</div>
+    <div>Date: 2026-11-27</div>
+  </div>
+</div>
+
+<h2>1. Executive Summary & Architecture Blueprint</h2>
+<p>
+  <strong>TechnoVerse</strong> is an enterprise-grade, hackathon-ready MERN platform built for a distributed two-developer team (one on Frontend, one on Backend). It features complete physical decoupling, strict shared API contracts, OpenRouter AI integration with offline mock fallbacks, and 32 installed Antigravity motion, 3D, and design skills.
+</p>
+
+<div class="grid-3">
+  <div class="callout" style="border-left-color: #3b82f6;">
+    <strong>Frontend (React 18 + Vite)</strong><br>
+    Tailwind CSS, GSAP Choreography, Three.js 3D Hero, Framer Motion, and Sonner notifications.
+  </div>
+  <div class="callout" style="border-left-color: #6366f1;">
+    <strong>Backend (Node.js + Express)</strong><br>
+    Modular controllers, Mongoose ORM, JWT stateless auth, bcrypt password hashing, and rate limiting.
+  </div>
+  <div class="callout" style="border-left-color: #8b5cf6;">
+    <strong>AI Layer (OpenRouter SDK)</strong><br>
+    ESM SDK integration, model slug configuration, streaming, structured JSON output, and mock mode.
+  </div>
+</div>
+
+<h2>2. Complete Project Directory Structure & File Manifest</h2>
+<div class="grid-2">
+  <div>
+    <h3>Project Directory Tree</h3>
+    <div class="tree-box">TechnoVerse/
+├── .agents/
+│   └── skills/ (32 installed skills)
+├── backend/
+│   ├── routes/
+│   │   └── aiRoutes.js
+│   ├── services/
+│   │   └── aiService.js
+│   ├── src/
+│   │   ├── config/
+│   │   │   └── db.js
+│   │   ├── controllers/
+│   │   │   └── authController.js
+│   │   ├── middleware/
+│   │   │   ├── authMiddleware.js
+│   │   │   ├── errorMiddleware.js
+│   │   │   └── rateLimitMiddleware.js
+│   │   ├── models/
+│   │   │   └── User.js
+│   │   ├── routes/
+│   │   │   ├── aiRoutes.js
+│   │   │   ├── authRoutes.js
+│   │   │   └── healthRoutes.js
+│   │   ├── services/
+│   │   │   └── aiService.js
+│   │   ├── utils/
+│   │   │   ├── generateToken.js
+│   │   │   └── validateEnv.js
+│   │   └── server.js
+│   ├── .env.example
+│   ├── .gitignore
+│   ├── package-lock.json
+│   └── package.json
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── canvas/
+│   │   │   │   └── HeroCanvas.jsx
+│   │   │   └── layout/
+│   │   │       └── Navbar.jsx
+│   │   ├── context/
+│   │   │   └── AuthContext.jsx
+│   │   ├── hooks/
+│   │   │   └── useAuth.js
+│   │   ├── pages/
+│   │   │   ├── DashboardPage.jsx
+│   │   │   ├── HomePage.jsx
+│   │   │   ├── LoginPage.jsx
+│   │   │   ├── NotFoundPage.jsx
+│   │   │   └── RegisterPage.jsx
+│   │   ├── services/
+│   │   │   ├── api.js
+│   │   │   └── authService.js
+│   │   ├── styles/
+│   │   │   └── index.css
+│   │   ├── App.jsx
+│   │   └── main.jsx
+│   ├── .env.example
+│   ├── .gitignore
+│   ├── index.html
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── postcss.config.js
+│   ├── tailwind.config.js
+│   └── vite.config.js
+├── .gitignore
+├── AGENTS.md
+├── AI_GUIDELINES.md
+├── BACKEND.md
+├── FRONTEND.md
+├── REPO_GUIDE.md
+├── SECURITY.md
+├── TECH_STACK.md
+└── skills-lock.json</div>
+  </div>
+
+  <div>
+    <h3>Root Specification Documents (.md)</h3>
+    <div class="file-desc-item">
+      <strong>AGENTS.md</strong><br>
+      Standing orders mandating context ingestion of all specs before coding, active use of skills, and zero cross-folder imports.
+    </div>
+    <div class="file-desc-item">
+      <strong>AI_GUIDELINES.md</strong><br>
+      OpenRouter SDK standards, completion, streaming, and structured JSON output patterns, 429 rate limit handling, and mock fallback.
+    </div>
+    <div class="file-desc-item">
+      <strong>BACKEND.md</strong><br>
+      Backend architectural blueprint, Express routes (/api/health, /api/auth/*, /api/ai/*), Mongoose User schema, bcrypt hooks, and zip-handoff rules.
+    </div>
+    <div class="file-desc-item">
+      <strong>FRONTEND.md</strong><br>
+      Frontend architecture, Tailwind glassmorphism tokens, Three.js 60fps canvas rules, GSAP entrance timeline, and Axios API contract.
+    </div>
+    <div class="file-desc-item">
+      <strong>SECURITY.md</strong><br>
+      Zero hardcoded secrets, .env isolation, NoSQL injection defenses, and 5 pre-deploy verification passes based on Gitleaks, Bearer, and Trail of Bits.
+    </div>
+    <div class="file-desc-item">
+      <strong>TECH_STACK.md</strong><br>
+      Definitive technology stack (MongoDB, Express, React, Node, Vercel, OpenRouter) and formal Antigravity skills engagement directives.
+    </div>
+    <div class="file-desc-item">
+      <strong>REPO_GUIDE.md</strong><br>
+      Git repository layout, Conventional Commits standard, branch hygiene (frontend/*, backend/*), and ignore rules.
+    </div>
+
+    <div class="callout" style="margin-top: 8px;">
+      <strong>Decoupled Hand-Off Protocol:</strong><br>
+      The <code>backend/</code> folder is 100% self-contained. It can be zipped with <code>BACKEND.md</code> and <code>SECURITY.md</code> and given to your teammate for instant execution via <code>npm run dev</code>.
+    </div>
+  </div>
+</div>
+
+<!-- ================= PAGE 2: COMPLETE SKILLS CATALOG ================= -->
+<div class="page-break"></div>
+<div class="header">
+  <div class="title-area">
+    <h1>Techno<span>Verse</span></h1>
+    <div class="subtitle">Complete Catalog of Installed & Built-In Agent Skills</div>
+  </div>
+  <div class="meta-badge">
+    <div class="badge-tag">SKILLS DIRECTORY</div>
+    <div>32 Installed + Global Skills</div>
+  </div>
+</div>
+
+<h2>3. Project-Installed Skills Catalog (.agents/skills/)</h2>
+<table>
+  <thead>
+    <tr>
+      <th style="width: 25%;">Skill Name & Trigger</th>
+      <th style="width: 14%;">Source / Package</th>
+      <th style="width: 61%;">Capabilities & Primary Use Case</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="pill pill-blue">frontend-design</span></td>
+      <td>anthropics/skills</td>
+      <td><strong>Mandatory for UI/layout styling.</strong> Intentional typography, distinctive palettes, component hierarchy, no generic AI templates.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-emerald">frontend-slides</span></td>
+      <td>zarazhangrui/slides</td>
+      <td>Builds animation-rich HTML presentation decks and converted PPTX pitch slides for hackathon project showcases.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-purple">gsap-core</span></td>
+      <td>greensock/gsap</td>
+      <td>Core GSAP animation methods (gsap.to, from, fromTo, easing curves, responsive matchMedia, and reduced-motion handling).</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-purple">gsap-react</span></td>
+      <td>greensock/gsap</td>
+      <td>Safe React lifecycle animation integration via <code>useGSAP</code> hook, scope management, and automated unmount cleanup.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-purple">gsap-scrolltrigger</span></td>
+      <td>greensock/gsap</td>
+      <td>Scroll-driven web animations, element pinning, scrub timelines, and scroll velocity triggers.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-purple">gsap-timeline</span></td>
+      <td>greensock/gsap</td>
+      <td>Complex choreographed multi-element sequences, position parameters, timeline nesting, and coordinated entrances.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-purple">gsap-performance</span></td>
+      <td>greensock/gsap</td>
+      <td>Transform-first optimizations, GPU layer management, layout thrashing prevention, and will-change best practices.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-purple">gsap-plugins</span></td>
+      <td>greensock/gsap</td>
+      <td>Flip, Draggable, Observer, SplitText, ScrambleText, and SVG path morphing plugins.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-purple">gsap-utils</span></td>
+      <td>greensock/gsap</td>
+      <td>Utility math functions: interpolate, clamp, mapRange, snap, wrap, and stagger distribution.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-purple">gsap-web</span></td>
+      <td>iart-ai/web-anim</td>
+      <td>Integrated scroll animation cookbook, Lenis smooth-scroll synchronization, and hero entrance timelines.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-indigo">threejs-fundamentals</span></td>
+      <td>CloudAI-X/threejs</td>
+      <td>Scene graph creation, camera configurations, WebGL renderers, aspect ratio resizing, and memory disposal.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-indigo">threejs-animation</span></td>
+      <td>CloudAI-X/threejs</td>
+      <td>Animation loop optimization, AnimationMixer, skeletal skinning, morph targets, and procedural bone motion.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-indigo">threejs-geometry</span></td>
+      <td>CloudAI-X/threejs</td>
+      <td>BufferGeometry creation, custom vertex attributes, procedural meshes, particle points, and instanced geometry.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-indigo">threejs-materials</span></td>
+      <td>CloudAI-X/threejs</td>
+      <td>PBR MeshStandardMaterial, MeshPhysicalMaterial, refractive glass, metallic surfaces, and toon shading.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-indigo">threejs-react-three-fiber</span></td>
+      <td>CloudAI-X/threejs</td>
+      <td>Declarative 3D scenes in React using <code>@react-three/fiber</code> and <code>@react-three/drei</code>.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-indigo">threejs-performance</span></td>
+      <td>CloudAI-X/threejs</td>
+      <td>Ensuring 60fps: draw call reduction, geometry batching/instancing, LOD, shadow tuning, and buffer cleanup.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-indigo">threejs-shaders</span></td>
+      <td>CloudAI-X/threejs</td>
+      <td>Custom GLSL vertex and fragment shaders, animated uniforms, noise functions, and visual post-processing effects.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-indigo">threejs-lighting</span></td>
+      <td>CloudAI-X/threejs</td>
+      <td>Directional, point, spot, and ambient lighting; shadow mapping configuration, and HDR environment probes.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-indigo">threejs-interaction</span></td>
+      <td>CloudAI-X/threejs</td>
+      <td>Raycasting for 3D cursor picking, mouse parallax, hover triggers, orbit controls, and drag interactions.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-indigo">threejs-loaders</span></td>
+      <td>CloudAI-X/threejs</td>
+      <td>Asynchronous loading of GLTF/GLB models, Draco compression, texture loaders, and progress tracking.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-indigo">threejs-asset-pipeline</span></td>
+      <td>CloudAI-X/threejs</td>
+      <td>Shrinking glTF assets with gltf-transform, quantization, KTX2, WebP textures, and gltfjsx conversion.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-indigo">threejs-postprocessing</span></td>
+      <td>CloudAI-X/threejs</td>
+      <td>EffectComposer chains: bloom glow, depth of field, chromatic aberration, vignette, and film grain.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-indigo">threejs-textures</span></td>
+      <td>CloudAI-X/threejs</td>
+      <td>Texture maps, mipmaps, cubemaps, normal maps, roughness maps, and render targets.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-amber">glassmorphism</span></td>
+      <td>iart-ai/web-anim</td>
+      <td>Frosted glass styling, <code>backdrop-filter</code> blur layers, border specular highlights, and refraction effects.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-amber">micro-interaction</span></td>
+      <td>iart-ai/web-anim</td>
+      <td>Tactile UI polish: active button scaling, hover lift, animated switches, and spring feedback with Framer Motion.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-amber">60fps-animation</span></td>
+      <td>iart-ai/web-anim</td>
+      <td>Diagnoses and resolves animation stutter; converts layouts to composite-only GPU properties (transform/opacity).</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-amber">accessible-animation</span></td>
+      <td>iart-ai/web-anim</td>
+      <td>WCAG 2.3.3 compliance; detects <code>prefers-reduced-motion</code> and gracefully scales down high-motion effects.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-amber">page-transition-animation</span></td>
+      <td>iart-ai/web-anim</td>
+      <td>Seamless view routing transitions with Framer Motion AnimatePresence and browser View Transitions API.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-amber">lottie-animation</span></td>
+      <td>iart-ai/web-anim</td>
+      <td>DotLottie / Lottie-web player integration, runtime recoloring, and interactive trigger synchronization.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-amber">svg-animation</span></td>
+      <td>iart-ai/web-anim</td>
+      <td>Stroke-dashoffset path drawing, morphing vector shapes, and motion along complex SVG curves.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-amber">ascii-animation</span></td>
+      <td>iart-ai/web-anim</td>
+      <td>Generative ASCII art, retro hacker terminals, and character brightness ramp canvases.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>4. Global & Antigravity Built-in Skills Reference</h2>
+<table>
+  <thead>
+    <tr>
+      <th style="width: 25%;">Skill / Plugin</th>
+      <th style="width: 14%;">Category</th>
+      <th style="width: 61%;">Description & Primary Directive</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="pill pill-blue">Superpowers</span></td>
+      <td>Workflow Plugin</td>
+      <td>Structured software engineering discipline: <code>/brainstorming</code>, <code>/writing-plans</code>, and <code>/executing-plans</code> before coding.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-blue">Ponytail</span></td>
+      <td>Review Plugin</td>
+      <td>"Lazy senior dev mode": YAGNI-first diffs, bloat elimination, and clean code review via <code>/ponytail-review</code>.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-purple">Emil Kowalski Skills</span></td>
+      <td>Interaction Design</td>
+      <td><code>emil-design-eng</code>, <code>animate</code>, <code>animation-performance</code>, <code>ask-sonner</code>, <code>break-ui</code>, and <code>choreograph</code>.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-purple">Impeccable & Taste</span></td>
+      <td>Art Direction</td>
+      <td><code>impeccable</code> (award-winning design critique), <code>design-taste-frontend</code> (anti-slop guidelines), and <code>image-to-code</code>.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-rose">Security & Hardening</span></td>
+      <td>Security</td>
+      <td>OWASP Top Ten threat modeling (STRIDE), input sanitizer audits, and vulnerability mitigation.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-emerald">Testing & Automation</span></td>
+      <td>Testing</td>
+      <td><code>playwright-cli</code> and <code>webapp-testing</code> for headless/headful browser inspection and UI validation.</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ================= PAGE 3: THE MASTER PROMPT FOR FUTURE AGENTS ================= -->
+<div class="page-break"></div>
+<div class="header">
+  <div class="title-area">
+    <h1>Techno<span>Verse</span></h1>
+    <div class="subtitle">Production Master Prompt for AI Coding Agents</div>
+  </div>
+  <div class="meta-badge">
+    <div class="badge-tag">COPY-PASTE PROMPT</div>
+    <div>Universal Agent Initialization</div>
+  </div>
+</div>
+
+<h2>5. The Master Prompt</h2>
+<p>
+  Copy and paste the exact prompt block below into any AI agent session (Claude Code, Cursor, Antigravity, or Bolt) to initiate feature development with 100% adherence to all project rules:
+</p>
+
+<div class="prompt-box">You are the lead full-stack engineer and design technologist working on the "TechnoVerse" MERN hackathon codebase (located at F:\TechnoVerse).
+
+### 1. MANDATORY CONTEXT INGESTION (READ BEFORE WRITING CODE)
+You must read and strictly adhere to the project specification documents in the repository root:
+- AGENTS.md      -> Standing directives for all AI sessions and decoupling protocol.
+- TECH_STACK.md  -> Definitive MERN stack, Vercel, OpenRouter, and skills usage mandate.
+- FRONTEND.md    -> React 18 (Vite) architecture, UI rules, and API consumption contracts.
+- BACKEND.md     -> Node/Express routes, Mongoose models, bcrypt/JWT auth, and zip handoff rules.
+- SECURITY.md    -> Zero hardcoded secrets, input sanitization, and 5 pre-deploy verification passes.
+- AI_GUIDELINES.md -> OpenRouter SDK standards, streaming, structured JSON, and USE_MOCK_AI fallback.
+- REPO_GUIDE.md  -> Git hygiene, Conventional Commits, and branch standards.
+
+### 2. STRICT DECOUPLING PROTOCOL
+- "frontend/" and "backend/" must remain 100% physically decoupled.
+- Never introduce cross-directory relative imports between frontend and backend.
+- The "backend/" directory must remain self-contained so it can be zipped and handed off to a backend teammate at any moment. All communication strictly adheres to the REST contract defined in FRONTEND.md and BACKEND.md.
+
+### 3. ACTIVE SKILLS & TOOLING MANDATE
+Never write generic, boilerplate AI code. You must actively engage the installed skills located in ".agents/skills/":
+- UI & Layout: Use "frontend-design" for intentional typography, distinctive palettes, and component hierarchy. No generic grey card templates!
+- Glassmorphism & Micro-interactions: Apply "glassmorphism", "emil-design-eng", and "micro-interaction" for frosted navigation bars and tactile button presses.
+- Hero & Motion: Use "GSAP" (gsap-core, gsap-timeline, gsap-react) and "Three.js" (threejs-fundamentals, threejs-geometry, threejs-materials) for interactive 3D hero experiences. Keep motion inside the 60fps frame budget ("60fps-animation") and respect prefers-reduced-motion ("accessible-animation").
+- Quality & Security: Use "ponytail-review" to keep diffs minimal and YAGNI-compliant, and "security-and-hardening" to verify IDOR and injection protections.
+
+### 4. OPENROUTER AI INTEGRATION
+- All AI features must use "backend/src/services/aiService.js".
+- Read model configuration from "OPENROUTER_MODEL" (default: google/gemini-2.5-flash).
+- Support standard completion, token streaming, and Zod structured JSON output.
+- Explicitly handle 429 rate-limit errors and respect "USE_MOCK_AI=true" for offline testing.
+
+### 5. EXECUTION WORKFLOW
+1. Step 1: Brainstorm alternatives and output a concise plan.
+2. Step 2: Implement minimal, high-quality, typed/validated code.
+3. Step 3: Run the 5 pre-deploy security checks from SECURITY.md.
+4. Step 4: Verify that the change preserves decoupling and test builds run cleanly.</div>
+
+<div class="callout" style="margin-top: 10px;">
+  <strong>How to Use This Prompt:</strong><br>
+  Whenever opening a new task or switching agent sessions, send this prompt as the first message or configure it in your custom system prompt. It guarantees that the agent reads the contract specifications, uses the installed GSAP/Three.js/design skills, and keeps backend and frontend decoupled.
+</div>
+
+</body>
+</html>
