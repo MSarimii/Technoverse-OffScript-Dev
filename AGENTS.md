@@ -13,6 +13,7 @@ Every agent session **MUST read and follow** the core specification files locate
 3. [**`BACKEND.md`**](file:///f:/TechnoVerse/BACKEND.md) — Backend architecture, Express routes, Mongoose models, and security middleware.
 4. [**`REPO_GUIDE.md`**](file:///f:/TechnoVerse/REPO_GUIDE.md) — Repository structure, commit conventions, branch isolation, and gitignore hygiene.
 5. [**`SECURITY.md`**](file:///f:/TechnoVerse/SECURITY.md) — Zero hardcoded secrets, input sanitization, rate limiting, and 5 pre-deploy verification audits.
+6. [**`AI_GUIDELINES.md`**](file:///f:/TechnoVerse/AI_GUIDELINES.md) — OpenRouter API integration, model configurations, rate-limit fallback, and schemas.
 
 ---
 

@@ -104,5 +104,23 @@ frontend/src/
    - Header: `Authorization: Bearer <token>`
    - Response (200): `{ "success": true, "data": { "user": { "id": "...", "name": "Alice", "email": "alice@example.com", "role": "user" } } }`
 
+### OpenRouter AI Endpoint Contract:
+1. `POST /api/ai/test`
+   - Request: `{ "prompt": "Explain why decoupled MERN architectures are ideal for hackathons." }`
+   - Response (200):
+     ```json
+     {
+       "success": true,
+       "data": {
+         "content": "Decoupled MERN architectures are ideal for hackathons because...",
+         "model": "google/gemini-2.5-flash",
+         "mock": false,
+         "usage": { "prompt_tokens": 18, "completion_tokens": 85, "total_tokens": 103 }
+       }
+     }
+     ```
+   - Rate limit error (429): `{ "success": false, "message": "OpenRouter rate limit exceeded. Please retry shortly." }`
+   - See [`AI_GUIDELINES.md`](file:///f:/TechnoVerse/AI_GUIDELINES.md) for full streaming and structured output schemas.
+
 ### Offline / Mock Capability:
-If the Backend is not running, the Frontend service layer (`src/services/api.js`) can easily switch to simulated local latency and return fixture responses from `mockData.js`, enabling 100% independent frontend iteration.
+If the Backend is not running or `USE_MOCK_AI=true` is set, the API returns deterministic mock data with `mock: true`, allowing 100% independent frontend development without network access or API credentials.

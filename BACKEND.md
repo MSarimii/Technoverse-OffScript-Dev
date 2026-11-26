@@ -60,10 +60,17 @@ JWT_EXPIRES_IN=7d
 
 # CORS Allowed Origin (Frontend URL)
 CLIENT_URL=http://localhost:5173
+
+# OpenRouter AI Configuration
+OPENROUTER_API_KEY=
+OPENROUTER_MODEL=google/gemini-2.5-flash
+OPENROUTER_SITE_URL=http://localhost:5173
+OPENROUTER_SITE_NAME=HackathonApp
+USE_MOCK_AI=false
 ```
 
 > [!CAUTION]
-> The server must check that `MONGO_URI` and `JWT_SECRET` are defined at startup. If either is missing, the server must fail immediately with a descriptive error.
+> The server must check that `JWT_SECRET` and (`OPENROUTER_API_KEY` unless `USE_MOCK_AI=true`) are defined at startup. If critical variables are missing, the server halts immediately with a descriptive error.
 
 ---
 
@@ -227,6 +234,46 @@ export default mongoose.model('User', userSchema);
           "role": "user"
         }
       }
+    }
+    ```
+
+### C. OpenRouter AI Routes (`/api/ai`)
+- **`POST /api/ai/test`**
+  - **Access**: Public
+  - **Body**:
+    ```json
+    {
+      "prompt": "Explain why decoupled MERN architectures are ideal for hackathons."
+    }
+    ```
+  - **Response (200 OK)**:
+    ```json
+    {
+      "success": true,
+      "data": {
+        "content": "Decoupled MERN architectures are ideal for hackathons because...",
+        "model": "google/gemini-2.5-flash",
+        "mock": false,
+        "usage": {
+          "prompt_tokens": 18,
+          "completion_tokens": 85,
+          "total_tokens": 103
+        }
+      }
+    }
+    ```
+  - **Error (429 Rate Limit)**:
+    ```json
+    {
+      "success": false,
+      "message": "OpenRouter rate limit exceeded. Please retry shortly."
+    }
+    ```
+  - **Error (400 Bad Request)**:
+    ```json
+    {
+      "success": false,
+      "message": "Prompt is required and cannot be empty"
     }
     ```
 

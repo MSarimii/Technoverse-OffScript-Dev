@@ -6,6 +6,7 @@ import { connectDB } from './config/db.js';
 import { validateEnv } from './utils/validateEnv.js';
 import authRoutes from './routes/authRoutes.js';
 import healthRoutes from './routes/healthRoutes.js';
+import aiRoutes from './routes/aiRoutes.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 
 // Load environment variables
@@ -38,6 +39,7 @@ app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 // API Routes
 app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Error Handling Middleware
 app.use(notFound);

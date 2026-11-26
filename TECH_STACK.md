@@ -12,6 +12,7 @@ This document defines the core technology stack, architecture patterns, and the 
 | **Backend** | **Node.js + Express** | Clean REST API modular architecture (routes, controllers, models, middleware, validation). |
 | **Frontend** | **React (Vite)** | Modern single-page application built with React (Vite SPA template), functional components, custom hooks, and Tailwind CSS. |
 | **Authentication** | **JWT & Bcrypt** | Secure stateless token authentication via JSON Web Tokens with HTTP-only cookies or Authorization Bearer headers, and salted bcrypt password hashing. |
+| **AI Integration** | **OpenRouter API** | Powered by `@openrouter/sdk` with configurable model slug (`google/gemini-2.5-flash`), rate-limit fallback, and offline mock mode. (See [`AI_GUIDELINES.md`](file:///f:/TechnoVerse/AI_GUIDELINES.md)). |
 | **Deployment** | **Vercel** | Frontend deployed as a static Vite build on Vercel; Backend configured for serverless/Express on Vercel or cloud container (Render/Railway). |
 
 ---
