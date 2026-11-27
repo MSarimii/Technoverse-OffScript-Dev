@@ -1,167 +1,181 @@
 # OpenRouter AI Integration Guidelines (`AI_GUIDELINES.md`)
+# ── Updated by feat/ai branch (Modular AI Architecture) ──
 
-This document outlines the standardized patterns, environment controls, and API contracts for all AI-powered features in the **TechnoVerse** platform via **OpenRouter**.
+This document outlines the standardized patterns, environment controls, and API contracts for all AI-powered features in the **TechnoVerse** Secure Examination Management System (SEMS) via **OpenRouter** and offline **Mock Heuristic**.
+
+> [!IMPORTANT]
+> **AI is strictly an OPTIONAL examiner-assist extra.**
+> The application must work fully with `USE_MOCK_AI=true` and no API key. No exam, grading, publishing, or reporting flow may ever require it.
 
 ---
 
-## 1. Overview & Architectural Principles
+## 1. Modular Subsystem Architecture
 
-All AI completions, streaming dialogues, and structured data extractions are routed through the OpenRouter API via [`backend/src/services/aiService.js`](file:///f:/TechnoVerse/backend/src/services/aiService.js).
+All AI completions, status checks, and structured extraction are routed through [`backend/src/services/aiService.js`](file:///f:/TechnoVerse/backend/src/services/aiService.js), which acts as a thin facade over single-purpose modules in `backend/src/services/ai/`:
 
-- **Unified Client**: Uses `@openrouter/sdk` with ESM module architecture.
-- **Model Agnostic**: Controlled dynamically via `process.env.OPENROUTER_MODEL` without code changes.
-- **Rate-Limit Resilience**: Explicit 429 error detection with human-friendly messaging.
-- **Offline / Mock Mode**: Full local simulation via `USE_MOCK_AI=true` so frontend and backend work can proceed without depleting API credits or requiring network connectivity.
+- **`config.js`**: Centralized AI environment variables (`USE_MOCK_AI` default `true`, `OPENROUTER_API_KEY`, `OPENROUTER_MODEL` default `google/gemini-2.5-flash`), validated in one place.
+- **`errors.js`**: `AiError` class with code-to-HTTP mapping (`AI_NOT_APPLICABLE` 422, `AI_RATE_LIMITED` 429, `AI_BAD_OUTPUT` 502, `AI_UNAVAILABLE` 503) and standard error shaping `{ error: { code, message, fields } }`.
+- **`schemas.js`**: Strict Zod schemas for request validation and provider response verification.
+- **`prompts.js`**: Prompt construction and prompt-injection defense (ASCII control character stripping, delimiter escaping, and 4,000 character capping).
+- **`cache.js`**: In-memory LRU cache (~200 entries, 30 min TTL) keyed by SHA-256 of question, rubric, answer, and model.
+- **`providers/mockProvider.js`**: 100% deterministic keyword-coverage heuristic against the rubric. Zero network, zero randomness.
+- **`providers/openrouterProvider.js`**: Production OpenRouter caller with JSON mode, 15 s AbortController timeout, 429 Retry-After budget, and single repair retry on malformed JSON.
+- **`context.js`**: The ONLY module that interacts with Attempt/Question/Exam models (`loadAttemptContext`), strictly enforcing examiner ownership and attempt snapshot immutability.
 
 ---
 
 ## 2. Environment Configuration
 
-Configure the following variables in `backend/.env`:
+Configure the following variables in `backend/.env` (based on `backend/.env.example`):
 
 ```env
-# OpenRouter API Key (sk-or-v1-...)
+# Mock Switch: set to true (default) for offline demo with zero API key
+USE_MOCK_AI=true
+
+# OpenRouter API Key (sk-or-v1-...); required only when USE_MOCK_AI=false
 OPENROUTER_API_KEY=
 
-# Default Model Slug (e.g., google/gemini-2.5-flash, anthropic/claude-3.5-sonnet, openai/gpt-4o-mini)
+# Configurable Model Slug
 OPENROUTER_MODEL=google/gemini-2.5-flash
 
-# Application Identity (Required by OpenRouter rankings & dashboard)
+# Application Identity for OpenRouter headers
 OPENROUTER_SITE_URL=http://localhost:5173
-OPENROUTER_SITE_NAME=HackathonApp
-
-# Hackathon Mock Switch (Set to true to return simulated responses without calling the API)
-USE_MOCK_AI=false
+OPENROUTER_SITE_NAME=TechnoVerse-SEMS
 ```
 
 > [!WARNING]
-> When `USE_MOCK_AI=false`, the server enforces the presence of `OPENROUTER_API_KEY` at boot time and will refuse to start if missing.
+> If `USE_MOCK_AI=false` and `OPENROUTER_API_KEY` is missing or empty, the AI service returns `AI_UNAVAILABLE` (503). It **never silently falls back to mock** when live was explicitly requested.
 
 ---
 
-## 3. Service API & Helper Functions
+## 3. REST API Contracts
 
-The service is located at [`backend/src/services/aiService.js`](file:///f:/TechnoVerse/backend/src/services/aiService.js) (and re-exported from [`backend/services/aiService.js`](file:///f:/TechnoVerse/backend/services/aiService.js)).
-
-### A. Standard Completion (`generateCompletion`)
-```javascript
-import { generateCompletion } from '../services/aiService.js';
-
-// Simple prompt
-const result = await generateCompletion('Analyze this hackathon project architecture');
-console.log(result.content); // "The architecture..."
-
-// With options (override model, temperature, system prompt)
-const customResult = await generateCompletion('Draft a welcome message', {
-  model: 'anthropic/claude-3.5-sonnet',
-  temperature: 0.7,
-  systemPrompt: 'You are an inspiring hackathon mentor.',
-});
-```
-
-### B. Streaming Completion (`generateStream`)
-Returns an `AsyncGenerator<string>` yielding tokens in real-time.
-```javascript
-import { generateStream } from '../services/aiService.js';
-
-const stream = generateStream('Explain quantum computing in 3 sentences');
-for await (const chunk of stream) {
-  process.stdout.write(chunk);
-}
-```
-
-### C. Structured JSON Output (`generateStructuredOutput`)
-Forces JSON mode and validates the output against a `zod` schema:
-```javascript
-import { generateStructuredOutput } from '../services/aiService.js';
-import { z } from 'zod';
-
-const projectPlanSchema = z.object({
-  title: z.string(),
-  milestones: z.array(z.string()),
-  estimatedHours: z.number(),
-});
-
-const response = await generateStructuredOutput(
-  'Create a 3-step hackathon sprint plan for a 3D portfolio app',
-  projectPlanSchema
-);
-
-console.log(response.data.title);
-console.log(response.data.milestones);
-```
-
----
-
-## 4. REST API Contract: `POST /api/ai/test`
-
-A starter endpoint is mounted at `/api/ai/test` in [`backend/src/routes/aiRoutes.js`](file:///f:/TechnoVerse/backend/src/routes/aiRoutes.js).
-
-### Request:
-- **Method**: `POST`
-- **URL**: `http://localhost:5000/api/ai/test`
-- **Headers**:
-  ```http
-  Content-Type: application/json
-  ```
-- **Body**:
+### A. Examiner Status Check: `POST /api/ai/test`
+- **Access**: Private (Authenticated Examiner)
+- **Rate Limit**: 20 requests / min per examiner
+- **Response (200 OK)**:
   ```json
   {
-    "prompt": "Explain why decoupled MERN architectures are ideal for hackathons."
+    "success": true,
+    "ok": true,
+    "source": "mock",
+    "model": "google/gemini-2.5-flash (mock)",
+    "latencyMs": 1
+  }
+  ```
+- **Error (503 Unavailable)**:
+  ```json
+  {
+    "success": false,
+    "error": {
+      "code": "AI_UNAVAILABLE",
+      "message": "AI is not available: USE_MOCK_AI is false but OPENROUTER_API_KEY is not set",
+      "fields": null
+    },
+    "code": "AI_UNAVAILABLE",
+    "message": "AI is not available: USE_MOCK_AI is false but OPENROUTER_API_KEY is not set"
   }
   ```
 
-### Response (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "content": "Decoupled MERN architectures are ideal for hackathons because...",
-    "model": "google/gemini-2.5-flash",
-    "mock": false,
-    "usage": {
-      "prompt_tokens": 18,
-      "completion_tokens": 85,
-      "total_tokens": 103
+---
+
+### B. Suggest Grade: `POST /api/ai/suggest-grade`
+- **Access**: Private (Authenticated Examiner owning the exam or sandbox attempt)
+- **Rate Limit**: 20 requests / min per examiner
+- **Request Body (Strict - IDs only)**:
+  ```json
+  {
+    "attemptId": "65a000000000000000aaaaaa",
+    "questionId": "65b000000000000000bbbbbb"
+  }
+  ```
+  *(Any extra fields such as `answer`, `rubric`, or `maxMarks` are rejected with `400 VALIDATION_ERROR`)*
+
+- **Success Response (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "suggestion": {
+      "suggestedMarks": 3.5,
+      "maxMarks": 5,
+      "matchedPoints": [
+        "Mentioned: 'light'",
+        "Mentioned: 'chlorophyll'"
+      ],
+      "missingPoints": [
+        "Missing: 'oxygen'",
+        "Missing: 'carbon dioxide'"
+      ],
+      "rationale": "The candidate explains light and chlorophyll absorption accurately but omits carbon fixation and oxygen release.",
+      "confidence": "medium"
+    },
+    "meta": {
+      "source": "mock",
+      "model": "google/gemini-2.5-flash (mock)",
+      "cached": false,
+      "disclaimer": "Suggestion only. The examiner decides."
     }
   }
-}
-```
+  ```
 
-### Error Responses:
-- **400 Bad Request** (Empty or invalid prompt):
+- **Guarantees**:
+  - `suggestedMarks` is clamped to `[0, maxMarks]` and rounded to the nearest `0.5`.
+  - The endpoint NEVER writes to any database document. The examiner applies marks via the core grading route `PUT /api/attempts/:id/grade`.
+  - Zero PII (names, emails, IDs) is ever transmitted to the upstream provider.
+
+---
+
+### C. Suggest Questions: `POST /api/ai/suggest-questions` (Stretch)
+- **Access**: Private (Authenticated Examiner)
+- **Rate Limit**: 20 requests / min per examiner
+- **Request Body**:
   ```json
   {
-    "success": false,
-    "message": "Prompt is required and cannot be empty"
+    "topic": "Operating Systems",
+    "difficulty": "medium",
+    "count": 3
   }
   ```
-- **429 Too Many Requests** (Rate Limit Exceeded):
+- **Response (200 OK)**:
   ```json
   {
-    "success": false,
-    "message": "OpenRouter rate limit exceeded. Please retry shortly."
-  }
-  ```
-- **500 Internal Server Error**:
-  ```json
-  {
-    "success": false,
-    "message": "Error details (stack omitted in production)"
+    "success": true,
+    "questions": [
+      {
+        "type": "written",
+        "text": "Explain deadlock conditions with examples.",
+        "marks": 5,
+        "rubric": "Mutual exclusion, hold and wait, no preemption, circular wait.",
+        "options": []
+      }
+    ],
+    "meta": { "source": "mock", "model": "google/gemini-2.5-flash (mock)" },
+    "disclaimer": "Draft questions only. Examiner reviews and imports manually."
   }
   ```
 
 ---
 
-## 5. Frontend Client Integration
+## 4. Frontend UI Contract (Member 1 Integration)
 
-Frontend components can invoke the AI endpoint via the configured Axios client:
+In the Examiner grading workspace:
+1. **"Suggest with AI" Button States**:
+   - `idle`: Enabled, clickable in written question grading cards.
+   - `loading`: Disabled with spinner ("Analyzing answer against rubric..."). Manual score inputs remain 100% interactive.
+   - `suggestion`: Displays `suggestedMarks`, matched/missing point lists, rationale, and an **"Apply" button**. Clicking "Apply" populates the manual score input (`marksInput.value = suggestedMarks`), but does NOT submit the grade.
+   - `error`: Shows a non-blocking toast/banner with friendly message based on `error.code`. Manual grading remains fully functional.
+2. **Mock vs. Live Badge**:
+   - When `meta.source === 'mock'`: Display grey/yellow **"Mock AI"** chip with model name.
+   - When `meta.source === 'openrouter'`: Display emerald **"Live AI"** chip with model name.
+3. **Mandatory Disclaimer**: Always display `meta.disclaimer` ("Suggestion only. The examiner decides.") next to AI suggestions.
 
-```javascript
-import api from '../services/api';
+---
 
-export const testAiCompletion = async (prompt) => {
-  const response = await api.post('/ai/test', { prompt });
-  return response.data; // { content, model, mock, usage }
-};
-```
+## 5. Security & Prompt Injection Defenses
+
+1. **Delimited Input & Token Escaping**: Candidate answers are bounded by `<candidate_answer>` tags, with internal closing tags escaped to `&lt;/candidate_answer&gt;`.
+2. **ASCII Sanitization**: Strips non-printable ASCII control characters.
+3. **Input Capping**: Answers are capped at 4,000 characters before processing, with truncation clearly flagged in the rationale.
+4. **Structural Defense**: Model output is strictly parsed with Zod schemas. Scores are unconditionally clamped to `[0, maxMarks]` and rounded to the nearest `0.5` on the server.
+5. **NoSQL Injection Defense**: Strict object schemas reject unexpected request properties.
+6. **Data Minimization**: Outbound payloads never contain candidate names, emails, user IDs, or exam titles.
