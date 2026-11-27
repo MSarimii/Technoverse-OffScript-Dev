@@ -7,6 +7,7 @@ import { validateImportFile, parseCsvSafe } from '../../lib/csv';
 import gsap from 'gsap';
 import { Flip } from 'gsap/Flip';
 import { Plus, Upload, Trash2, Copy, Edit3, ArrowUp, ArrowDown } from 'lucide-react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 
 gsap.registerPlugin(Flip);
 
@@ -48,6 +49,7 @@ export const QuestionBankPage = () => {
 
   const [showImport, setShowImport] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const reduced = useReducedMotion();
   const [importText, setImportText] = useState(
     '[\n  { "type": "mcq_single", "topic": "Networks", "difficulty": 2, "text": "Which protocol provides reliable ordered byte-stream delivery?", "marks": 2 }\n]'
   );
@@ -407,26 +409,35 @@ export const QuestionBankPage = () => {
                       <Trash2 className="w-4 h-4" strokeWidth={1.5} />
                     </button>
                   </Tooltip>
-                  {confirmDeleteId === q.id && (
-                    <div className="absolute right-0 top-10 z-30 w-52 p-3 rounded-[12px] luxury-card space-y-2">
-                      <p className="text-xs text-ink font-medium">Delete this question?</p>
-                      <div className="flex justify-end gap-1.5">
-                        <Button size="sm" variant="secondary" onClick={() => setConfirmDeleteId(null)}>Cancel</Button>
-                        <Button
-                          size="sm"
-                          variant="danger"
-                          onClick={async () => {
-                            await questionService.deleteQuestion(q.id);
-                            setQuestions((prev) => prev.filter((item) => item.id !== q.id));
-                            setConfirmDeleteId(null);
-                            toast.success('Question deleted');
-                          }}
-                        >
-                          Delete
-                        </Button>
-                      </div>
-                    </div>
-                  )}
+                  <AnimatePresence>
+                    {confirmDeleteId === q.id && (
+                      <motion.div
+                        initial={reduced ? { opacity: 1 } : { opacity: 0, scale: 0.94, y: -4 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.94, y: -4 }}
+                        transition={{ type: 'spring', stiffness: 450, damping: 28 }}
+                        style={{ transformOrigin: 'top right' }}
+                        className="absolute right-0 top-10 z-30 w-56 p-3 rounded-[12px] luxury-card space-y-2"
+                      >
+                        <p className="text-xs text-ink font-medium">Are you sure?</p>
+                        <div className="flex justify-end gap-1.5">
+                          <Button size="sm" variant="secondary" onClick={() => setConfirmDeleteId(null)}>Cancel</Button>
+                          <Button
+                            size="sm"
+                            variant="danger"
+                            onClick={async () => {
+                              await questionService.deleteQuestion(q.id);
+                              setQuestions((prev) => prev.filter((item) => item.id !== q.id));
+                              setConfirmDeleteId(null);
+                              toast.success('Question deleted');
+                            }}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
             ))}

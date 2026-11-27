@@ -3,7 +3,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 
 const VARIANTS = {
-  primary: 'relative overflow-hidden group bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-ink)] border-transparent shadow-sm hover:shadow-[0_6px_20px_rgba(20,61,47,0.22)]',
+  primary: 'relative overflow-hidden group bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-ink)] border-transparent shadow-sm hover:shadow-[0_6px_20px_rgba(25,103,77,0.26)]',
   champagne: 'bg-champagne hover:bg-champagne-lit text-white border-transparent shadow-sm hover:shadow-md',
   secondary: 'bg-surface hover:bg-subtle text-ink border-line shadow-sm',
   ghost: 'bg-transparent hover:bg-subtle text-ink border-transparent',

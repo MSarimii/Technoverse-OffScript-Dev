@@ -100,7 +100,7 @@ export const ExaminerDashboardPage = () => {
       />
 
       {/* Hairline-Separated KPI Strip with Serif Numerals & Sparklines */}
-      <section aria-label="Lifecycle summary" className="grid grid-cols-2 sm:grid-cols-4 border border-line divide-y sm:divide-y-0 sm:divide-x divide-line luxury-card rounded-[14px] overflow-hidden">
+      <section aria-label="Lifecycle summary" className="grid grid-cols-2 sm:grid-cols-4 border border-line divide-y sm:divide-y-0 sm:divide-x divide-line luxury-card card-top-emerald rounded-[14px] overflow-hidden">
         {[
           { key: 'draft', label: 'Drafts', val: counts.draft, pts: '0,14 12,10 24,12 36,6 48,8' },
           { key: 'published', label: 'Scheduled', val: counts.published, pts: '0,16 12,14 24,8 36,10 48,4' },
@@ -189,7 +189,7 @@ export const ExaminerDashboardPage = () => {
             const isMenuOpen = openMenuId === exam.id;
 
             return (
-              <article key={exam.id} className="luxury-card rounded-[14px] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <article key={exam.id} className={`luxury-card rounded-[14px] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${st === 'ongoing' ? 'card-top-emerald' : 'card-top-brass'}`}>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-1.5">
                     <Badge tone={st === 'ongoing' ? 'cobalt' : st === 'completed' ? 'success' : 'neutral'}>

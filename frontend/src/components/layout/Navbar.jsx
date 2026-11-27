@@ -6,7 +6,7 @@ import { LogOut, Menu, X, Sun, Moon, Monitor, WifiOff, ChevronDown, LayoutDashbo
 import { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { USE_MOCK } from '../../services/api';
-import { IconButton, Badge } from '../ui';
+import { IconButton, Badge, Tooltip } from '../ui';
 
 export const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -110,9 +110,11 @@ export const Navbar = () => {
             Verify a report
           </Link>
 
-          <IconButton label={`Theme: ${theme} (click to switch)`} onClick={cycleTheme} variant="ghost">
-            <ThemeIcon className="w-4 h-4" strokeWidth={1.5} />
-          </IconButton>
+          <Tooltip label={`Theme: ${theme}`}>
+            <IconButton label={`Theme: ${theme} (click to switch)`} onClick={cycleTheme} variant="ghost">
+              <ThemeIcon className="w-4 h-4" strokeWidth={1.5} />
+            </IconButton>
+          </Tooltip>
 
           {isAuthenticated ? (
             <div ref={profileRef} className="relative pl-2 border-l border-line">

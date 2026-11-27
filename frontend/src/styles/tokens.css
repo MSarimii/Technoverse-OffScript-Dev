@@ -8,21 +8,23 @@
   --tertiary: #7B827E;
   --line: rgba(197, 160, 89, 0.22);
   --line-strong: rgba(18, 23, 20, 0.18);
-  --focus: #143D2F;
+  --focus: #19674D;
 
   --champagne: #C5A059;
-  --champagne-lit: #D4B474;
+  --champagne-lit: #D6B46E;
   --champagne-deep: #8E6E35;
+  --emerald-deep: #134E3A;
+  --emerald-tint: #E6F3EE;
 
-  --accent: #143D2F;
-  --accent-hover: #1D5441;
+  --accent: #19674D;
+  --accent-hover: #1F7D5E;
   --accent-ink: #FFFFFF;
-  --card-shadow: 0 2px 6px rgba(15, 46, 35, 0.04), 0 12px 32px rgba(15, 46, 35, 0.05);
+  --card-shadow: 0 2px 6px rgba(19, 78, 58, 0.05), 0 12px 32px rgba(19, 78, 58, 0.06);
 
   --success: #1B7A50;
   --warning: #B45309;
   --danger: #C93B3B;
-  --current: #143D2F;
+  --current: #19674D;
   --info: #2E8BC0;
 
   /* Tailwind variable aliases */

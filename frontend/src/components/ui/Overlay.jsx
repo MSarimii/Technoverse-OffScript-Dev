@@ -93,7 +93,7 @@ export const Tooltip = ({ label, children }) => {
             animate={{ opacity: 1, y: 0 }}
             exit={reduced ? { opacity: 0 } : { opacity: 0, y: 4 }}
             transition={{ type: 'spring', stiffness: 460, damping: 28 }}
-            className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1 rounded-lg bg-[#0F2E23] text-[#F4EFE6] border border-[#C5A059]/40 shadow-md text-[11px] font-mono whitespace-nowrap z-50"
+            className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1 rounded-lg bg-[#134E3A] text-[#F7F5F0] border border-[#C5A059]/45 shadow-md text-[11px] font-mono whitespace-nowrap z-50"
           >
             {label}
           </motion.span>

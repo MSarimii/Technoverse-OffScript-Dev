@@ -17,6 +17,13 @@ export default {
           lit: 'var(--champagne-lit)',
           deep: 'var(--champagne-deep)',
         },
+        emeraldDeep: 'var(--emerald-deep)',
+        emeraldTint: 'var(--emerald-tint)',
+        accent: {
+          DEFAULT: 'var(--accent)',
+          hover: 'var(--accent-hover)',
+          ink: 'var(--accent-ink)',
+        },
         navy: {
           50: 'rgba(203, 169, 107, 0.12)',
           100: 'rgba(203, 169, 107, 0.22)',
