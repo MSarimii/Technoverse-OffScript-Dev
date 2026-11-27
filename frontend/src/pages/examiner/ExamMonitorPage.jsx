@@ -1,8 +1,11 @@
-import { useEffect, useState, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useState, useCallback } from 'react';
+import { useParams } from 'react-router-dom';
 import { examService } from '../../services/examService';
+import { usePolling } from '../../hooks/usePolling';
+import { PageHeader } from '../../components/layout/AppLayout';
+import { Button, Badge, Drawer } from '../../components/ui';
 import { toast } from 'sonner';
-import { ArrowLeft, Megaphone, AlertCircle, Wifi } from 'lucide-react';
+import { Megaphone, AlertCircle, Wifi, RefreshCw } from 'lucide-react';
 
 export const ExamMonitorPage = () => {
   const { id } = useParams();
@@ -10,32 +13,27 @@ export const ExamMonitorPage = () => {
   const [announcements, setAnnouncements] = useState([]);
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const [filterState, setFilterState] = useState('all');
+  const [search, setSearch] = useState('');
+  const [selectedAttempt, setSelectedAttempt] = useState(null);
 
   const fetchMonitor = useCallback(async () => {
-    try {
-      const res = await examService.getMonitor(id);
-      setAttempts(res.data?.attempts || []);
-      setAnnouncements(res.data?.announcements || []);
-    } catch {
-      // silent poll retry
-    }
+    const res = await examService.getMonitor(id);
+    setAttempts(res.data?.attempts || []);
+    setAnnouncements(res.data?.announcements || []);
   }, [id]);
 
-  useEffect(() => {
-    fetchMonitor();
-    const timer = setInterval(fetchMonitor, 4000);
-    return () => clearInterval(timer);
-  }, [fetchMonitor]);
+  const { lastSyncedAt, pollError, refresh } = usePolling(fetchMonitor, 4000, true);
 
   const handleBroadcast = async (e) => {
     e.preventDefault();
-    if (!message.trim()) return;
+    if (!message.trim() || sending) return;
     setSending(true);
     try {
       await examService.postAnnouncement(id, message.trim());
       setMessage('');
       toast.success('Announcement broadcast to active candidates');
-      fetchMonitor();
+      refresh();
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -43,111 +41,154 @@ export const ExamMonitorPage = () => {
     }
   };
 
+  const inProgressCount = attempts.filter((a) => a.status === 'in_progress').length;
+  const submittedCount = attempts.filter((a) => a.status === 'submitted' || a.status === 'graded').length;
+
+  const filtered = attempts.filter((a) => {
+    const matchState = filterState === 'all' || a.status === filterState;
+    const matchText = !search || a.candidateName.toLowerCase().includes(search.toLowerCase());
+    return matchState && matchText;
+  });
+
   return (
-    <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <Link to="/examiner" className="inline-flex items-center gap-1.5 text-xs font-mono text-ink-muted hover:text-ink mb-4">
-        <ArrowLeft className="w-3.5 h-3.5" /> Back to console
-      </Link>
+    <main className="space-y-6">
+      <PageHeader
+        title="Live Examination Monitor"
+        subtitle="4s polling · Server-authoritative status & connectivity ledger."
+        breadcrumbs={[{ label: 'Examiner', to: '/examiner' }, { label: 'Live Monitor' }]}
+        actions={
+          <div className="flex items-center gap-2">
+            <Badge tone={pollError ? 'danger' : 'success'}>
+              <Wifi className="w-3.5 h-3.5" />
+              {lastSyncedAt ? `Last synced ${lastSyncedAt.toLocaleTimeString()}` : 'Syncing...'}
+            </Badge>
+            <Button size="sm" variant="secondary" onClick={refresh}>
+              <RefreshCw className="w-3.5 h-3.5" /> Refresh
+            </Button>
+          </div>
+        }
+      />
 
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="font-serif text-3xl text-ink">Live Examination Monitor</h1>
-          <p className="text-sm text-ink-muted">Polling every 4 seconds · Server-authoritative status & connectivity ledger.</p>
-        </div>
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-status-answered text-xs font-mono">
-          <Wifi className="w-3.5 h-3.5" /> Live Polling Active
-        </span>
-      </div>
-
-      {/* Incident disclaimer */}
-      <div className="mb-6 p-3.5 rounded-md bg-amber-50 border border-amber-200 text-xs text-amber-950 flex items-center gap-2">
+      <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-950 flex items-center gap-2">
         <AlertCircle className="w-4 h-4 shrink-0" />
         <span>
-          <strong>Review Notice:</strong> Monitoring events (tab switches, disconnect intervals, late-synced answers) are contextual indicators for review, not conclusive evidence of misconduct.
+          <strong>Review Notice:</strong> Monitoring events (tab switches, disconnect intervals, late-synced answers) are indicators for review, not conclusive evidence of misconduct.
         </span>
       </div>
 
+      {/* Live Counts */}
+      <section className="grid grid-cols-3 gap-3">
+        <div className="bg-surface border border-line rounded-xl p-4">
+          <div className="text-xs font-mono text-ink-muted">Total Attempts</div>
+          <div className="font-serif text-3xl text-ink mt-1">{attempts.length}</div>
+        </div>
+        <div className="bg-surface border border-line rounded-xl p-4">
+          <div className="text-xs font-mono text-ink-muted">In Progress</div>
+          <div className="font-serif text-3xl text-cobalt mt-1">{inProgressCount}</div>
+        </div>
+        <div className="bg-surface border border-line rounded-xl p-4">
+          <div className="text-xs font-mono text-ink-muted">Submitted</div>
+          <div className="font-serif text-3xl text-status-answered mt-1">{submittedCount}</div>
+        </div>
+      </section>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <section className="lg:col-span-2 bg-surface border border-line rounded-lg overflow-hidden">
-          <div className="px-4 py-3 border-b border-line font-semibold text-sm">
-            Candidate Attempts ({attempts.length})
+        <section className="lg:col-span-2 bg-surface border border-line rounded-xl overflow-hidden">
+          <div className="px-4 py-3 border-b border-line flex flex-wrap items-center justify-between gap-2">
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Filter candidate..."
+              className="px-3 py-1.5 text-xs bg-canvas border border-line rounded-lg"
+            />
+            <select
+              value={filterState}
+              onChange={(e) => setFilterState(e.target.value)}
+              className="px-2.5 py-1.5 text-xs font-mono bg-canvas border border-line rounded-lg"
+            >
+              <option value="all">All States</option>
+              <option value="in_progress">In Progress</option>
+              <option value="submitted">Submitted</option>
+              <option value="graded">Graded</option>
+            </select>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="bg-subtle text-xs font-mono text-ink-muted uppercase">
                 <tr>
                   <th className="px-4 py-2.5">Candidate</th>
-                  <th className="px-4 py-2.5">Status</th>
+                  <th className="px-4 py-2.5">State</th>
                   <th className="px-4 py-2.5">Progress</th>
-                  <th className="px-4 py-2.5">5.3 Ledger / Indicators</th>
+                  <th className="px-4 py-2.5">Indicators</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
-                {attempts.length === 0 ? (
+                {filtered.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="px-4 py-8 text-center text-ink-muted text-xs font-mono">
-                      No active or submitted attempts yet.
+                      No matching attempts.
                     </td>
                   </tr>
                 ) : (
-                  attempts.map((a) => (
-                    <tr key={a.attemptId}>
-                      <td className="px-4 py-3 font-medium text-ink">{a.candidateName}</td>
-                      <td className="px-4 py-3 font-mono text-xs">{a.status}</td>
-                      <td className="px-4 py-3 font-mono text-xs">
-                        {a.answeredCount} / {a.totalQuestions}
-                      </td>
-                      <td className="px-4 py-3 text-xs font-mono text-ink-muted">
-                        {a.lateSyncedCount > 0 && (
-                          <span className="inline-block mr-2 px-1.5 py-0.5 rounded bg-amber-100 text-amber-900">
-                            {a.lateSyncedCount} late-synced
-                          </span>
-                        )}
-                        {a.connectivityLedger?.length > 0 && (
-                          <span>{a.connectivityLedger.length} outage(s)</span>
-                        )}
-                        {a.events?.length > 0 && (
-                          <span className="ml-2">{a.events.length} indicator(s)</span>
-                        )}
-                        {!a.lateSyncedCount && !a.connectivityLedger?.length && !a.events?.length && 'Normal'}
-                      </td>
-                    </tr>
-                  ))
+                  filtered.map((a) => {
+                    const pct = a.totalQuestions ? Math.round((a.answeredCount / a.totalQuestions) * 100) : 0;
+                    return (
+                      <tr
+                        key={a.attemptId}
+                        onClick={() => setSelectedAttempt(a)}
+                        className="hover:bg-canvas/70 cursor-pointer"
+                      >
+                        <td className="px-4 py-3 font-medium text-ink">{a.candidateName}</td>
+                        <td className="px-4 py-3 font-mono text-xs">{a.status}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2 font-mono text-xs">
+                            <div className="w-20 h-2 bg-canvas rounded-full overflow-hidden border border-line">
+                              <div className="bg-cobalt h-full" style={{ width: `${pct}%` }} />
+                            </div>
+                            <span>{a.answeredCount}/{a.totalQuestions}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-xs font-mono text-ink-muted">
+                          {a.lateSyncedCount > 0 && (
+                            <Badge tone="warning" className="mr-1">{a.lateSyncedCount} late</Badge>
+                          )}
+                          {a.events?.length || 0} event(s)
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
           </div>
         </section>
 
-        <section className="bg-surface border border-line rounded-lg p-4 space-y-4 h-fit">
+        <section className="bg-surface border border-line rounded-xl p-4 space-y-4 h-fit">
           <div className="flex items-center gap-2 font-semibold text-sm text-ink">
-            <Megaphone className="w-4 h-4 text-navy-800" />
+            <Megaphone className="w-4 h-4 text-cobalt" />
             Broadcast Announcement
           </div>
           <form onSubmit={handleBroadcast} className="space-y-2">
             <textarea
               rows={3}
+              required
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Send a live clarification to all candidates..."
-              className="w-full p-2.5 text-sm bg-canvas border border-line rounded-md"
+              className="w-full p-2.5 text-sm bg-canvas border border-line rounded-lg"
             />
-            <button
-              disabled={sending}
-              type="submit"
-              className="w-full py-2 text-sm font-semibold bg-navy-900 text-white rounded-md"
-            >
-              {sending ? 'Sending...' : 'Send Announcement'}
-            </button>
+            <Button type="submit" loading={sending} className="w-full">
+              Send Announcement
+            </Button>
           </form>
 
           <div className="pt-3 border-t border-line space-y-2">
-            <h3 className="text-xs font-mono uppercase text-ink-muted">Recent Broadcasts</h3>
+            <h3 className="text-xs font-mono uppercase text-ink-muted">Broadcast History</h3>
             {announcements.length === 0 ? (
               <p className="text-xs text-ink-muted">None sent yet.</p>
             ) : (
               announcements.map((an) => (
-                <div key={an.id} className="p-2.5 rounded bg-canvas border border-line text-xs">
+                <div key={an.id} className="p-2.5 rounded-lg bg-canvas border border-line text-xs">
                   <p className="text-ink">{an.message}</p>
                   <span className="text-[10px] font-mono text-ink-muted">
                     {new Date(an.createdAt).toLocaleTimeString()}
@@ -158,6 +199,43 @@ export const ExamMonitorPage = () => {
           </div>
         </section>
       </div>
+
+      <Drawer
+        open={Boolean(selectedAttempt)}
+        onClose={() => setSelectedAttempt(null)}
+        title={selectedAttempt ? `${selectedAttempt.candidateName} — Timeline` : 'Attempt Timeline'}
+      >
+        {selectedAttempt && (
+          <div className="space-y-3 text-xs font-mono">
+            <div>Status: <strong>{selectedAttempt.status}</strong></div>
+            <div>Progress: {selectedAttempt.answeredCount}/{selectedAttempt.totalQuestions}</div>
+            <div className="pt-2 border-t border-line">
+              <div className="text-ink-muted mb-1">Connectivity Ledger (5.3)</div>
+              {(selectedAttempt.connectivityLedger || []).length === 0 ? (
+                <p className="text-ink-muted">No recorded outages.</p>
+              ) : (
+                selectedAttempt.connectivityLedger.map((gap, i) => (
+                  <div key={i} className="p-2 rounded bg-canvas border border-line mb-1">
+                    Outage: {gap.durationSec}s
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="pt-2 border-t border-line">
+              <div className="text-ink-muted mb-1">Activity Indicators</div>
+              {(selectedAttempt.events || []).length === 0 ? (
+                <p className="text-ink-muted">No indicators recorded.</p>
+              ) : (
+                selectedAttempt.events.map((ev, i) => (
+                  <div key={i} className="p-2 rounded bg-canvas border border-line mb-1">
+                    {ev.type} · {new Date(ev.at).toLocaleTimeString()}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+      </Drawer>
     </main>
   );
 };

@@ -3,6 +3,7 @@ import { questionService } from '../../services/questionService';
 import { PageHeader } from '../../components/layout/AppLayout';
 import { Button, Input, Textarea, Select, Badge, Dialog, Skeleton, EmptyState, ErrorState } from '../../components/ui';
 import { toast } from 'sonner';
+import { validateImportFile, parseCsvSafe } from '../../lib/csv';
 import gsap from 'gsap';
 import { Flip } from 'gsap/Flip';
 import { Plus, Upload, Trash2, Copy, Edit3, ArrowUp, ArrowDown } from 'lucide-react';
@@ -238,7 +239,28 @@ export const QuestionBankPage = () => {
 
       {showImport && (
         <div className="bg-surface border border-line rounded-xl p-5 space-y-3">
-          <h2 className="text-sm font-semibold text-ink">Bulk Import Questions (JSON)</h2>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-sm font-semibold text-ink">Bulk Import Questions (CSV / JSON)</h2>
+            <input
+              type="file"
+              accept=".csv,.json"
+              aria-label="Choose CSV or JSON file"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                const err = validateImportFile(file);
+                if (err) return toast.error(err);
+                const text = await file.text();
+                if (file.name.toLowerCase().endsWith('.csv')) {
+                  const parsed = parseCsvSafe(text);
+                  if (parsed.error) return toast.error(parsed.error);
+                  setImportText(JSON.stringify(parsed.rows, null, 2));
+                } else {
+                  setImportText(text);
+                }
+              }}
+              className="text-xs font-mono"
+            />
+          </div>
           <textarea
             rows={4}
             value={importText}

@@ -131,7 +131,9 @@ function AnimatedRoutes() {
           path="/examiner/exams/:id/monitor"
           element={
             <ProtectedRoute allowedRoles={['examiner']}>
-              <ExamMonitorPage />
+              <AppLayout>
+                <ExamMonitorPage />
+              </AppLayout>
             </ProtectedRoute>
           }
         />
@@ -139,7 +141,9 @@ function AnimatedRoutes() {
           path="/examiner/exams/:id/grading"
           element={
             <ProtectedRoute allowedRoles={['examiner']}>
-              <ExamGradingPage />
+              <AppLayout>
+                <ExamGradingPage />
+              </AppLayout>
             </ProtectedRoute>
           }
         />
@@ -147,7 +151,9 @@ function AnimatedRoutes() {
           path="/examiner/exams/:id/analytics"
           element={
             <ProtectedRoute allowedRoles={['examiner']}>
-              <ExamAnalyticsPage />
+              <AppLayout>
+                <ExamAnalyticsPage />
+              </AppLayout>
             </ProtectedRoute>
           }
         />

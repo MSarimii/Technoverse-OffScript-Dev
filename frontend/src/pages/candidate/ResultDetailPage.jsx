@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { attemptService } from '../../services/attemptService';
 import { USE_MOCK } from '../../services/api';
 import { toast } from 'sonner';
-import { Printer, ShieldCheck, ArrowLeft, ExternalLink } from 'lucide-react';
+import { Printer, ShieldCheck, ArrowLeft, ExternalLink, Copy } from 'lucide-react';
 
 export const ResultDetailPage = () => {
   const { attemptId } = useParams();
@@ -79,18 +79,29 @@ export const ResultDetailPage = () => {
         </div>
         <div className="flex flex-wrap gap-2">
           {attempt.verificationId && (
-            <Link
-              to={`/verify/${attempt.verificationId}`}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-mono border border-line rounded-md bg-canvas hover:bg-subtle"
-            >
-              <ShieldCheck className="w-4 h-4 text-status-answered" />
-              {attempt.verificationId}
-              <ExternalLink className="w-3 h-3" />
-            </Link>
+            <>
+              <button
+                onClick={() => {
+                  navigator.clipboard?.writeText(attempt.verificationId);
+                  toast.success('Verification ID copied');
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-mono border border-line rounded-lg bg-canvas hover:bg-subtle"
+              >
+                <Copy className="w-3.5 h-3.5" /> Copy ID
+              </button>
+              <Link
+                to={`/verify/${attempt.verificationId}`}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-mono border border-line rounded-lg bg-canvas hover:bg-subtle"
+              >
+                <ShieldCheck className="w-4 h-4 text-status-answered" />
+                {attempt.verificationId}
+                <ExternalLink className="w-3 h-3" />
+              </Link>
+            </>
           )}
           <button
             onClick={handleDownloadPdf}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-navy-900 text-white rounded-md active:scale-[0.98]"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-cobalt text-white rounded-lg active:scale-[0.97]"
           >
             <Printer className="w-4 h-4" />
             Download PDF Report

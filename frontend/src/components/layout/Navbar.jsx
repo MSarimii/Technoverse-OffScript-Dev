@@ -1,8 +1,8 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../context/ThemeContext';
-import { ShieldCheck, LogOut, BookOpen, Users, ClipboardCheck, Award, Menu, X, Sun, Moon, Monitor } from 'lucide-react';
-import { useState } from 'react';
+import { ShieldCheck, LogOut, BookOpen, Users, ClipboardCheck, Award, Menu, X, Sun, Moon, Monitor, WifiOff } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { USE_MOCK } from '../../services/api';
 import { IconButton, Badge } from '../ui';
 
@@ -12,6 +12,18 @@ export const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [online, setOnline] = useState(() => (typeof navigator !== 'undefined' ? navigator.onLine : true));
+
+  useEffect(() => {
+    const on = () => setOnline(true);
+    const off = () => setOnline(false);
+    window.addEventListener('online', on);
+    window.addEventListener('offline', off);
+    return () => {
+      window.removeEventListener('online', on);
+      window.removeEventListener('offline', off);
+    };
+  }, []);
 
   if (location.pathname.startsWith('/candidate/exam/')) {
     return null;
@@ -56,6 +68,11 @@ export const Navbar = () => {
             </div>
           </Link>
           {USE_MOCK && <Badge tone="warning" className="hidden sm:inline-flex">MOCK MODE</Badge>}
+          {!online && (
+            <Badge tone="danger" className="hidden sm:inline-flex">
+              <WifiOff className="w-3 h-3" /> Offline
+            </Badge>
+          )}
         </div>
 
         {/* Desktop Nav */}

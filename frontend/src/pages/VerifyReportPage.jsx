@@ -8,19 +8,28 @@ export const VerifyReportPage = () => {
   const navigate = useNavigate();
   const [queryId, setQueryId] = useState(verificationId || '');
   const [result, setResult] = useState(null);
+  const [rateLimited, setRateLimited] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!verificationId) return;
     let active = true;
     setLoading(true);
+    setRateLimited(false);
     attemptService
       .verifyReport(verificationId)
       .then((res) => {
         if (active) setResult(res.data || res);
       })
-      .catch(() => {
-        if (active) setResult({ valid: false });
+      .catch((err) => {
+        if (active) {
+          if (err.statusCode === 429 || err.code === 'RATE_LIMITED') {
+            setRateLimited(true);
+            setResult(null);
+          } else {
+            setResult({ valid: false });
+          }
+        }
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -72,7 +81,13 @@ export const VerifyReportPage = () => {
           </div>
         )}
 
-        {!loading && result && (
+        {rateLimited && (
+          <div role="alert" className="p-4 rounded-lg bg-amber-50 border border-amber-300 text-sm text-amber-950">
+            Too many verification requests. Please wait a moment and try again.
+          </div>
+        )}
+
+        {!loading && !rateLimited && result && (
           <div
             className={`p-5 rounded-md border ${
               result.valid ? 'bg-emerald-50/60 border-emerald-300' : 'bg-red-50/60 border-red-300'
