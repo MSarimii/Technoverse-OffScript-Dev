@@ -1,23 +1,18 @@
 import axios from 'axios';
+import { mapErrorCodeToCopy } from '../lib/errors';
 
 export const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false';
 
-const ERROR_CODE_MESSAGES = {
-  EXAM_NOT_AVAILABLE: 'This examination is not currently open for entry.',
-  ATTEMPT_EXPIRED: 'The examination time limit has expired.',
-  ALREADY_SUBMITTED: 'Your attempt has already been submitted.',
-  FORBIDDEN: 'You do not have permission to perform this action.',
-  UNAUTHORIZED: 'Your session has expired. Please sign in again.',
-  VALIDATION_ERROR: 'Please check the highlighted fields and try again.',
-  RATE_LIMITED: 'Too many requests. Please wait a moment and retry.',
-  NOT_FOUND: 'The requested record could not be found.',
-};
+let memoryToken = null;
+export function setMemoryToken(tok) {
+  memoryToken = tok;
+}
 
 export function normalizeApiError(error) {
   if (!error.response && error.isAxiosError) {
     return {
       code: 'NETWORK_ERROR',
-      message: 'Network unavailable. Changes are queued locally if supported.',
+      message: mapErrorCodeToCopy('NETWORK_ERROR'),
       fields: {},
       statusCode: 0,
       isNetworkError: true,
@@ -27,12 +22,7 @@ export function normalizeApiError(error) {
   const payload = error.response?.data;
   const errObj = payload?.error || {};
   const code = errObj.code || payload?.code || 'UNKNOWN_ERROR';
-  const message =
-    errObj.message ||
-    payload?.message ||
-    ERROR_CODE_MESSAGES[code] ||
-    error.message ||
-    'Something went wrong';
+  const message = mapErrorCodeToCopy(code, errObj.message || payload?.message || error.message);
 
   return {
     code,
@@ -53,7 +43,7 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('sems_token');
+    const token = memoryToken || sessionStorage.getItem('sems_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -70,6 +60,11 @@ api.interceptors.response.use(
     const isGet = config?.method?.toLowerCase() === 'get';
     const status = error.response?.status || 0;
     const isTransient = !error.response || status >= 500;
+
+    if (status === 401) {
+      memoryToken = null;
+      sessionStorage.removeItem('sems_token');
+    }
 
     if (isGet && isTransient && (config.__retryCount || 0) < 2) {
       config.__retryCount = (config.__retryCount || 0) + 1;

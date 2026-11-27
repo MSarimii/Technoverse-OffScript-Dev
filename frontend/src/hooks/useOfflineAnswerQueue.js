@@ -1,27 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { attemptService } from '../services/attemptService';
+import { readQueue, writeQueue, clearQueue } from '../lib/offlineQueue';
 
-export function useOfflineAnswerQueue({ attemptId, initialAnswers, initialMarked, startedAt }) {
-  const queueKey = attemptId ? `sems_queue_${attemptId}` : null;
+export function useOfflineAnswerQueue({ attemptId, initialAnswers, initialMarked }) {
   const seqKey = attemptId ? `sems_seq_${attemptId}` : null;
+  const loadPerfRef = useRef(typeof performance !== 'undefined' ? performance.now() : 0);
 
-  const [answers, setAnswers] = useState(() => {
-    const map = {};
-    Object.entries(initialAnswers || {}).forEach(([qid, item]) => {
-      map[qid] = item.value;
-    });
-    return map;
-  });
-
+  const [answers, setAnswers] = useState({});
   const [markedForReview, setMarkedForReview] = useState(initialMarked || []);
-  const [queue, setQueue] = useState(() => {
-    if (!queueKey) return [];
-    try {
-      return JSON.parse(localStorage.getItem(queueKey) || '[]');
-    } catch {
-      return [];
-    }
-  });
+  const [queue, setQueue] = useState([]);
   const [isOnline, setIsOnline] = useState(() => (typeof navigator !== 'undefined' ? navigator.onLine : true));
   const [syncStatus, setSyncStatus] = useState('saved'); // saved | saving | offline | retrying | error
   const [lateSyncedCount, setLateSyncedCount] = useState(0);
@@ -30,37 +17,37 @@ export function useOfflineAnswerQueue({ attemptId, initialAnswers, initialMarked
   const flushTimerRef = useRef(null);
   const flushingRef = useRef(false);
 
-  // Sync initial loaded answers when attemptId arrives
   useEffect(() => {
     if (!attemptId) return;
-    const map = {};
-    Object.entries(initialAnswers || {}).forEach(([qid, item]) => {
-      map[qid] = item.value;
-    });
-    // Overlay any un-flushed local queued answers so refresh preserves offline edits
-    try {
-      const localQ = JSON.parse(localStorage.getItem(`sems_queue_${attemptId}`) || '[]');
+    let mounted = true;
+    readQueue(attemptId).then((localQ) => {
+      if (!mounted) return;
+      const map = {};
+      Object.entries(initialAnswers || {}).forEach(([qid, item]) => {
+        map[qid] = item.value;
+      });
       localQ.forEach((item) => {
         map[item.qid] = item.value;
       });
       setQueue(localQ);
-    } catch {
-      // ignore
-    }
-    setAnswers(map);
-    setMarkedForReview(initialMarked || []);
+      setAnswers(map);
+      setMarkedForReview(initialMarked || []);
+    });
+    return () => {
+      mounted = false;
+    };
   }, [attemptId, initialAnswers, initialMarked]);
 
   useEffect(() => {
-    if (queueKey) {
-      localStorage.setItem(queueKey, JSON.stringify(queue));
+    if (attemptId) {
+      writeQueue(attemptId, queue);
     }
-  }, [queue, queueKey]);
+  }, [queue, attemptId]);
 
   const flushQueue = useCallback(
     async (explicitMarked) => {
       if (!attemptId || flushingRef.current) return;
-      const currentQueue = JSON.parse(localStorage.getItem(`sems_queue_${attemptId}`) || '[]');
+      const currentQueue = await readQueue(attemptId);
       if (currentQueue.length === 0 && !explicitMarked) {
         setSyncStatus(navigator.onLine ? 'saved' : 'offline');
         return;
@@ -111,11 +98,16 @@ export function useOfflineAnswerQueue({ attemptId, initialAnswers, initialMarked
       setIsOnline(false);
       setSyncStatus('offline');
     };
+    const handleVisibility = () => {
+      if (document.hidden) flushQueue();
+    };
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
+    document.addEventListener('visibilitychange', handleVisibility);
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, [flushQueue]);
 
@@ -125,13 +117,13 @@ export function useOfflineAnswerQueue({ attemptId, initialAnswers, initialMarked
       seqRef.current += 1;
       if (seqKey) localStorage.setItem(seqKey, String(seqRef.current));
 
-      const clientElapsedMs = startedAt ? Math.max(0, Date.now() - Date.parse(startedAt)) : 0;
-      const entry = { qid, value, seq: seqRef.current, clientElapsedMs };
+      const clientElapsedMs =
+        typeof performance !== 'undefined' ? Math.max(0, Math.round(performance.now() - loadPerfRef.current)) : 0;
+      const entry = { qid, value, seq: seqRef.current, clientElapsedMs, ts: Date.now() };
 
       setQueue((prev) => {
-        const filtered = prev.filter((item) => item.qid !== qid);
-        const next = [...filtered, entry];
-        if (queueKey) localStorage.setItem(queueKey, JSON.stringify(next));
+        const next = [...prev.filter((item) => item.qid !== qid), entry];
+        if (attemptId) writeQueue(attemptId, next);
         return next;
       });
 
@@ -145,9 +137,9 @@ export function useOfflineAnswerQueue({ attemptId, initialAnswers, initialMarked
       if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
       flushTimerRef.current = setTimeout(() => {
         flushQueue();
-      }, 450);
+      }, 600);
     },
-    [flushQueue, queueKey, seqKey, startedAt]
+    [attemptId, flushQueue, seqKey]
   );
 
   const toggleMarkForReview = useCallback(
@@ -162,10 +154,9 @@ export function useOfflineAnswerQueue({ attemptId, initialAnswers, initialMarked
   );
 
   const clearLocalQueue = useCallback(() => {
-    if (queueKey) localStorage.removeItem(queueKey);
-    if (seqKey) localStorage.removeItem(seqKey);
+    clearQueue(attemptId);
     setQueue([]);
-  }, [queueKey, seqKey]);
+  }, [attemptId]);
 
   return {
     answers,

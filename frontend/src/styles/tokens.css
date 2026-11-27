@@ -1,47 +1,86 @@
 :root {
-  --bg-canvas: #F6F3EC;
-  --bg-surface: #FFFFFF;
-  --bg-subtle: #EDE9DF;
-  --ink-primary: #0B1020;
-  --ink-secondary: #5B6275;
-  --border-line: #E3DFD4;
+  --bg: #F6F3EC;
+  --surface: #FFFFFF;
+  --surface-2: #FBF9F4;
+  --ink: #0B1020;
+  --muted: #5B6275;
+  --line: #E3DFD4;
+  --focus: #2F5BFF;
 
-  --accent-primary: #2F5BFF;
-  --status-answered: #1F9D66;
-  --status-review: #F5A524;
-  --status-unanswered: #5B6275;
-  --status-danger: #D64545;
-  --status-current: #7A5CFF;
+  --accent: #2F5BFF;
+  --accent-ink: #FFFFFF;
+  --success: #1F9D66;
+  --warning: #F5A524;
+  --danger: #D64545;
+  --current: #7A5CFF;
+  --info: #2E8BC0;
+
+  /* Tailwind variable aliases */
+  --bg-canvas: var(--bg);
+  --bg-surface: var(--surface);
+  --bg-subtle: #EDE9DF;
+  --ink-primary: var(--ink);
+  --ink-secondary: var(--muted);
+  --border-line: var(--line);
+  --accent-primary: var(--accent);
+  --status-answered: var(--success);
+  --status-review: var(--warning);
+  --status-unanswered: var(--muted);
+  --status-danger: var(--danger);
+  --status-current: var(--current);
 
   color-scheme: light;
 }
 
 [data-theme='dark'] {
-  --bg-canvas: #0B1020;
-  --bg-surface: #141A2E;
-  --bg-subtle: #1B233D;
-  --ink-primary: #E8EAF2;
-  --ink-secondary: #9CA3AF;
-  --border-line: #262D47;
+  --bg: #0B1020;
+  --surface: #141A2E;
+  --surface-2: #1A2240;
+  --ink: #E8EAF2;
+  --muted: #9AA3BD;
+  --line: #262D47;
+  --focus: #6C8BFF;
 
-  --accent-primary: #2F5BFF;
-  --status-answered: #24B476;
-  --status-review: #F5A524;
-  --status-unanswered: #9CA3AF;
-  --status-danger: #E85D5D;
-  --status-current: #8F75FF;
+  --accent: #2F5BFF;
+  --accent-ink: #FFFFFF;
+  --success: #24B476;
+  --warning: #F5A524;
+  --danger: #E85D5D;
+  --current: #8F75FF;
+
+  --bg-canvas: var(--bg);
+  --bg-surface: var(--surface);
+  --bg-subtle: var(--surface-2);
+  --ink-primary: var(--ink);
+  --ink-secondary: var(--muted);
+  --border-line: var(--line);
+  --accent-primary: var(--focus);
+  --status-answered: var(--success);
+  --status-review: var(--warning);
+  --status-unanswered: var(--muted);
+  --status-danger: var(--danger);
+  --status-current: var(--current);
 
   color-scheme: dark;
 }
 
 @media (prefers-color-scheme: dark) {
   [data-theme='system'] {
-    --bg-canvas: #0B1020;
-    --bg-surface: #141A2E;
-    --bg-subtle: #1B233D;
-    --ink-primary: #E8EAF2;
-    --ink-secondary: #9CA3AF;
-    --border-line: #262D47;
+    --bg: #0B1020;
+    --surface: #141A2E;
+    --surface-2: #1A2240;
+    --ink: #E8EAF2;
+    --muted: #9AA3BD;
+    --line: #262D47;
+    --focus: #6C8BFF;
+
+    --bg-canvas: var(--bg);
+    --bg-surface: var(--surface);
+    --bg-subtle: var(--surface-2);
+    --ink-primary: var(--ink);
+    --ink-secondary: var(--muted);
+    --border-line: var(--line);
+    --accent-primary: var(--focus);
     --status-answered: #24B476;
     --status-danger: #E85D5D;
     --status-current: #8F75FF;

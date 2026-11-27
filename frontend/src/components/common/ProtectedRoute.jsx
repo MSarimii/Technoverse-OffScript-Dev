@@ -1,6 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { getRoleHome } from '../../context/AuthContext';
+import { ForbiddenPage } from '../../pages/ForbiddenPage';
 
 export const ProtectedRoute = ({ allowedRoles, children }) => {
   const { user, loading, isAuthenticated } = useAuth();
@@ -19,7 +19,7 @@ export const ProtectedRoute = ({ allowedRoles, children }) => {
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    return <Navigate to={getRoleHome(user.role)} replace />;
+    return <ForbiddenPage />;
   }
 
   return children;

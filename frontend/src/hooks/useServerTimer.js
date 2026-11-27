@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { ServerClock } from '../lib/serverClock';
 
 export function formatRemaining(ms) {
   const totalSec = Math.max(0, Math.floor(ms / 1000));
@@ -10,7 +11,7 @@ export function formatRemaining(ms) {
 }
 
 export function useServerTimer({ deadlineAt, startedAt, serverTime, onExpire }) {
-  const offsetRef = useRef(0);
+  const clockRef = useRef(new ServerClock());
   const expiredFiredRef = useRef(false);
   const announcedRef = useRef(new Set());
   const onExpireRef = useRef(onExpire);
@@ -19,24 +20,22 @@ export function useServerTimer({ deadlineAt, startedAt, serverTime, onExpire }) 
   const [remainingMs, setRemainingMs] = useState(0);
   const [announcement, setAnnouncement] = useState('');
 
-  const syncServerTime = useCallback((newServerTime) => {
+  const syncServerTime = useCallback((newServerTime, rttMs = 0) => {
     if (newServerTime) {
-      offsetRef.current = Date.parse(newServerTime) - Date.now();
+      clockRef.current.recordSample(newServerTime, rttMs);
     }
   }, []);
 
   useEffect(() => {
-    syncServerTime(serverTime);
+    syncServerTime(serverTime, 0);
   }, [serverTime, syncServerTime]);
 
   useEffect(() => {
     if (!deadlineAt) return;
-    const deadlineMs = Date.parse(deadlineAt);
     expiredFiredRef.current = false;
 
     const tick = () => {
-      const serverNow = Date.now() + offsetRef.current;
-      const rem = Math.max(0, deadlineMs - serverNow);
+      const rem = clockRef.current.remainingMs(deadlineAt);
       setRemainingMs(rem);
 
       const remSec = Math.floor(rem / 1000);
@@ -61,7 +60,12 @@ export function useServerTimer({ deadlineAt, startedAt, serverTime, onExpire }) 
 
     tick();
     const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
+    const onVis = () => tick();
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', onVis);
+    };
   }, [deadlineAt]);
 
   const totalDurationMs =
@@ -69,7 +73,7 @@ export function useServerTimer({ deadlineAt, startedAt, serverTime, onExpire }) 
   const progress = Math.min(1, Math.max(0, remainingMs / totalDurationMs));
 
   const urgency =
-    remainingMs <= 60 * 1000 ? 'critical' : remainingMs <= 5 * 60 * 1000 ? 'warning' : 'normal';
+    remainingMs <= 60 * 1000 ? 'critical' : remainingMs <= 10 * 60 * 1000 ? 'warning' : 'normal';
 
   return {
     remainingMs,
@@ -78,5 +82,6 @@ export function useServerTimer({ deadlineAt, startedAt, serverTime, onExpire }) 
     urgency,
     announcement,
     syncServerTime,
+    monotonicElapsedMs: () => clockRef.current.monotonicElapsedMs(),
   };
 }

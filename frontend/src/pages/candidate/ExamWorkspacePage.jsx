@@ -19,6 +19,7 @@ import {
   AlertTriangle,
   FlaskConical,
   Bell,
+  HelpCircle,
 } from 'lucide-react';
 
 export const ExamWorkspacePage = () => {
@@ -32,18 +33,22 @@ export const ExamWorkspacePage = () => {
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Reachability via heartbeat + navigator.onLine
+  // Reachability via heartbeat (2 consecutive failures = unstable/offline)
   const [isReachable, setIsReachable] = useState(true);
+  const failedHeartbeatsRef = useRef(0);
 
   // Preferences (4.7)
-  const [prefs, setPrefs] = useState({
-    fontSize: 'md',
+  const DEFAULT_PREFS = {
+    fontSizePx: 16,
     lineSpacing: 'normal',
     density: 'comfortable',
     palettePosition: 'right',
     theme: 'light',
-  });
+    showOptionLetters: true,
+  };
+  const [prefs, setPrefs] = useState(DEFAULT_PREFS);
   const [showPrefs, setShowPrefs] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
   // Scratchpad (4.8) & Announcements Drawer
   const [showScratchpad, setShowScratchpad] = useState(false);
@@ -152,22 +157,29 @@ export const ExamWorkspacePage = () => {
     onExpire: () => handleFinalSubmit(true),
   });
 
-  // Heartbeat (15s) + Announcements poll (5s)
+  // Heartbeat (10s) + Announcements poll (5s)
   useEffect(() => {
     if (!attempt?.id) return;
     const hb = setInterval(async () => {
       if (!navigator.onLine) {
+        failedHeartbeatsRef.current += 1;
         setIsReachable(false);
         return;
       }
+      const t0 = performance.now();
       try {
         const res = await attemptService.sendHeartbeat(attempt.id);
+        const rttMs = Math.round(performance.now() - t0);
+        failedHeartbeatsRef.current = 0;
         setIsReachable(true);
-        syncServerTime(res.data?.serverTime);
+        syncServerTime(res.data?.serverTime, rttMs);
       } catch {
-        setIsReachable(false);
+        failedHeartbeatsRef.current += 1;
+        if (failedHeartbeatsRef.current >= 2) {
+          setIsReachable(false);
+        }
       }
-    }, 15000);
+    }, 10000);
 
     const pollAnn = async () => {
       if (!navigator.onLine) return;
@@ -218,15 +230,20 @@ export const ExamWorkspacePage = () => {
     const onPaste = () => {
       attemptService.logEvent(attempt.id, { type: 'paste' }).catch(() => {});
     };
+    const onCopy = () => {
+      attemptService.logEvent(attempt.id, { type: 'copy' }).catch(() => {});
+    };
     document.addEventListener('visibilitychange', onVisibility);
     window.addEventListener('blur', onBlur);
     document.addEventListener('fullscreenchange', onFullscreen);
     document.addEventListener('paste', onPaste);
+    document.addEventListener('copy', onCopy);
     return () => {
       document.removeEventListener('visibilitychange', onVisibility);
       window.removeEventListener('blur', onBlur);
       document.removeEventListener('fullscreenchange', onFullscreen);
       document.removeEventListener('paste', onPaste);
+      document.removeEventListener('copy', onCopy);
     };
   }, [attempt?.id, attempt?.isSandbox]);
 
@@ -236,24 +253,53 @@ export const ExamWorkspacePage = () => {
   // Keyboard shortcuts
   useEffect(() => {
     const onKeyDown = (e) => {
-      if (!e.altKey) return;
-      if (e.key.toLowerCase() === 'n') {
+      const tag = e.target?.tagName?.toLowerCase();
+      const isTyping = tag === 'textarea' || tag === 'input';
+
+      if (e.key === 'Escape') {
+        setShowPrefs(false);
+        setShowShortcuts(false);
+        setShowSubmitModal(false);
+        return;
+      }
+      if (e.ctrlKey && e.key === 'Enter') {
+        e.preventDefault();
+        setShowSubmitModal(true);
+        return;
+      }
+      if (isTyping && !e.altKey) return;
+
+      if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'n') {
         e.preventDefault();
         setCurrentIndex((i) => Math.min(questions.length - 1, i + 1));
-      } else if (e.key.toLowerCase() === 'p') {
+      } else if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'p') {
         e.preventDefault();
         setCurrentIndex((i) => Math.max(0, i - 1));
       } else if (e.key.toLowerCase() === 'm' && currentQ) {
         e.preventDefault();
         toggleMarkForReview(currentQ.id);
-      } else if (e.key.toLowerCase() === 's') {
+      } else if (e.key === '?') {
+        e.preventDefault();
+        setShowShortcuts((v) => !v);
+      } else if (e.altKey && e.key.toLowerCase() === 's') {
         e.preventDefault();
         setShowScratchpad((v) => !v);
+      } else if (/^[1-9]$/.test(e.key) && currentQ && currentQ.options?.length) {
+        const idx = Number(e.key) - 1;
+        const opt = currentQ.options[idx];
+        if (opt) {
+          if (currentQ.type === 'mcq_single') enqueueAnswer(currentQ.id, opt.id);
+          else if (currentQ.type === 'mcq_multi') {
+            const prev = Array.isArray(answers[currentQ.id]) ? answers[currentQ.id] : [];
+            const next = prev.includes(opt.id) ? prev.filter((id) => id !== opt.id) : [...prev, opt.id];
+            enqueueAnswer(currentQ.id, next);
+          }
+        }
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [currentQ, questions.length, toggleMarkForReview]);
+  }, [answers, currentQ, enqueueAnswer, questions.length, toggleMarkForReview]);
 
   const updatePreference = (patch) => {
     const next = { ...prefs, ...patch };
@@ -281,8 +327,7 @@ export const ExamWorkspacePage = () => {
     );
   }
 
-  const fontSizeClass =
-    prefs.fontSize === 'lg' ? 'text-lg' : prefs.fontSize === 'sm' ? 'text-sm' : 'text-base';
+  const fontSizeStyle = { fontSize: `${prefs.fontSizePx || 16}px` };
   const lineSpacingClass = prefs.lineSpacing === 'relaxed' ? 'leading-loose' : 'leading-relaxed';
   const paddingClass = prefs.density === 'compact' ? 'p-4 sm:p-5' : 'p-5 sm:p-8';
 
@@ -449,8 +494,8 @@ export const ExamWorkspacePage = () => {
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2.5"
-                strokeDasharray={ringC}
-                strokeDashoffset={ringOffset}
+                strokeDasharray={urgency === 'critical' ? '3 2' : ringC}
+                strokeDashoffset={urgency === 'critical' ? 0 : ringOffset}
                 transform="rotate(-90 11 11)"
               />
             </svg>
@@ -488,6 +533,14 @@ export const ExamWorkspacePage = () => {
           </button>
 
           <button
+            onClick={() => setShowShortcuts((v) => !v)}
+            aria-label="Keyboard shortcuts"
+            className="min-h-[44px] min-w-[44px] p-2 rounded-lg border border-line bg-canvas text-ink hover:bg-subtle flex items-center justify-center"
+          >
+            <HelpCircle className="w-4 h-4" />
+          </button>
+
+          <button
             onClick={() => setShowPrefs((v) => !v)}
             aria-label="Workspace preferences"
             className="min-h-[44px] min-w-[44px] p-2 rounded-lg border border-line bg-canvas text-ink hover:bg-subtle flex items-center justify-center"
@@ -515,6 +568,21 @@ export const ExamWorkspacePage = () => {
         </div>
       )}
 
+      {/* Keyboard Shortcuts Popover (?) */}
+      {showShortcuts && (
+        <div className="bg-surface border-b border-line px-4 sm:px-6 py-3 text-xs font-mono flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap gap-4 text-ink-muted">
+            <span><strong className="text-ink">← / → or P / N</strong> Prev / Next</span>
+            <span><strong className="text-ink">M</strong> Mark for review</span>
+            <span><strong className="text-ink">1–9</strong> Select option</span>
+            <span><strong className="text-ink">Alt+S</strong> Scratchpad</span>
+            <span><strong className="text-ink">Ctrl+Enter</strong> Review & Submit</span>
+            <span><strong className="text-ink">Esc</strong> Close panels</span>
+          </div>
+          <button onClick={() => setShowShortcuts(false)} className="text-cobalt hover:underline">Close</button>
+        </div>
+      )}
+
       {/* Workspace Preferences Popover (4.7) */}
       {showPrefs && (
         <div className="bg-surface border-b border-line px-4 sm:px-6 py-3 flex flex-wrap items-center gap-5 text-xs">
@@ -532,19 +600,18 @@ export const ExamWorkspacePage = () => {
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="font-mono text-ink-muted">Size:</span>
-            {['sm', 'md', 'lg'].map((sz) => (
-              <button
-                key={sz}
-                onClick={() => updatePreference({ fontSize: sz })}
-                className={`px-2.5 py-1 rounded border uppercase ${
-                  prefs.fontSize === sz ? 'bg-cobalt text-white border-cobalt' : 'bg-canvas border-line'
-                }`}
-              >
-                {sz}
-              </button>
-            ))}
+          <div className="flex items-center gap-2">
+            <label htmlFor="pref-font-size" className="font-mono text-ink-muted">Font ({prefs.fontSizePx}px):</label>
+            <input
+              id="pref-font-size"
+              type="range"
+              min={14}
+              max={22}
+              step={2}
+              value={prefs.fontSizePx}
+              onChange={(e) => updatePreference({ fontSizePx: Number(e.target.value) })}
+              className="accent-[#2F5BFF]"
+            />
           </div>
           <div className="flex items-center gap-1.5">
             <span className="font-mono text-ink-muted">Spacing:</span>
@@ -574,6 +641,24 @@ export const ExamWorkspacePage = () => {
               </button>
             ))}
           </div>
+          <label className="inline-flex items-center gap-1.5 cursor-pointer font-mono text-ink-muted">
+            <input
+              type="checkbox"
+              checked={prefs.showOptionLetters}
+              onChange={(e) => updatePreference({ showOptionLetters: e.target.checked })}
+              className="accent-[#2F5BFF]"
+            />
+            Option letters
+          </label>
+          <button
+            onClick={() => {
+              setPrefs(DEFAULT_PREFS);
+              if (attempt?.id) attemptService.savePreferences(attempt.id, DEFAULT_PREFS).catch(() => {});
+            }}
+            className="text-cobalt font-mono hover:underline ml-auto"
+          >
+            Reset to defaults
+          </button>
         </div>
       )}
 
@@ -603,14 +688,15 @@ export const ExamWorkspacePage = () => {
                 </div>
               </div>
 
-              <p className={`${fontSizeClass} ${lineSpacingClass} text-ink font-medium mb-6 max-w-[75ch]`}>
+              <p style={fontSizeStyle} className={`${lineSpacingClass} text-ink font-medium mb-6 max-w-[72ch]`}>
                 {currentQ.text}
               </p>
 
               {currentQ.type === 'mcq_single' && (
                 <div className="space-y-2.5" role="radiogroup" aria-label="Answer choices">
-                  {currentQ.options.map((opt) => {
+                  {currentQ.options.map((opt, oIdx) => {
                     const selected = answers[currentQ.id] === opt.id;
+                    const letter = String.fromCharCode(65 + oIdx);
                     return (
                       <label
                         key={opt.id}
@@ -627,7 +713,12 @@ export const ExamWorkspacePage = () => {
                           onChange={() => enqueueAnswer(currentQ.id, opt.id)}
                           className="mt-1 accent-[#2F5BFF]"
                         />
-                        <span className={`${fontSizeClass} leading-snug`}>{opt.text}</span>
+                        <span style={fontSizeStyle} className="leading-snug">
+                          {prefs.showOptionLetters && (
+                            <span className="font-mono text-xs text-ink-muted mr-2">{letter}.</span>
+                          )}
+                          {opt.text}
+                        </span>
                       </label>
                     );
                   })}
@@ -639,8 +730,9 @@ export const ExamWorkspacePage = () => {
                   <p className="text-xs font-mono text-ink-muted mb-2">
                     Select all applicable options ({currentQ.multiSelectRule === 'partial' ? 'Partial credit' : 'All-or-nothing'}).
                   </p>
-                  {currentQ.options.map((opt) => {
+                  {currentQ.options.map((opt, oIdx) => {
                     const selected = Array.isArray(answers[currentQ.id]) && answers[currentQ.id].includes(opt.id);
+                    const letter = String.fromCharCode(65 + oIdx);
                     return (
                       <label
                         key={opt.id}
@@ -656,7 +748,12 @@ export const ExamWorkspacePage = () => {
                           onChange={() => toggleMultiOption(currentQ.id, opt.id)}
                           className="mt-1 accent-[#2F5BFF]"
                         />
-                        <span className={`${fontSizeClass} leading-snug`}>{opt.text}</span>
+                        <span style={fontSizeStyle} className="leading-snug">
+                          {prefs.showOptionLetters && (
+                            <span className="font-mono text-xs text-ink-muted mr-2">{letter}.</span>
+                          )}
+                          {opt.text}
+                        </span>
                       </label>
                     );
                   })}
@@ -670,8 +767,12 @@ export const ExamWorkspacePage = () => {
                     value={answers[currentQ.id] || ''}
                     onChange={(e) => enqueueAnswer(currentQ.id, e.target.value)}
                     placeholder="Write your response clearly..."
-                    className={`w-full p-3.5 rounded-lg border border-line bg-canvas text-ink ${fontSizeClass}`}
+                    style={fontSizeStyle}
+                    className="w-full p-3.5 rounded-lg border border-line bg-canvas text-ink"
                   />
+                  <div className="mt-1.5 text-right text-[11px] font-mono text-ink-muted">
+                    {((answers[currentQ.id] || '').trim().split(/\s+/).filter(Boolean)).length} words · {(answers[currentQ.id] || '').length} chars
+                  </div>
                 </div>
               )}
             </div>

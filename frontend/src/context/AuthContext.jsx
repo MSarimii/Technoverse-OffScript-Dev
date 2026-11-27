@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect, useCallback } from 'react';
 import { authService } from '../services/authService';
+import { setMemoryToken } from '../services/api';
 
 export const AuthContext = createContext(null);
 
@@ -18,11 +19,16 @@ export function getRoleHome(role) {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(() => localStorage.getItem('sems_token'));
+  const [token, setToken] = useState(() => {
+    const saved = sessionStorage.getItem('sems_token');
+    setMemoryToken(saved);
+    return saved;
+  });
   const [loading, setLoading] = useState(true);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('sems_token');
+    setMemoryToken(null);
+    sessionStorage.removeItem('sems_token');
     localStorage.removeItem('sems_mock_uid');
     setToken(null);
     setUser(null);
@@ -47,7 +53,8 @@ export const AuthProvider = ({ children }) => {
     const res = await authService.login(email, password);
     const receivedToken = res.token;
     const userData = res.data?.user || res.user;
-    localStorage.setItem('sems_token', receivedToken);
+    setMemoryToken(receivedToken);
+    sessionStorage.setItem('sems_token', receivedToken);
     setToken(receivedToken);
     setUser(userData);
     return userData;

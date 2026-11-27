@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
@@ -5,22 +6,23 @@ import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { Navbar } from './components/layout/Navbar';
-import { HomePage } from './pages/HomePage';
-import { LoginPage } from './pages/LoginPage';
-import { VerifyReportPage } from './pages/VerifyReportPage';
-import { AdminUsersPage } from './pages/admin/AdminUsersPage';
-import { CandidateExamsPage } from './pages/candidate/CandidateExamsPage';
-import { ExamWorkspacePage } from './pages/candidate/ExamWorkspacePage';
-import { CandidateResultsPage } from './pages/candidate/CandidateResultsPage';
-import { ResultDetailPage } from './pages/candidate/ResultDetailPage';
-import { ExaminerDashboardPage } from './pages/examiner/ExaminerDashboardPage';
-import { QuestionBankPage } from './pages/examiner/QuestionBankPage';
-import { ExamWizardPage } from './pages/examiner/ExamWizardPage';
-import { ExamMonitorPage } from './pages/examiner/ExamMonitorPage';
-import { ExamGradingPage } from './pages/examiner/ExamGradingPage';
-import { ExamAnalyticsPage } from './pages/examiner/ExamAnalyticsPage';
-import { NotFoundPage } from './pages/NotFoundPage';
-import { Toaster } from 'sonner';
+import { Toaster } from './components/ui';
+
+const HomePage = lazy(() => import('./pages/HomePage').then((m) => ({ default: m.HomePage })));
+const LoginPage = lazy(() => import('./pages/LoginPage').then((m) => ({ default: m.LoginPage })));
+const VerifyReportPage = lazy(() => import('./pages/VerifyReportPage').then((m) => ({ default: m.VerifyReportPage })));
+const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage').then((m) => ({ default: m.AdminUsersPage })));
+const CandidateExamsPage = lazy(() => import('./pages/candidate/CandidateExamsPage').then((m) => ({ default: m.CandidateExamsPage })));
+const ExamWorkspacePage = lazy(() => import('./pages/candidate/ExamWorkspacePage').then((m) => ({ default: m.ExamWorkspacePage })));
+const CandidateResultsPage = lazy(() => import('./pages/candidate/CandidateResultsPage').then((m) => ({ default: m.CandidateResultsPage })));
+const ResultDetailPage = lazy(() => import('./pages/candidate/ResultDetailPage').then((m) => ({ default: m.ResultDetailPage })));
+const ExaminerDashboardPage = lazy(() => import('./pages/examiner/ExaminerDashboardPage').then((m) => ({ default: m.ExaminerDashboardPage })));
+const QuestionBankPage = lazy(() => import('./pages/examiner/QuestionBankPage').then((m) => ({ default: m.QuestionBankPage })));
+const ExamWizardPage = lazy(() => import('./pages/examiner/ExamWizardPage').then((m) => ({ default: m.ExamWizardPage })));
+const ExamMonitorPage = lazy(() => import('./pages/examiner/ExamMonitorPage').then((m) => ({ default: m.ExamMonitorPage })));
+const ExamGradingPage = lazy(() => import('./pages/examiner/ExamGradingPage').then((m) => ({ default: m.ExamGradingPage })));
+const ExamAnalyticsPage = lazy(() => import('./pages/examiner/ExamAnalyticsPage').then((m) => ({ default: m.ExamAnalyticsPage })));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,6 +33,12 @@ const queryClient = new QueryClient({
   },
 });
 
+const RouteFallback = () => (
+  <div className="min-h-[50vh] flex items-center justify-center font-mono text-xs text-ink-muted">
+    Loading view...
+  </div>
+);
+
 function AnimatedRoutes() {
   const location = useLocation();
   const prefersReducedMotion = useReducedMotion();
@@ -38,116 +46,118 @@ function AnimatedRoutes() {
   const skipMotion = prefersReducedMotion || isExamWorkspace;
 
   const content = (
-    <Routes location={location}>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<Navigate to="/login" replace />} />
-      <Route path="/verify/:verificationId" element={<VerifyReportPage />} />
+    <Suspense fallback={<RouteFallback />}>
+      <Routes location={location}>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<Navigate to="/login" replace />} />
+        <Route path="/verify/:verificationId" element={<VerifyReportPage />} />
 
-      {/* Admin */}
-      <Route
-        path="/admin/users"
-        element={
-          <ProtectedRoute allowedRoles={['admin']}>
-            <AdminUsersPage />
-          </ProtectedRoute>
-        }
-      />
+        {/* Admin */}
+        <Route
+          path="/admin/users"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminUsersPage />
+            </ProtectedRoute>
+          }
+        />
 
-      {/* Examiner */}
-      <Route
-        path="/examiner"
-        element={
-          <ProtectedRoute allowedRoles={['examiner']}>
-            <ExaminerDashboardPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/examiner/questions"
-        element={
-          <ProtectedRoute allowedRoles={['examiner']}>
-            <QuestionBankPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/examiner/exams/new"
-        element={
-          <ProtectedRoute allowedRoles={['examiner']}>
-            <ExamWizardPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/examiner/exams/:id/edit"
-        element={
-          <ProtectedRoute allowedRoles={['examiner']}>
-            <ExamWizardPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/examiner/exams/:id/monitor"
-        element={
-          <ProtectedRoute allowedRoles={['examiner']}>
-            <ExamMonitorPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/examiner/exams/:id/grading"
-        element={
-          <ProtectedRoute allowedRoles={['examiner']}>
-            <ExamGradingPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/examiner/exams/:id/analytics"
-        element={
-          <ProtectedRoute allowedRoles={['examiner']}>
-            <ExamAnalyticsPage />
-          </ProtectedRoute>
-        }
-      />
+        {/* Examiner */}
+        <Route
+          path="/examiner"
+          element={
+            <ProtectedRoute allowedRoles={['examiner']}>
+              <ExaminerDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/examiner/questions"
+          element={
+            <ProtectedRoute allowedRoles={['examiner']}>
+              <QuestionBankPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/examiner/exams/new"
+          element={
+            <ProtectedRoute allowedRoles={['examiner']}>
+              <ExamWizardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/examiner/exams/:id/edit"
+          element={
+            <ProtectedRoute allowedRoles={['examiner']}>
+              <ExamWizardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/examiner/exams/:id/monitor"
+          element={
+            <ProtectedRoute allowedRoles={['examiner']}>
+              <ExamMonitorPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/examiner/exams/:id/grading"
+          element={
+            <ProtectedRoute allowedRoles={['examiner']}>
+              <ExamGradingPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/examiner/exams/:id/analytics"
+          element={
+            <ProtectedRoute allowedRoles={['examiner']}>
+              <ExamAnalyticsPage />
+            </ProtectedRoute>
+          }
+        />
 
-      {/* Candidate + Examiner Sandbox */}
-      <Route
-        path="/candidate"
-        element={
-          <ProtectedRoute allowedRoles={['candidate']}>
-            <CandidateExamsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/candidate/exam/:examId"
-        element={
-          <ProtectedRoute allowedRoles={['candidate', 'examiner']}>
-            <ExamWorkspacePage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/candidate/results"
-        element={
-          <ProtectedRoute allowedRoles={['candidate']}>
-            <CandidateResultsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/candidate/results/:attemptId"
-        element={
-          <ProtectedRoute allowedRoles={['candidate']}>
-            <ResultDetailPage />
-          </ProtectedRoute>
-        }
-      />
+        {/* Candidate + Examiner Sandbox */}
+        <Route
+          path="/candidate"
+          element={
+            <ProtectedRoute allowedRoles={['candidate']}>
+              <CandidateExamsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/candidate/exam/:examId"
+          element={
+            <ProtectedRoute allowedRoles={['candidate', 'examiner']}>
+              <ExamWorkspacePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/candidate/results"
+          element={
+            <ProtectedRoute allowedRoles={['candidate']}>
+              <CandidateResultsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/candidate/results/:attemptId"
+          element={
+            <ProtectedRoute allowedRoles={['candidate']}>
+              <ResultDetailPage />
+            </ProtectedRoute>
+          }
+        />
 
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </Suspense>
   );
 
   if (skipMotion) {
@@ -176,9 +186,15 @@ function App() {
         <AuthProvider>
           <Router>
             <div className="min-h-screen bg-canvas flex flex-col text-ink">
-              <Toaster richColors position="top-right" />
+              <a
+                href="#main-content"
+                className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-cobalt focus:text-white focus:rounded-lg"
+              >
+                Skip to content
+              </a>
+              <Toaster />
               <Navbar />
-              <div className="flex-1">
+              <div id="main-content" className="flex-1">
                 <AnimatedRoutes />
               </div>
             </div>
