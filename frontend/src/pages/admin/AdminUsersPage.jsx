@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { adminService } from '../../services/adminService';
 import { useAuth } from '../../hooks/useAuth';
 import { PageHeader } from '../../components/layout/AppLayout';
+import { getInitials } from '../../lib/initials';
 import { Button, Input, Select, Badge, Dialog, Skeleton, EmptyState, ErrorState, Tooltip } from '../../components/ui';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -247,7 +248,7 @@ export const AdminUsersPage = () => {
                             <span
                               className={`w-8 h-8 rounded-full font-mono text-xs font-semibold flex items-center justify-center shrink-0 ${avatarClass(u.role)}`}
                             >
-                              {u.name?.[0] || 'U'}
+                              {getInitials(u.name)}
                             </span>
                             <span>{u.name}</span>
                             {isSelf && <Badge tone="cobalt">You</Badge>}

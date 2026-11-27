@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../context/ThemeContext';
 import { examService } from '../../services/examService';
+import { getInitials } from '../../lib/initials';
 import { motion, AnimatePresence, useMotionValue, animate, useReducedMotion } from 'framer-motion';
 import {
   Users,
@@ -281,7 +282,7 @@ export const Sidebar = () => {
             }`}
           >
             <span className="w-8 h-8 rounded-full bg-[#0B0F0E] text-white font-mono text-xs font-semibold flex items-center justify-center shrink-0">
-              {user.name?.[0] || 'U'}
+              {getInitials(user.name)}
             </span>
             {!collapsed && (
               <>
