@@ -5,10 +5,10 @@ import { useTheme } from '../../context/ThemeContext';
 import { PageHeader } from '../../components/layout/AppLayout';
 import { getInitials } from '../../lib/initials';
 import { sanitizeCell } from '../../lib/csv';
-import { Button, Input, Select, Badge, Dialog, Skeleton, EmptyState, ErrorState, Tooltip, BentoAreaChart, BentoDonutChart } from '../../components/ui';
+import { Button, Input, Select, Badge, Dialog, Skeleton, EmptyState, ErrorState, Tooltip, BentoAreaChart, BentoDonutChart, SlideOverDrawer, DrawerSection } from '../../components/ui';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { toast } from 'sonner';
-import { UserPlus, Search, ShieldAlert, Users, ShieldCheck, GraduationCap, BookOpen, Download, Copy, Check, Shield, ArrowRight, X } from 'lucide-react';
+import { UserPlus, Search, ShieldAlert, Users, ShieldCheck, GraduationCap, BookOpen, Download, Copy, Check, Shield, ArrowRight } from 'lucide-react';
 
 const PAGE_SIZE = 8;
 
@@ -472,55 +472,37 @@ export const AdminUsersPage = () => {
       </div>
 
       {/* User Inspector Slide-Over Drawer */}
-      {inspectedUser && (
-        <div
-          className="fixed inset-0 z-40 flex justify-end bg-black/30 backdrop-blur-xs"
-          onClick={() => setInspectedUserId(null)}
-          role="dialog"
-          aria-modal="true"
-          aria-label="User Inspector"
-        >
-          <aside
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md h-full bg-[var(--surface)] border-l border-[var(--line)] text-[var(--ink)] shadow-2xl p-6 overflow-y-auto flex flex-col justify-between gap-6"
-          >
+      <SlideOverDrawer
+        open={Boolean(inspectedUser)}
+        onClose={() => setInspectedUserId(null)}
+        eyebrow="Identity Directory"
+        title="User Inspector"
+        ariaLabel="User Inspector"
+      >
+        {inspectedUser && (
+          <>
             <div className="space-y-6">
-              <div className="flex items-center justify-between pb-4 border-b border-[var(--line)]">
-                <div>
-                  <p className="text-[11px] font-mono uppercase tracking-widest text-[var(--muted)]">Identity Directory</p>
-                  <h2 className="font-display font-bold text-lg text-[var(--ink)] tracking-[-0.02em]">
-                    User Inspector
-                  </h2>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setInspectedUserId(null)}
-                  aria-label="Close inspector"
-                  className="p-2 rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <div className="flex items-center gap-3.5 p-4 rounded-xl bg-canvas border border-[var(--line)]">
-                <span
-                  className={`w-11 h-11 rounded-full font-mono text-sm font-semibold flex items-center justify-center shrink-0 ${avatarClass(inspectedUser.role)}`}
-                >
-                  {getInitials(inspectedUser.name)}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-base text-[var(--ink)] truncate">{inspectedUser.name}</span>
-                    {inspectedUser.id === currentUser?.id && <Badge tone="cobalt">You</Badge>}
+              <DrawerSection index={0}>
+                <div className="flex items-center gap-3.5 p-4 rounded-xl bg-canvas border border-[var(--line)]">
+                  <span
+                    className={`w-11 h-11 rounded-full font-mono text-sm font-semibold flex items-center justify-center shrink-0 ${avatarClass(inspectedUser.role)}`}
+                  >
+                    {getInitials(inspectedUser.name)}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-base text-[var(--ink)] truncate">{inspectedUser.name}</span>
+                      {inspectedUser.id === currentUser?.id && <Badge tone="cobalt">You</Badge>}
+                    </div>
+                    <div className="text-xs font-mono text-[var(--muted)] truncate mt-0.5">{inspectedUser.email}</div>
                   </div>
-                  <div className="text-xs font-mono text-[var(--muted)] truncate mt-0.5">{inspectedUser.email}</div>
+                  <Badge tone={inspectedUser.isActive ? 'success' : 'danger'}>
+                    {inspectedUser.isActive ? 'active' : 'inactive'}
+                  </Badge>
                 </div>
-                <Badge tone={inspectedUser.isActive ? 'success' : 'danger'}>
-                  {inspectedUser.isActive ? 'active' : 'inactive'}
-                </Badge>
-              </div>
+              </DrawerSection>
 
-              <div className="space-y-2">
+              <DrawerSection index={1} className="space-y-2">
                 <label
                   htmlFor="inspector-role-select"
                   className="block text-[11px] font-mono uppercase tracking-wider text-[var(--muted)]"
@@ -543,10 +525,10 @@ export const AdminUsersPage = () => {
                     Self-lockout protection prevents modifying your own role.
                   </p>
                 )}
-              </div>
+              </DrawerSection>
             </div>
 
-            <div className="pt-4 border-t border-[var(--line)] flex items-center justify-between gap-3">
+            <DrawerSection index={2} className="pt-4 border-t border-[var(--line)] flex items-center justify-between gap-3">
               <Button variant="secondary" onClick={() => setInspectedUserId(null)}>
                 Close
               </Button>
@@ -566,10 +548,10 @@ export const AdminUsersPage = () => {
                   {inspectedUser.isActive ? 'Deactivate Account' : 'Reactivate Account'}
                 </Button>
               )}
-            </div>
-          </aside>
-        </div>
-      )}
+            </DrawerSection>
+          </>
+        )}
+      </SlideOverDrawer>
 
       {/* Create User Dialog */}
       <Dialog open={showCreate} onClose={() => setShowCreate(false)} title="Provision User Account">

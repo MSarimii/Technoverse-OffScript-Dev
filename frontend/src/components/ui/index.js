@@ -4,3 +4,4 @@ export { Badge, StatusChip, ProgressRing, Skeleton, CopyButton, EmptyState, Erro
 export { Tabs, Dialog, Drawer, Popover, Tooltip, Table } from './Overlay';
 export { CommandPalette } from './CommandPalette';
 export { BentoAreaChart, BentoDonutChart, BentoTooltip } from './BentoCharts';
+export { SlideOverDrawer, DrawerSection } from './SlideOverDrawer';

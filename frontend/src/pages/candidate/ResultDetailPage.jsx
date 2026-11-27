@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { attemptService } from '../../services/attemptService';
 import { examService } from '../../services/examService';
-import { Button, Badge, Dialog, Select, Textarea, CopyButton } from '../../components/ui';
+import { Button, Badge, Select, Textarea, CopyButton, SlideOverDrawer, DrawerSection } from '../../components/ui';
 import { toast } from 'sonner';
 import { Printer, ShieldCheck, ArrowLeft, ExternalLink, Flag } from 'lucide-react';
 
@@ -194,7 +194,12 @@ export const ResultDetailPage = () => {
         })}
       </div>
 
-      <Dialog open={Boolean(disputeQ)} onClose={() => setDisputeQ(null)} title="Challenge Answer">
+      <SlideOverDrawer
+        open={Boolean(disputeQ)}
+        onClose={() => setDisputeQ(null)}
+        eyebrow="Academic Transcript"
+        title="Challenge Answer"
+      >
         <form
           onSubmit={async (e) => {
             e.preventDefault();
@@ -216,73 +221,84 @@ export const ResultDetailPage = () => {
               setSubmittingDispute(false);
             }
           }}
-          className="space-y-4"
+          className="flex-1 flex flex-col justify-between gap-5"
         >
-          <Select label="Reason" value={category} onChange={(e) => setCategory(e.target.value)}>
-            <option value="grading_error">Grading Discrepancy</option>
-            <option value="ambiguous_question">Ambiguous Question</option>
-            <option value="technical_incident">Technical / Sync Issue</option>
-          </Select>
-          <Textarea
-            label="Justification (max 1,000 chars)"
-            required
-            maxLength={1000}
-            rows={4}
-            value={explanation}
-            onChange={(e) => setExplanation(e.target.value)}
-            placeholder="Describe the grading discrepancy or technical issue clearly..."
-          />
-          <div className="flex justify-end gap-2">
+          <div className="space-y-4">
+            <DrawerSection index={0}>
+              <Select label="Reason" value={category} onChange={(e) => setCategory(e.target.value)}>
+                <option value="grading_error">Grading Discrepancy</option>
+                <option value="ambiguous_question">Ambiguous Question</option>
+                <option value="technical_incident">Technical / Sync Issue</option>
+              </Select>
+            </DrawerSection>
+            <DrawerSection index={1}>
+              <Textarea
+                label="Justification (max 1,000 chars)"
+                required
+                maxLength={1000}
+                rows={4}
+                value={explanation}
+                onChange={(e) => setExplanation(e.target.value)}
+                placeholder="Describe the grading discrepancy or technical issue clearly..."
+              />
+            </DrawerSection>
+          </div>
+          <DrawerSection index={2} className="flex justify-end gap-2 pt-3 border-t border-[var(--line)]">
             <Button type="button" variant="secondary" onClick={() => setDisputeQ(null)}>Cancel</Button>
             <Button type="submit" loading={submittingDispute}>Submit Challenge</Button>
-          </div>
+          </DrawerSection>
         </form>
-      </Dialog>
+      </SlideOverDrawer>
 
-      <Dialog
+      <SlideOverDrawer
         open={Boolean(viewingResponse)}
         onClose={() => setViewingResponse(null)}
+        eyebrow="Academic Transcript"
         title="Challenge Status & Professor Response"
       >
         {viewingResponse && (
-          <div className="space-y-4 text-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-mono uppercase text-ink-muted">Status</span>
-              <Badge
-                tone={
-                  viewingResponse.status === 'resolved'
-                    ? 'success'
+          <div className="flex-1 flex flex-col justify-between gap-4 text-sm">
+            <div className="space-y-4">
+              <DrawerSection index={0} className="flex items-center justify-between">
+                <span className="text-xs font-mono uppercase text-[var(--muted)]">Status</span>
+                <Badge
+                  tone={
+                    viewingResponse.status === 'resolved'
+                      ? 'success'
+                      : viewingResponse.status === 'rejected'
+                      ? 'neutral'
+                      : 'warning'
+                  }
+                  dot={viewingResponse.status === 'rejected' ? 'slate' : undefined}
+                >
+                  {viewingResponse.status === 'resolved'
+                    ? 'Upheld'
                     : viewingResponse.status === 'rejected'
-                    ? 'neutral'
-                    : 'warning'
-                }
-                dot={viewingResponse.status === 'rejected' ? 'slate' : undefined}
-              >
-                {viewingResponse.status === 'resolved'
-                  ? 'Upheld'
-                  : viewingResponse.status === 'rejected'
-                  ? 'Dismissed'
-                  : 'Challenge Pending'}
-              </Badge>
+                    ? 'Dismissed'
+                    : 'Challenge Pending'}
+                </Badge>
+              </DrawerSection>
+              <DrawerSection index={1} className="space-y-3">
+                <div className="p-3.5 rounded-xl bg-canvas border border-[var(--line)]">
+                  <div className="text-[11px] font-mono uppercase text-[var(--muted)] mb-1">Your Justification</div>
+                  <p className="text-[var(--ink)]">{viewingResponse.explanation}</p>
+                </div>
+                <div className="p-3.5 rounded-xl bg-canvas border border-[var(--line)]">
+                  <div className="text-[11px] font-mono uppercase text-[var(--muted)] mb-1">Professor Response</div>
+                  <p className="text-[var(--ink)]">
+                    {viewingResponse.reason || 'Your challenge is queued for examiner review.'}
+                  </p>
+                </div>
+              </DrawerSection>
             </div>
-            <div className="p-3.5 rounded-xl bg-canvas border border-line">
-              <div className="text-[11px] font-mono uppercase text-ink-muted mb-1">Your Justification</div>
-              <p className="text-ink">{viewingResponse.explanation}</p>
-            </div>
-            <div className="p-3.5 rounded-xl bg-canvas border border-line">
-              <div className="text-[11px] font-mono uppercase text-ink-muted mb-1">Professor Response</div>
-              <p className="text-ink">
-                {viewingResponse.reason || 'Your challenge is queued for examiner review.'}
-              </p>
-            </div>
-            <div className="flex justify-end">
+            <DrawerSection index={2} className="flex justify-end pt-3 border-t border-[var(--line)]">
               <Button variant="secondary" onClick={() => setViewingResponse(null)}>
                 Close
               </Button>
-            </div>
+            </DrawerSection>
           </div>
         )}
-      </Dialog>
+      </SlideOverDrawer>
     </main>
   );
 };

@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { examService } from '../../services/examService';
 import { getInitials } from '../../lib/initials';
 import { PageHeader } from '../../components/layout/AppLayout';
-import { Button, Badge, Tabs, Input, Textarea, Dialog, Skeleton, EmptyState } from '../../components/ui';
+import { Button, Badge, Tabs, Input, Textarea, Dialog, Skeleton, EmptyState, SlideOverDrawer, DrawerSection } from '../../components/ui';
 import { toast } from 'sonner';
 import { CheckCircle2, XCircle, ShieldAlert, Check, Flag, ChevronRight } from 'lucide-react';
 
@@ -220,77 +220,67 @@ export const ExaminerChallengesPage = () => {
       )}
 
       {/* Slide-over Challenge Review Drawer */}
-      {selectedDispute && (
-        <div
-          className="fixed inset-0 z-50 flex justify-end bg-black/30 backdrop-blur-xs"
-          onClick={() => setSelectedDispute(null)}
-          role="dialog"
-          aria-modal="true"
-          aria-label={`Challenge Review · ${selectedDispute.candidateName}`}
-        >
-          <aside
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md h-full bg-[var(--surface)] border-l border-[var(--line)] text-[var(--ink)] shadow-2xl p-6 overflow-y-auto space-y-5"
-          >
-            <div className="flex items-center justify-between gap-2 pb-3 border-b border-[var(--line)]">
-              <h2 className="font-display font-bold text-lg text-[var(--ink)] tracking-[-0.02em]">
-                Challenge Review · {selectedDispute.candidateName}
-              </h2>
-              <button
-                type="button"
-                onClick={() => setSelectedDispute(null)}
-                className="px-2.5 py-1 rounded-lg text-xs font-mono text-[var(--muted)] hover:text-[var(--ink)] hover:bg-zinc-100 dark:hover:bg-white/5"
-              >
-                Close
-              </button>
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <Badge
-                tone={
-                  selectedDispute.status === 'resolved'
-                    ? 'success'
+      <SlideOverDrawer
+        open={Boolean(selectedDispute)}
+        onClose={() => setSelectedDispute(null)}
+        eyebrow="Challenges & Integrity"
+        title={selectedDispute ? `Challenge Review · ${selectedDispute.candidateName}` : 'Challenge Review'}
+      >
+        {selectedDispute && (
+          <>
+            <div className="space-y-4">
+              <DrawerSection index={0} className="flex flex-wrap items-center justify-between gap-2">
+                <Badge
+                  tone={
+                    selectedDispute.status === 'resolved'
+                      ? 'success'
+                      : selectedDispute.status === 'rejected'
+                      ? 'neutral'
+                      : 'warning'
+                  }
+                >
+                  {selectedDispute.status === 'resolved'
+                    ? 'Upheld'
                     : selectedDispute.status === 'rejected'
-                    ? 'neutral'
-                    : 'warning'
-                }
-              >
-                {selectedDispute.status === 'resolved'
-                  ? 'Upheld'
-                  : selectedDispute.status === 'rejected'
-                  ? 'Dismissed'
-                  : 'Pending'}
-              </Badge>
-              <span className="text-xs font-mono text-[var(--muted)] tabular-nums">
-                Score: <strong className="text-[var(--ink)]">{selectedDispute.currentMarks}</strong> / {selectedDispute.maxMarks}
-              </span>
+                    ? 'Dismissed'
+                    : 'Pending'}
+                </Badge>
+                <span className="text-xs font-mono text-[var(--muted)] tabular-nums">
+                  Score: <strong className="text-[var(--ink)]">{selectedDispute.currentMarks}</strong> / {selectedDispute.maxMarks}
+                </span>
+              </DrawerSection>
+
+              <DrawerSection index={1} className="space-y-3">
+                <div>
+                  <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--muted)] mb-1">Question</div>
+                  <p className="text-sm font-medium text-[var(--ink)]">{selectedDispute.questionText}</p>
+                </div>
+                <div className="p-3 rounded-xl bg-canvas border border-[var(--line)]">
+                  <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--muted)] mb-1">
+                    Candidate&apos;s Answer
+                  </div>
+                  <p className="text-xs font-mono text-[var(--ink)]">
+                    {Array.isArray(selectedDispute.candidateAnswer)
+                      ? selectedDispute.candidateAnswer.join(', ')
+                      : String(selectedDispute.candidateAnswer)}
+                  </p>
+                </div>
+                <div className="p-3 rounded-xl bg-canvas border border-[var(--line)]">
+                  <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--muted)] mb-1">
+                    Submitted Rationale
+                  </div>
+                  <p className="text-xs text-[var(--ink)]">{selectedDispute.explanation}</p>
+                </div>
+                {selectedDispute.reason && (
+                  <div className="p-3 rounded-xl bg-zinc-100 dark:bg-white/[0.05] border border-[var(--line)] text-xs font-mono text-[var(--ink)]">
+                    Professor note: {selectedDispute.reason}
+                  </div>
+                )}
+              </DrawerSection>
             </div>
-            <div>
-              <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--muted)] mb-1">Question</div>
-              <p className="text-sm font-medium text-[var(--ink)]">{selectedDispute.questionText}</p>
-            </div>
-            <div className="p-3 rounded-xl bg-canvas border border-[var(--line)]">
-              <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--muted)] mb-1">
-                Candidate&apos;s Answer
-              </div>
-              <p className="text-xs font-mono text-[var(--ink)]">
-                {Array.isArray(selectedDispute.candidateAnswer)
-                  ? selectedDispute.candidateAnswer.join(', ')
-                  : String(selectedDispute.candidateAnswer)}
-              </p>
-            </div>
-            <div className="p-3 rounded-xl bg-canvas border border-[var(--line)]">
-              <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--muted)] mb-1">
-                Submitted Rationale
-              </div>
-              <p className="text-xs text-[var(--ink)]">{selectedDispute.explanation}</p>
-            </div>
-            {selectedDispute.reason && (
-              <div className="p-3 rounded-xl bg-zinc-100 dark:bg-white/[0.05] border border-[var(--line)] text-xs font-mono text-[var(--ink)]">
-                Professor note: {selectedDispute.reason}
-              </div>
-            )}
+
             {selectedDispute.status !== 'resolved' && selectedDispute.status !== 'rejected' && (
-              <div className="flex flex-wrap items-center justify-end gap-2 pt-3 border-t border-[var(--line)]">
+              <DrawerSection index={2} className="flex flex-wrap items-center justify-end gap-2 pt-3 border-t border-[var(--line)]">
                 <button
                   type="button"
                   onClick={() => {
@@ -317,11 +307,11 @@ export const ExaminerChallengesPage = () => {
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" /> Approve &amp; Adjust Score
                 </Button>
-              </div>
+              </DrawerSection>
             )}
-          </aside>
-        </div>
-      )}
+          </>
+        )}
+      </SlideOverDrawer>
 
       <Dialog
         open={Boolean(actionTarget)}
