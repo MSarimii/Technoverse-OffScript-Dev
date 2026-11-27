@@ -2,13 +2,53 @@
 const now = Date.now();
 const hour = 3600 * 1000;
 
+const TOPICS = ['DSA', 'Databases', 'OS', 'Networks', 'Web'];
+const EXTRA_QUESTIONS = Array.from({ length: 28 }, (_, i) => {
+  const num = i + 13;
+  const topic = TOPICS[i % TOPICS.length];
+  const difficulty = ((i % 3) + 1);
+  const type = i % 5 === 0 ? 'written' : i % 3 === 0 ? 'mcq_multi' : 'mcq_single';
+  return {
+    id: `q-${num}`,
+    ownerId: i % 2 === 0 ? 'u-exam-1' : 'u-exam-2',
+    type,
+    topic,
+    difficulty,
+    text: `[${topic} · L${difficulty}] Evaluate core architectural trade-offs in scenario #${num}.`,
+    options:
+      type === 'written'
+        ? []
+        : [
+            { id: `o-${num}a`, text: `Primary invariant approach (${topic})`, isCorrect: true },
+            { id: `o-${num}b`, text: `Unbounded polling fallback`, isCorrect: type === 'mcq_multi' },
+            { id: `o-${num}c`, text: `Client-trusted clock state`, isCorrect: false },
+            { id: `o-${num}d`, text: `Unindexed sequential scan`, isCorrect: false },
+          ],
+    marks: type === 'written' ? 5 : type === 'mcq_multi' ? 3 : 2,
+    negativeMarks: type === 'mcq_single' ? 0.5 : 0,
+    multiSelectRule: type === 'mcq_multi' ? 'partial' : 'all_or_nothing',
+    rubric: type === 'written' ? `Award full marks for ${topic} correctness and edge-case handling.` : '',
+    version: 1,
+  };
+});
+
 export const INITIAL_MOCK_DB = {
   users: [
     { id: 'u-admin-1', name: 'Dr. Tariq Mahmood', email: 'admin@sems.edu', role: 'admin', isActive: true },
     { id: 'u-exam-1', name: 'Prof. Ayesha Siddiqui', email: 'examiner@sems.edu', role: 'examiner', isActive: true },
+    { id: 'u-exam-2', name: 'Dr. Salman Qureshi', email: 'salman@sems.edu', role: 'examiner', isActive: true },
     { id: 'u-cand-1', name: 'Zainab Khan', email: 'candidate@sems.edu', role: 'candidate', isActive: true },
     { id: 'u-cand-2', name: 'Bilal Ahmed', email: 'bilal@sems.edu', role: 'candidate', isActive: true },
     { id: 'u-cand-3', name: 'Hira Fatima', email: 'hira@sems.edu', role: 'candidate', isActive: true },
+    { id: 'u-cand-4', name: 'Usman Tariq', email: 'usman@sems.edu', role: 'candidate', isActive: true },
+    { id: 'u-cand-5', name: 'Sana Mir', email: 'sana@sems.edu', role: 'candidate', isActive: true },
+    { id: 'u-cand-6', name: 'Hamza Raza', email: 'hamza@sems.edu', role: 'candidate', isActive: true },
+    { id: 'u-cand-7', name: 'Ayesha Noor', email: 'noor@sems.edu', role: 'candidate', isActive: true },
+    { id: `u-cand-8`, name: 'Omer Farooq', email: 'omer@sems.edu', role: 'candidate', isActive: true },
+    { id: 'u-cand-9', name: 'Mahnoor Ali', email: 'mahnoor@sems.edu', role: 'candidate', isActive: true },
+    { id: 'u-cand-10', name: 'Saad Hassan', email: 'saad@sems.edu', role: 'candidate', isActive: true },
+    { id: 'u-cand-11', name: 'Laiba Javed', email: 'laiba@sems.edu', role: 'candidate', isActive: true },
+    { id: 'u-cand-12', name: 'Daniyal Sheikh', email: 'daniyal@sems.edu', role: 'candidate', isActive: true },
   ],
   questions: [
     {
@@ -224,6 +264,7 @@ export const INITIAL_MOCK_DB = {
       rubric: 'Explain linked buckets vs probing sequences and O(1 + alpha) expected lookup.',
       version: 1,
     },
+    ...EXTRA_QUESTIONS,
   ],
   exams: [
     {

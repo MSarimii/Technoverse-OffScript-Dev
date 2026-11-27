@@ -5,6 +5,16 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SEMS — Secure Examination Management System</title>
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('sems_theme') || 'system';
+          if (t !== 'light') {
+            document.documentElement.setAttribute('data-theme', t);
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body class="bg-canvas text-ink antialiased selection:bg-[#2F5BFF] selection:text-white">
     <div id="root"></div>

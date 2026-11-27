@@ -6,7 +6,12 @@ import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { Navbar } from './components/layout/Navbar';
+import { AppLayout } from './components/layout/AppLayout';
 import { Toaster } from './components/ui';
+
+const DesignSystemPage = import.meta.env.DEV
+  ? lazy(() => import('./pages/DesignSystemPage').then((m) => ({ default: m.DesignSystemPage })))
+  : null;
 
 const HomePage = lazy(() => import('./pages/HomePage').then((m) => ({ default: m.HomePage })));
 const LoginPage = lazy(() => import('./pages/LoginPage').then((m) => ({ default: m.LoginPage })));
@@ -53,12 +58,18 @@ function AnimatedRoutes() {
         <Route path="/register" element={<Navigate to="/login" replace />} />
         <Route path="/verify/:verificationId" element={<VerifyReportPage />} />
 
+        {import.meta.env.DEV && DesignSystemPage && (
+          <Route path="/_design" element={<DesignSystemPage />} />
+        )}
+
         {/* Admin */}
         <Route
           path="/admin/users"
           element={
             <ProtectedRoute allowedRoles={['admin']}>
-              <AdminUsersPage />
+              <AppLayout>
+                <AdminUsersPage />
+              </AppLayout>
             </ProtectedRoute>
           }
         />
@@ -68,7 +79,9 @@ function AnimatedRoutes() {
           path="/examiner"
           element={
             <ProtectedRoute allowedRoles={['examiner']}>
-              <ExaminerDashboardPage />
+              <AppLayout>
+                <ExaminerDashboardPage />
+              </AppLayout>
             </ProtectedRoute>
           }
         />
@@ -76,7 +89,9 @@ function AnimatedRoutes() {
           path="/examiner/questions"
           element={
             <ProtectedRoute allowedRoles={['examiner']}>
-              <QuestionBankPage />
+              <AppLayout>
+                <QuestionBankPage />
+              </AppLayout>
             </ProtectedRoute>
           }
         />
@@ -126,7 +141,9 @@ function AnimatedRoutes() {
           path="/candidate"
           element={
             <ProtectedRoute allowedRoles={['candidate']}>
-              <CandidateExamsPage />
+              <AppLayout>
+                <CandidateExamsPage />
+              </AppLayout>
             </ProtectedRoute>
           }
         />
@@ -142,7 +159,9 @@ function AnimatedRoutes() {
           path="/candidate/results"
           element={
             <ProtectedRoute allowedRoles={['candidate']}>
-              <CandidateResultsPage />
+              <AppLayout>
+                <CandidateResultsPage />
+              </AppLayout>
             </ProtectedRoute>
           }
         />
@@ -150,7 +169,9 @@ function AnimatedRoutes() {
           path="/candidate/results/:attemptId"
           element={
             <ProtectedRoute allowedRoles={['candidate']}>
-              <ResultDetailPage />
+              <AppLayout>
+                <ResultDetailPage />
+              </AppLayout>
             </ProtectedRoute>
           }
         />
