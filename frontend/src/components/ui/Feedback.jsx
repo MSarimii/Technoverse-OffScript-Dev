@@ -2,18 +2,30 @@ import { Toaster as SonnerToaster } from 'sonner';
 import { AlertCircle, CheckCircle2, Clock, WifiOff, RefreshCw, Inbox } from 'lucide-react';
 
 const BADGE_STYLES = {
-  neutral: 'bg-subtle text-ink border-line',
-  cobalt: 'bg-[#ECFDF5] text-[#065F46] border-[#A7F3D0]',
-  success: 'bg-[#ECFDF5] text-[#065F46] border-[#A7F3D0]',
-  warning: 'bg-amber-50 text-amber-900 border-amber-200',
-  danger: 'bg-[#FEF2F2] text-[#DC2626] border-[#FECACA]',
+  neutral: 'bg-[#F4F4F5] text-[#18181B] border-[#E4E4E7]',
+  cobalt: 'bg-white text-[#18181B] border-[#E4E4E7]',
+  success: 'bg-white text-[#18181B] border-[#E4E4E7]',
+  warning: 'bg-white text-[#18181B] border-[#E4E4E7]',
+  danger: 'bg-white text-[#18181B] border-[#E4E4E7]',
 };
 
-export const Badge = ({ tone = 'neutral', className = '', children }) => (
-  <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono border ${BADGE_STYLES[tone]} ${className}`}>
-    {children}
-  </span>
-);
+const DOT_COLORS = {
+  cobalt: 'bg-[#10B981]',
+  success: 'bg-[#10B981]',
+  warning: 'bg-[#F59E0B]',
+  danger: 'bg-[#EF4444]',
+  slate: 'bg-[#64748B]',
+};
+
+export const Badge = ({ tone = 'neutral', dot, className = '', children }) => {
+  const dotColor = dot ? DOT_COLORS[dot] : tone !== 'neutral' ? DOT_COLORS[tone] : null;
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${BADGE_STYLES[tone] || BADGE_STYLES.neutral} ${className}`}>
+      {dotColor && <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor}`} aria-hidden="true" />}
+      {children}
+    </span>
+  );
+};
 
 export const StatusChip = ({ status, label }) => {
   const map = {

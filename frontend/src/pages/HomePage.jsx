@@ -317,7 +317,7 @@ export const HomePage = () => {
             </div>
             <div className="flex items-center gap-3">
               <span className="text-[#059669] font-semibold">02</span>
-              <span>Idempotent submission</span>
+              <span>Duplicate-safe submission</span>
             </div>
             <div className="flex items-center gap-3">
               <span className="text-[#059669] font-semibold">03</span>
@@ -471,9 +471,9 @@ export const HomePage = () => {
                   <span className="inline-flex items-center gap-1.5">
                     <Database className="w-3.5 h-3.5 text-[#059669]" /> Offline-First Sync Pipeline
                   </span>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46]">
-                    <PulseDot />
-                    Monotonic Seq • Idempotent
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white border border-[#E4E4E7] text-[#18181B]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" aria-hidden="true" />
+                    Ordered Sync • Duplicate-Safe
                   </span>
                 </div>
 
@@ -500,7 +500,7 @@ export const HomePage = () => {
                       </span>
                       <span className="h-[2px] flex-1 border-t-2 border-dashed border-[#059669]/40" />
                     </div>
-                    <span className="text-[10px] font-mono text-[#6B7280] mt-1.5">Bounded late-sync</span>
+                    <span className="text-[10px] font-mono text-[#6B7280] mt-1.5">Verified late-sync</span>
                   </div>
 
                   <div className="rounded-xl p-3.5 bg-[#0B0F0E] border border-[#181F1D] space-y-1.5">

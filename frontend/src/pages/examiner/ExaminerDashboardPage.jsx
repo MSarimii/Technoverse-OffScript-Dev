@@ -192,7 +192,7 @@ export const ExaminerDashboardPage = () => {
               <article key={exam.id} className={`luxury-card luxury-card-hover rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t-2 ${st === 'ongoing' ? 'border-t-[#059669]' : 'border-t-[#0B0F0E]'}`}>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-1.5">
-                    <Badge tone={st === 'ongoing' ? 'cobalt' : st === 'completed' ? 'success' : 'neutral'}>
+                    <Badge tone={st === 'ongoing' ? 'cobalt' : st === 'completed' ? 'success' : 'neutral'} dot={st === 'draft' ? 'slate' : undefined}>
                       {st}
                     </Badge>
                     {exam.resultsPublished && <Badge tone="success">Results Published</Badge>}

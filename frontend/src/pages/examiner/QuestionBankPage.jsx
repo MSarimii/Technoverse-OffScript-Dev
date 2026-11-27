@@ -372,7 +372,7 @@ export const QuestionBankPage = () => {
                   />
                   <div>
                     <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-ink-muted mb-1">
-                      <Badge tone="cobalt">
+                      <Badge tone="neutral">
                         {q.type === 'mcq_single' ? 'Single Choice' : q.type === 'mcq_multi' ? 'Multi-Select' : 'Written'}
                       </Badge>
                       <span>{q.topic}</span>
