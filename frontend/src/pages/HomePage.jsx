@@ -285,16 +285,16 @@ export const HomePage = () => {
               <p className="hero-fade eyebrow-rule font-mono text-xs uppercase tracking-[0.12em] text-[#065F46]">
                 Established 2014 · Institutional Assessment Infrastructure
               </p>
-              <h1 className="font-display font-extrabold text-[clamp(40px,5.4vw,72px)] tracking-[-0.04em] leading-[1.02] text-ink">
-                <span className="block overflow-hidden">
+              <h1 className="font-display font-extrabold text-[clamp(40px,5.4vw,72px)] tracking-[-0.04em] leading-[1.12] text-ink">
+                <span className="block overflow-hidden pb-[0.14em] -mb-[0.14em]">
                   <span className="hero-line block">Exams that stay</span>
                 </span>
-                <span className="block overflow-hidden">
+                <span className="block overflow-hidden pb-[0.14em] -mb-[0.14em]">
                   <span className="hero-line block">
                     <span className="text-[#059669]">fair</span> when everything
                   </span>
                 </span>
-                <span className="block overflow-hidden">
+                <span className="block overflow-hidden pb-[0.14em] -mb-[0.14em]">
                   <span className="hero-line block">else fails.</span>
                 </span>
               </h1>
