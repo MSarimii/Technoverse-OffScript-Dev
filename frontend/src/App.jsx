@@ -220,6 +220,14 @@ function AnimatedRoutes() {
           }
         />
         <Route
+          path="/candidate/attempts/:attemptId"
+          element={
+            <ProtectedRoute allowedRoles={['candidate', 'examiner']}>
+              <ExamWorkspacePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/candidate/results"
           element={
             <ProtectedRoute allowedRoles={['candidate']}>

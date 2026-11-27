@@ -23,9 +23,9 @@ export const PreExamPage = () => {
     import('./ExamWorkspacePage').catch(() => {});
 
     attemptService
-      .getCandidateExams()
+      .getCandidateExamDetail(examId)
       .then((res) => {
-        const found = (res.data?.exams || []).find((e) => e.id === examId);
+        const found = res.data?.exam;
         if (!found) setError('Examination not found or you are not enrolled.');
         else setExam(found);
       })

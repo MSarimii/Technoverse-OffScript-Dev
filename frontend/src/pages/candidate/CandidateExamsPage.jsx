@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { attemptService } from '../../services/attemptService';
+import { useTheme } from '../../context/ThemeContext';
 import { PageHeader } from '../../components/layout/AppLayout';
-import { Button, Badge, Tabs, Skeleton, EmptyState, ErrorState } from '../../components/ui';
-import { Clock, Play, RotateCcw, CheckCircle, Calendar, Lock } from 'lucide-react';
+import { Button, Badge, Tabs, Select, Switch, Dialog, Skeleton, EmptyState, ErrorState } from '../../components/ui';
+import { toast } from 'sonner';
+import { Clock, Play, RotateCcw, CheckCircle, Calendar, Lock, SlidersHorizontal } from 'lucide-react';
 
 function formatCountdown(ms) {
   if (ms <= 0) return 'Opening now';
@@ -16,11 +18,21 @@ function formatCountdown(ms) {
 
 export const CandidateExamsPage = () => {
   const navigate = useNavigate();
+  const { setTheme } = useTheme();
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [tab, setTab] = useState('available');
   const [nowMs, setNowMs] = useState(Date.now());
+  const [showPrefs, setShowPrefs] = useState(false);
+  const [savingPrefs, setSavingPrefs] = useState(false);
+  const [prefs, setPrefs] = useState({
+    theme: 'light',
+    fontScale: 'md',
+    layout: 'right',
+    showTimer: true,
+    highContrast: false,
+  });
 
   const load = async () => {
     setLoading(true);
@@ -37,9 +49,31 @@ export const CandidateExamsPage = () => {
 
   useEffect(() => {
     load();
+    attemptService
+      .getMyPreferences()
+      .then((res) => {
+        if (res.data?.preferences) setPrefs((p) => ({ ...p, ...res.data.preferences }));
+      })
+      .catch(() => {});
     const id = setInterval(() => setNowMs(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
+
+  const handleSavePrefs = async (e) => {
+    e.preventDefault();
+    setSavingPrefs(true);
+    try {
+      await attemptService.updateMyPreferences(prefs);
+      if (prefs.highContrast) setTheme('high-contrast');
+      else if (prefs.theme) setTheme(prefs.theme);
+      setShowPrefs(false);
+      toast.success('Workspace preferences saved');
+    } catch (err) {
+      toast.error(err.message || 'Could not save preferences');
+    } finally {
+      setSavingPrefs(false);
+    }
+  };
 
   const available = exams.filter(
     (e) => e.derivedStatus === 'ongoing' && e.attemptStatus !== 'submitted' && e.attemptStatus !== 'graded'
@@ -57,6 +91,11 @@ export const CandidateExamsPage = () => {
         title="My Examinations"
         subtitle="View scheduled windows, instructions, and active attempts."
         breadcrumbs={[{ label: 'Candidate' }, { label: 'Examinations' }]}
+        actions={
+          <Button variant="secondary" onClick={() => setShowPrefs(true)}>
+            <SlidersHorizontal className="w-4 h-4" /> Preferences
+          </Button>
+        }
       />
 
       <Tabs
@@ -101,7 +140,7 @@ export const CandidateExamsPage = () => {
                 <div className="space-y-1.5 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge tone={exam.derivedStatus === 'ongoing' ? 'cobalt' : 'neutral'}>
-                      {exam.derivedStatus}
+                      {exam.accessStatus || exam.derivedStatus}
                     </Badge>
                     {exam.attemptStatus === 'in_progress' && <Badge tone="warning">In Progress</Badge>}
                     <span className="text-xs font-mono text-ink-muted">{accessReason}</span>
@@ -158,6 +197,60 @@ export const CandidateExamsPage = () => {
           })}
         </div>
       )}
+
+      <Dialog open={showPrefs} onClose={() => setShowPrefs(false)} title="Workspace Preferences">
+        <form onSubmit={handleSavePrefs} className="space-y-4">
+          <Select
+            label="Theme"
+            value={prefs.theme}
+            onChange={(e) => setPrefs((p) => ({ ...p, theme: e.target.value }))}
+          >
+            <option value="light">Light (Alabaster)</option>
+            <option value="dark">Dark (Obsidian)</option>
+            <option value="system">System Default</option>
+          </Select>
+
+          <Select
+            label="Font Scale"
+            value={prefs.fontScale}
+            onChange={(e) => setPrefs((p) => ({ ...p, fontScale: e.target.value }))}
+          >
+            <option value="sm">Compact (14px)</option>
+            <option value="md">Standard (16px)</option>
+            <option value="lg">Large (18px)</option>
+          </Select>
+
+          <Select
+            label="Question Palette Layout"
+            value={prefs.layout}
+            onChange={(e) => setPrefs((p) => ({ ...p, layout: e.target.value }))}
+          >
+            <option value="right">Palette on Right</option>
+            <option value="left">Palette on Left</option>
+          </Select>
+
+          <Switch
+            label="Show countdown timer in workspace"
+            checked={prefs.showTimer}
+            onChange={(v) => setPrefs((p) => ({ ...p, showTimer: v }))}
+          />
+
+          <Switch
+            label="High-contrast accessibility mode"
+            checked={prefs.highContrast}
+            onChange={(v) => setPrefs((p) => ({ ...p, highContrast: v }))}
+          />
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="secondary" onClick={() => setShowPrefs(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" loading={savingPrefs}>
+              Save Preferences
+            </Button>
+          </div>
+        </form>
+      </Dialog>
     </main>
   );
 };

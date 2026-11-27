@@ -62,10 +62,15 @@ export function useOfflineAnswerQueue({ attemptId, initialAnswers, initialMarked
       flushingRef.current = true;
       setSyncStatus('saving');
       try {
+        const offlineEntry = currentQueue.find((q) => q.offlineBuffered);
+        const extra = offlineEntry
+          ? { offlineBuffered: true, clientSavedAt: offlineEntry.clientSavedAt }
+          : {};
         const res = await attemptService.saveAnswers(
           attemptId,
           currentQueue,
-          explicitMarked || markedForReview
+          explicitMarked || markedForReview,
+          extra
         );
         const accepted = new Set(res.data?.acceptedSeqs || currentQueue.map((q) => q.seq));
         const late = res.data?.lateSyncedSeqs || [];
@@ -119,7 +124,15 @@ export function useOfflineAnswerQueue({ attemptId, initialAnswers, initialMarked
 
       const clientElapsedMs =
         typeof performance !== 'undefined' ? Math.max(0, Math.round(performance.now() - loadPerfRef.current)) : 0;
-      const entry = { qid, value, seq: seqRef.current, clientElapsedMs, ts: Date.now() };
+      const entry = {
+        qid,
+        value,
+        seq: seqRef.current,
+        clientElapsedMs,
+        ts: Date.now(),
+        clientSavedAt: new Date().toISOString(),
+        offlineBuffered: !navigator.onLine,
+      };
 
       setQueue((prev) => {
         const next = [...prev.filter((item) => item.qid !== qid), entry];

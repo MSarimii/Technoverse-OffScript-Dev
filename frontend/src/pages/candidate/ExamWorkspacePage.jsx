@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 
 export const ExamWorkspacePage = () => {
-  const { examId } = useParams();
+  const { examId, attemptId: routeAttemptId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -69,7 +69,7 @@ export const ExamWorkspacePage = () => {
     const init = async () => {
       setLoading(true);
       try {
-        let attemptId = location.state?.attemptId;
+        let attemptId = routeAttemptId || location.state?.attemptId;
         if (!attemptId) {
           const startRes = isSandboxRequest
             ? await examService.startSandbox(examId)
