@@ -24,10 +24,23 @@ export const attemptService = {
     USE_MOCK ? mockApi.logEvent(attemptId, event) : api.post(`/attempts/${attemptId}/events`, event),
   getPreferences: () =>
     USE_MOCK ? Promise.resolve({ data: { preferences: {} } }) : api.get('/me/preferences'),
+  getMyPreferences: () =>
+    USE_MOCK ? Promise.resolve({ data: { preferences: {} } }) : api.get('/me/preferences'),
   savePreferences: (_attemptId, preferences) =>
     USE_MOCK
       ? mockApi.savePreferences(_attemptId, preferences)
       : api.put('/me/preferences', preferences),
+  updateMyPreferences: (p = {}) => {
+    if (USE_MOCK) return mockApi.savePreferences(null, p);
+    const body = {
+      theme: ['light', 'dark', 'system'].includes(p.theme) ? p.theme : 'light',
+      fontScale: ['sm', 'md', 'lg'].includes(p.fontScale) ? p.fontScale : 'md',
+      layout: ['standard', 'compact', 'split'].includes(p.layout) ? p.layout : 'standard',
+      showTimer: Boolean(p.showTimer ?? true),
+      highContrast: Boolean(p.highContrast),
+    };
+    return api.put('/me/preferences', body);
+  },
   saveScratchpad: (attemptId, text) =>
     USE_MOCK ? mockApi.saveScratchpad(attemptId, text) : api.put(`/attempts/${attemptId}/scratchpad`, { text }),
   submitAttempt: (attemptId) =>
@@ -42,6 +55,10 @@ export const attemptService = {
   verifyReport: (verificationId) =>
     USE_MOCK ? mockApi.verifyReport(verificationId) : api.get(`/verify/${verificationId}`),
   async downloadAttemptReportPdf(attemptId) {
+    const blob = await api.get(`/attempts/${attemptId}/report.pdf`, { responseType: 'blob' });
+    triggerBlobDownload(blob, `attempt-${attemptId}-transcript.pdf`);
+  },
+  downloadAttemptPdf: async (attemptId) => {
     const blob = await api.get(`/attempts/${attemptId}/report.pdf`, { responseType: 'blob' });
     triggerBlobDownload(blob, `attempt-${attemptId}-transcript.pdf`);
   },

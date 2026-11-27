@@ -1,5 +1,5 @@
-import { lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { lazy, Suspense, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useParams, matchPath } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { AuthProvider } from './context/AuthContext';
@@ -7,7 +7,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { Navbar } from './components/layout/Navbar';
 import { AppLayout } from './components/layout/AppLayout';
-import { Toaster } from './components/ui';
+import { Toaster, CommandPalette } from './components/ui';
 
 const DesignSystemPage = import.meta.env.DEV
   ? lazy(() => import('./pages/DesignSystemPage').then((m) => ({ default: m.DesignSystemPage })))
@@ -31,6 +31,7 @@ const ExamGradingPage = lazy(() => import('./pages/examiner/ExamGradingPage').th
 const ExamAnalyticsPage = lazy(() => import('./pages/examiner/ExamAnalyticsPage').then((m) => ({ default: m.ExamAnalyticsPage })));
 const ExamFairnessPage = lazy(() => import('./pages/examiner/ExamFairnessPage').then((m) => ({ default: m.ExamFairnessPage })));
 const ExamDisputesPage = lazy(() => import('./pages/examiner/ExamDisputesPage').then((m) => ({ default: m.ExamDisputesPage })));
+const ExaminerChallengesPage = lazy(() => import('./pages/examiner/ExaminerChallengesPage').then((m) => ({ default: m.ExaminerChallengesPage })));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
 
 const queryClient = new QueryClient({
@@ -47,6 +48,11 @@ const RouteFallback = () => (
     Loading view...
   </div>
 );
+
+const AttemptRedirect = () => {
+  const { attemptId } = useParams();
+  return <Navigate to={`/candidate/attempts/${attemptId}`} replace />;
+};
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -95,6 +101,16 @@ function AnimatedRoutes() {
             <ProtectedRoute allowedRoles={['examiner']}>
               <AppLayout>
                 <QuestionBankPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/examiner/challenges"
+          element={
+            <ProtectedRoute allowedRoles={['examiner']}>
+              <AppLayout>
+                <ExaminerChallengesPage />
               </AppLayout>
             </ProtectedRoute>
           }
@@ -220,6 +236,15 @@ function AnimatedRoutes() {
           }
         />
         <Route
+          path="/candidate/attempts/:attemptId"
+          element={
+            <ProtectedRoute allowedRoles={['candidate', 'examiner']}>
+              <ExamWorkspacePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/candidate/attempt/:attemptId" element={<AttemptRedirect />} />
+        <Route
           path="/candidate/results"
           element={
             <ProtectedRoute allowedRoles={['candidate']}>
@@ -264,9 +289,31 @@ function AnimatedRoutes() {
   );
 }
 
+const ROUTE_TITLES = [
+  { pattern: '/', title: 'SEMS — Secure Examination Suite' },
+  { pattern: '/login', title: 'Sign In · SEMS' },
+  { pattern: '/register', title: 'Create Account · SEMS' },
+  { pattern: '/admin/users', title: 'Users & Roles · SEMS' },
+  { pattern: '/examiner', title: 'Examiner Console · SEMS' },
+  { pattern: '/examiner/questions', title: 'Question Bank · SEMS' },
+  { pattern: '/examiner/challenges', title: 'Challenges & Integrity · SEMS' },
+  { pattern: '/candidate', title: 'My Exams · SEMS' },
+  { pattern: '/candidate/exams', title: 'My Exams · SEMS' },
+  { pattern: '/candidate/attempts/:attemptId', title: 'Live Attempt · SEMS' },
+  { pattern: '/candidate/exam/:examId', title: 'Live Attempt · SEMS' },
+  { pattern: '/candidate/results', title: 'Official Transcripts · SEMS' },
+  { pattern: '/candidate/results/:attemptId', title: 'Official Transcripts · SEMS' },
+  { pattern: '/verify/:id', title: 'Verify Credential · SEMS' },
+];
+
 function AppShell() {
   const location = useLocation();
   const isExamWorkspace = location.pathname.startsWith('/candidate/exam/');
+
+  useEffect(() => {
+    const matched = ROUTE_TITLES.find((r) => matchPath({ path: r.pattern, end: true }, location.pathname));
+    document.title = matched ? matched.title : 'SEMS — Secure Examination Suite';
+  }, [location.pathname]);
 
   return (
     <div className="min-h-screen bg-canvas flex flex-col text-ink">
@@ -277,6 +324,7 @@ function AppShell() {
         Skip to content
       </a>
       <Toaster />
+      <CommandPalette />
       <Navbar />
       <div id="main-content" className="flex-1">
         <AnimatedRoutes />

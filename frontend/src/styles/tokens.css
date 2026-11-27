@@ -26,6 +26,12 @@
   --accent: #0B0F0E;
   --accent-hover: #181F1D;
   --accent-ink: #FFFFFF;
+  --hero-bar-bg: #F4F4F5;
+  --hero-bar-ink: #3F3F46;
+  --hero-pill-bg: #FFFFFF;
+  --hero-chip-bg: #ECFDF5;
+  --hero-chip-border: #A7F3D0;
+  --hero-chip-ink: #065F46;
   --card-shadow: 0 1px 2px rgba(11, 15, 14, 0.03), 0 12px 32px -8px rgba(11, 15, 14, 0.06);
   --card-shadow-hover: 0 4px 12px rgba(11, 15, 14, 0.05), 0 20px 40px -12px rgba(11, 15, 14, 0.10);
 
@@ -78,6 +84,12 @@
   --accent: #FAFBF9;
   --accent-hover: #E4E8E6;
   --accent-ink: #0B0F0E;
+  --hero-bar-bg: #141A18;
+  --hero-bar-ink: #D4D4D8;
+  --hero-pill-bg: #111615;
+  --hero-chip-bg: rgba(6, 78, 59, 0.55);
+  --hero-chip-border: rgba(16, 185, 129, 0.4);
+  --hero-chip-ink: #6EE7B7;
   --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px -8px rgba(0, 0, 0, 0.4);
   --card-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.4), 0 20px 40px -12px rgba(0, 0, 0, 0.5);
 

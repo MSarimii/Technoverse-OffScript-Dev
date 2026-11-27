@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { examService } from '../../services/examService';
 import { PageHeader } from '../../components/layout/AppLayout';
 import { Button, Badge, Dialog, Skeleton, EmptyState } from '../../components/ui';
@@ -22,6 +22,7 @@ function mapAiErrorMessage(err) {
 
 export const ExamGradingPage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [exam, setExam] = useState(null);
   const [attempts, setAttempts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -252,6 +253,13 @@ export const ExamGradingPage = () => {
         breadcrumbs={[{ label: 'Examiner', to: '/examiner' }, { label: 'Grading' }]}
         actions={
           <div className="flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => navigate(`/examiner/challenges?examId=${id}`)}
+            >
+              View Challenges &amp; Integrity →
+            </Button>
             {aiStatus && (
               <Badge tone={aiStatus.ok ? (aiStatus.source === 'openrouter' ? 'cobalt' : 'neutral') : 'warning'}>
                 AI: {aiStatus.ok ? (aiStatus.source === 'openrouter' ? 'OpenRouter Live' : 'Mock Mode') : 'Offline'}

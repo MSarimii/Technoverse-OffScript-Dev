@@ -15,32 +15,45 @@ export const PreExamPage = () => {
   const [error, setError] = useState('');
   const [acknowledged, setAcknowledged] = useState(false);
   const [checkingNet, setCheckingNet] = useState(false);
-  const [netStatus, setNetStatus] = useState('untested');
+  const [netStatus, setNetStatus] = useState('untested'); // untested | ok | fail
   const [starting, setStarting] = useState(false);
 
   useEffect(() => {
+    // Prefetch ExamWorkspace chunk so entry is instant
     import('./ExamWorkspacePage').catch(() => {});
 
-    attemptService
-      .getCandidateExamDetail(examId)
-      .then((res) => {
-        const found = res.data?.exam;
+    const loadExam = async () => {
+      try {
+        const res = await attemptService.getCandidateExamDetail(examId);
+        let found = res.data?.exam;
+        if (!found) {
+          const listRes = await attemptService.getCandidateExams().catch(() => null);
+          const all = [
+            ...(listRes?.data?.available || []),
+            ...(listRes?.data?.upcoming || []),
+            ...(listRes?.data?.completed || []),
+            ...(listRes?.data?.exams || []),
+          ];
+          found = all.find((x) => String(x.id || x._id) === String(examId)) || null;
+        }
         if (!found) setError('Examination not found or you are not enrolled.');
         else setExam(found);
-      })
-      .catch(async (err) => {
-        try {
-          const listRes = await attemptService.getCandidateExams();
-          const d = listRes.data || {};
-          const all = [...(d.available || []), ...(d.upcoming || []), ...(d.completed || []), ...(d.exams || [])];
-          const found = all.find((e) => e.id === examId);
-          if (found) setExam(found);
-          else setError(err.message || 'Unable to load examination details');
-        } catch {
-          setError(err.message || 'Unable to load examination details');
-        }
-      })
-      .finally(() => setLoading(false));
+      } catch (err) {
+        const listRes = await attemptService.getCandidateExams().catch(() => null);
+        const all = [
+          ...(listRes?.data?.available || []),
+          ...(listRes?.data?.upcoming || []),
+          ...(listRes?.data?.completed || []),
+          ...(listRes?.data?.exams || []),
+        ];
+        const found = all.find((x) => String(x.id || x._id) === String(examId)) || null;
+        if (found) setExam(found);
+        else setError(err.message || 'Unable to load examination details');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadExam();
   }, [examId]);
 
   const runConnectivityCheck = async () => {
@@ -63,11 +76,12 @@ export const PreExamPage = () => {
     try {
       const res = await attemptService.startAttempt(examId);
       const attempt = res.data?.attempt;
-      navigate(`/candidate/exam/${examId}`, {
+      navigate(`/candidate/attempts/${attempt.id}`, {
         state: {
-          attemptId: attempt?.id,
+          attemptId: attempt.id,
           initialAttempt: attempt,
           examTitle: exam.title,
+          remainingMs: attempt?.remainingMs ?? res.data?.remainingMs,
         },
       });
     } catch (err) {

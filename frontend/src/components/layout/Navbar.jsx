@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../context/ThemeContext';
 import { getRoleHome } from '../../context/AuthContext';
-import { LogOut, Menu, X, Sun, Moon, Monitor, WifiOff, ChevronDown, LayoutDashboard } from 'lucide-react';
+import { LogOut, Menu, X, Sun, Moon, Monitor, WifiOff, LayoutDashboard, Search } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { USE_MOCK } from '../../services/api';
@@ -50,6 +50,12 @@ export const Navbar = () => {
   if (location.pathname.startsWith('/candidate/exam/')) {
     return null;
   }
+
+  const isPublicRoute =
+    location.pathname === '/' ||
+    location.pathname.startsWith('/verify') ||
+    location.pathname === '/login' ||
+    location.pathname === '/register';
 
   const handleLogout = () => {
     setProfileOpen(false);
@@ -99,6 +105,17 @@ export const Navbar = () => {
 
         {/* Minimal Desktop Top Bar */}
         <nav aria-label="Top utilities" className="hidden md:flex items-center gap-2.5">
+          {isAuthenticated && (user?.role === 'admin' || user?.role === 'examiner') && (
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new Event('sems-open-command-palette'))}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-line bg-surface hover:bg-subtle text-xs font-mono text-ink-muted hover:text-ink transition-colors"
+            >
+              <Search className="w-3.5 h-3.5" />
+              <span>Quick jump</span>
+              <kbd className="px-1.5 py-0.5 rounded bg-subtle border border-line text-[10px]">⌘K</kbd>
+            </button>
+          )}
           <Link
             to="/verify/VER-2026-SEMS-8841"
             className="px-3.5 py-1.5 rounded-full text-sm font-medium text-ink-muted hover:text-ink hover:bg-subtle transition-colors"
@@ -106,19 +123,39 @@ export const Navbar = () => {
             Verify a report
           </Link>
 
-          <Tooltip label={`Theme: ${theme}`}>
+          <Tooltip label={`Theme: ${theme}`} placement="bottom" align="right">
             <IconButton label={`Theme: ${theme} (click to switch)`} onClick={cycleTheme} variant="ghost">
               <ThemeIcon className="w-4 h-4" strokeWidth={1.5} />
             </IconButton>
           </Tooltip>
 
-          {!isAuthenticated && (
-            <Link
-              to="/login"
-              className="min-h-[38px] inline-flex items-center text-sm font-medium bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-ink)] px-5 py-1.5 rounded-full transition-transform active:scale-[0.97]"
-            >
-              Sign in
-            </Link>
+          {isPublicRoute && (
+            isAuthenticated ? (
+              <div className="flex items-center gap-2 pl-2 border-l border-line">
+                <Link
+                  to={getRoleHome(user.role)}
+                  className="min-h-[38px] inline-flex items-center gap-1.5 text-sm font-medium bg-[#0B0F0E] hover:bg-[#181F1D] text-white px-4 py-1.5 rounded-full transition-all active:scale-[0.98]"
+                >
+                  <LayoutDashboard className="w-3.5 h-3.5 text-[#10B981]" />
+                  Dashboard
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="min-h-[38px] inline-flex items-center gap-1.5 text-xs font-medium px-3.5 py-1.5 rounded-full border border-line bg-surface hover:bg-[#FEF2F2] hover:text-[#DC2626] hover:border-[#FECACA] text-ink-muted transition-colors"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  Sign out
+                </button>
+              </div>
+            ) : (
+              <Link
+                to="/login"
+                className="min-h-[38px] inline-flex items-center text-sm font-medium bg-[#0B0F0E] hover:bg-[#181F1D] text-white px-5 py-1.5 rounded-full transition-transform active:scale-[0.98]"
+              >
+                Sign in
+              </Link>
+            )
           )}
         </nav>
 

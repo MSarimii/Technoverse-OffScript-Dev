@@ -2,12 +2,15 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../context/ThemeContext';
+import { examService } from '../../services/examService';
+import { getInitials } from '../../lib/initials';
 import { motion, AnimatePresence, useMotionValue, animate, useReducedMotion } from 'framer-motion';
 import {
   Users,
   ClipboardCheck,
   BookOpen,
   Award,
+  ShieldAlert,
   PanelLeftClose,
   LogOut,
   Sun,
@@ -31,7 +34,21 @@ export const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [hoveredTo, setHoveredTo] = useState(null);
   const [footerOpen, setFooterOpen] = useState(false);
+  const [pendingChallenges, setPendingChallenges] = useState(0);
   const footerRef = useRef(null);
+
+  useEffect(() => {
+    if (user?.role !== 'examiner') return;
+    examService
+      .getAllDisputes()
+      .then((res) => {
+        const count = (res.data?.disputes || []).filter(
+          (d) => d.status !== 'resolved' && d.status !== 'rejected'
+        ).length;
+        setPendingChallenges(count);
+      })
+      .catch(() => {});
+  }, [user?.role, location.pathname]);
   const draggingRef = useRef(false);
   const widthMV = useMotionValue(EXPANDED_W);
 
@@ -107,6 +124,12 @@ export const Sidebar = () => {
       ? [
           { to: '/examiner', label: 'Examinations', icon: ClipboardCheck },
           { to: '/examiner/questions', label: 'Question Bank', icon: BookOpen },
+          {
+            to: '/examiner/challenges',
+            label: 'Challenges & Integrity',
+            icon: ShieldAlert,
+            badge: pendingChallenges,
+          },
         ]
       : user?.role === 'candidate'
       ? [
@@ -169,7 +192,7 @@ export const Sidebar = () => {
           </div>
 
           <nav className="space-y-1" style={{ perspective: 500 }}>
-            {links.map(({ to, label, icon: Icon }, idx) => {
+            {links.map(({ to, label, icon: Icon, badge }, idx) => {
               const active = location.pathname === to;
               return (
                 <div
@@ -182,14 +205,16 @@ export const Sidebar = () => {
                     to={to}
                     aria-label={collapsed ? label : undefined}
                     className={`group relative flex items-center gap-3 px-3 py-2.5 min-h-[44px] text-sm rounded-xl transition-colors ${
-                      active ? 'text-[#065F46] font-semibold' : 'text-ink-muted hover:text-ink hover:bg-subtle/60'
+                      active
+                        ? 'text-[#065F46] dark:text-emerald-400 font-semibold'
+                        : 'text-ink-muted hover:text-ink hover:bg-subtle/60'
                     } ${collapsed ? 'justify-center px-0' : ''}`}
                   >
                     {active && (
                       <motion.span
                         layoutId={reduced ? undefined : 'sidebar-active-pill'}
                         transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-                        className="absolute inset-0 bg-[#ECFDF5] border border-[#A7F3D0] rounded-xl -z-0"
+                        className="absolute inset-0 bg-[#ECFDF5] border border-[#A7F3D0] dark:bg-emerald-500/10 dark:border-emerald-500/20 rounded-xl -z-0"
                       />
                     )}
                     <motion.span
@@ -216,9 +241,14 @@ export const Sidebar = () => {
                           damping: 28,
                           delay: reduced ? 0 : idx * 0.035,
                         }}
-                        className="relative z-10 truncate"
+                        className="relative z-10 flex items-center justify-between gap-2 flex-1 min-w-0"
                       >
-                        {label}
+                        <span className="truncate">{label}</span>
+                        {typeof badge === 'number' && badge > 0 && (
+                          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-[#0B0F0E] text-white shrink-0">
+                            {badge}
+                          </span>
+                        )}
                       </motion.span>
                     )}
                   </Link>
@@ -254,7 +284,7 @@ export const Sidebar = () => {
             }`}
           >
             <span className="w-8 h-8 rounded-full bg-[#0B0F0E] text-white font-mono text-xs font-semibold flex items-center justify-center shrink-0">
-              {user.name?.[0] || 'U'}
+              {getInitials(user.name)}
             </span>
             {!collapsed && (
               <>

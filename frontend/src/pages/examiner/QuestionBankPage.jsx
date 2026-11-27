@@ -6,12 +6,24 @@ import { toast } from 'sonner';
 import { validateImportFile, parseCsvSafe } from '../../lib/csv';
 import gsap from 'gsap';
 import { Flip } from 'gsap/Flip';
-import { Plus, Upload, Trash2, Copy, Edit3, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Upload, Trash2, Copy, Edit3, ArrowUp, ArrowDown, BookOpen } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 
 gsap.registerPlugin(Flip);
 
 const PAGE_SIZE = 10;
+
+const normalizeType = (t) => {
+  if (t === 'single' || t === 'mcq_single') return 'single';
+  if (t === 'multiple' || t === 'mcq_multi') return 'multiple';
+  return 'written';
+};
+
+const normalizeDiff = (d) => {
+  if (d === 1 || d === '1' || d === 'easy') return 'easy';
+  if (d === 3 || d === '3' || d === 'hard') return 'hard';
+  return 'medium';
+};
 
 const emptyForm = {
   id: null,
@@ -28,10 +40,6 @@ const emptyForm = {
     { id: 'opt-2', text: '', isCorrect: false },
   ],
 };
-
-const normalizeType = (t) => (t === 'mcq_single' ? 'single' : t === 'mcq_multi' ? 'multiple' : t || 'single');
-const normalizeDiff = (d) => (d === 1 || d === '1' ? 'easy' : d === 2 || d === '2' ? 'medium' : d === 3 || d === '3' ? 'hard' : d || 'medium');
-const diffRank = (d) => (d === 'hard' ? 3 : d === 'medium' ? 2 : 1);
 
 export const QuestionBankPage = () => {
   const [questions, setQuestions] = useState([]);
@@ -55,9 +63,8 @@ export const QuestionBankPage = () => {
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const reduced = useReducedMotion();
   const [importText, setImportText] = useState(
-    '[\n  { "type": "single", "topic": "Networks", "difficulty": "medium", "text": "Which protocol provides reliable ordered byte-stream delivery?", "options": ["TCP", "UDP"], "correctOptionIndexes": [0], "marks": 2 }\n]'
+    '[\n  { "type": "single", "topic": "Networks", "difficulty": "medium", "text": "Which protocol provides reliable ordered byte-stream delivery?", "marks": 2, "options": [{ "text": "TCP" }, { "text": "UDP" }], "correctOptionIndexes": [0] }\n]'
   );
-  const [importFormat, setImportFormat] = useState('json');
   const [importErrors, setImportErrors] = useState([]);
 
   const listRef = useRef(null);
@@ -101,64 +108,66 @@ export const QuestionBankPage = () => {
   const openEdit = (q) => {
     const correctSet = new Set((q.correctOptionIds || []).map(String));
     setForm({
-      id: q.id,
+      id: q.id || q._id,
       type: normalizeType(q.type),
       topic: q.topic || 'General',
       difficulty: normalizeDiff(q.difficulty),
       text: q.text || '',
       marks: q.marks || 2,
       negativeMarks: q.scheme?.negativeMarks ?? q.negativeMarks ?? 0,
-      multiSelectRule: q.scheme?.mode ?? q.multiSelectRule ?? 'all_or_nothing',
+      multiSelectRule: q.scheme?.mode || q.multiSelectRule || 'all_or_nothing',
       rubric: q.rubric || '',
       options: q.options?.length
-        ? q.options.map((o, idx) => {
-            const oid = String(o.id || o._id || idx);
-            return {
-              id: oid,
-              text: o.text || '',
-              isCorrect: typeof o.isCorrect === 'boolean' ? o.isCorrect : correctSet.has(oid),
-            };
-          })
+        ? q.options.map((o, idx) => ({
+            id: o.id || o.optionId || `opt-${idx}`,
+            text: o.text || '',
+            isCorrect: Boolean(o.isCorrect) || correctSet.has(String(o.optionId || o.id)),
+          }))
         : structuredClone(emptyForm.options),
     });
     setFormError('');
     setShowEditor(true);
   };
 
-  const buildQuestionPayload = (src) => {
-    const type = normalizeType(src.type);
-    const validOpts = (src.options || []).filter((o) => o.text?.trim());
-    const base = {
+  const buildQuestionPayload = (raw) => {
+    const type = normalizeType(raw.type);
+    const difficulty = normalizeDiff(raw.difficulty);
+    const validOpts = (raw.options || []).filter((o) => o.text?.trim());
+    const payload = {
       type,
-      topic: (src.topic || 'General').trim(),
-      difficulty: normalizeDiff(src.difficulty),
-      text: src.text.trim(),
-      marks: Number(src.marks),
+      topic: (raw.topic || 'General').trim() || 'General',
+      difficulty,
+      text: (raw.text || '').trim(),
+      marks: Number(raw.marks),
       scheme: {
-        mode: src.multiSelectRule || src.scheme?.mode || 'all_or_nothing',
-        negativeMarks: Number(src.negativeMarks ?? src.scheme?.negativeMarks ?? 0) || 0,
+        mode: type === 'multiple' ? raw.multiSelectRule || 'all_or_nothing' : 'all_or_nothing',
+        negativeMarks: Number(raw.negativeMarks) || 0,
       },
-      rubric: src.rubric || '',
+      rubric: raw.rubric || '',
     };
     if (type !== 'written') {
-      base.options = validOpts.map((o) => ({ text: o.text.trim() }));
-      base.correctOptionIndexes = validOpts.reduce((acc, o, i) => (o.isCorrect ? [...acc, i] : acc), []);
+      payload.options = validOpts.map((o) => ({ text: o.text.trim() }));
+      payload.correctOptionIndexes = validOpts.reduce((acc, o, i) => {
+        if (o.isCorrect) acc.push(i);
+        return acc;
+      }, []);
     }
-    return base;
+    return payload;
   };
 
   const handleSaveQuestion = async (e) => {
     e.preventDefault();
     setFormError('');
-    if (!form.text.trim() || form.text.trim().length < 3) return setFormError('Question stem must be at least 3 characters.');
-    if (form.type !== 'written') {
+    const normType = normalizeType(form.type);
+    if (!form.text.trim()) return setFormError('Question stem is required.');
+    if (normType !== 'written') {
       const validOpts = form.options.filter((o) => o.text.trim());
       if (validOpts.length < 2) return setFormError('Provide at least 2 non-empty options.');
       const correctCount = validOpts.filter((o) => o.isCorrect).length;
-      if (form.type === 'single' && correctCount !== 1) {
+      if (normType === 'single' && correctCount !== 1) {
         return setFormError('Single MCQ must have exactly 1 correct option.');
       }
-      if (form.type === 'multiple' && correctCount < 1) {
+      if (normType === 'multiple' && correctCount < 1) {
         return setFormError('Multi-select MCQ must have at least 1 correct option.');
       }
     }
@@ -186,14 +195,15 @@ export const QuestionBankPage = () => {
   const handleDuplicate = async (q) => {
     try {
       const correctSet = new Set((q.correctOptionIds || []).map(String));
-      const opts = (q.options || []).map((o, idx) => ({
-        text: o.text,
-        isCorrect: typeof o.isCorrect === 'boolean' ? o.isCorrect : correctSet.has(String(o.id || o._id || idx)),
-      }));
       const payload = buildQuestionPayload({
         ...q,
         text: `${q.text} (Copy)`,
-        options: opts,
+        negativeMarks: q.scheme?.negativeMarks ?? q.negativeMarks ?? 0,
+        multiSelectRule: q.scheme?.mode || q.multiSelectRule || 'all_or_nothing',
+        options: (q.options || []).map((o) => ({
+          ...o,
+          isCorrect: Boolean(o.isCorrect) || correctSet.has(String(o.optionId || o.id)),
+        })),
       });
       const res = await questionService.createQuestion(payload);
       setQuestions((prev) => [res.data.question, ...prev]);
@@ -215,32 +225,37 @@ export const QuestionBankPage = () => {
   const handleImport = async () => {
     setImportErrors([]);
     try {
-      const res =
-        importFormat === 'csv'
-          ? await questionService.importQuestions({ format: 'csv', content: importText })
-          : await questionService.importQuestions(JSON.parse(importText), 'json');
+      const parsed = JSON.parse(importText);
+      const rows = Array.isArray(parsed) ? parsed : [parsed];
+      const res = await questionService.importQuestions({
+        format: 'json',
+        content: JSON.stringify(rows),
+      });
       const { imported, importedCount, errors } = res.data || {};
-      const count = imported ?? importedCount ?? 0;
       setImportErrors(errors || []);
-      toast.success(`Imported ${count} question(s)`);
+      toast.success(`Imported ${imported ?? importedCount ?? 0} question(s)`);
       load();
     } catch (err) {
-      toast.error(err.message || 'Import failed');
+      toast.error(err.message || 'Invalid JSON format');
     }
   };
 
   const topics = Array.from(new Set(questions.map((q) => q.topic).filter(Boolean)));
 
+  const diffRank = { easy: 1, medium: 2, hard: 3 };
+
   const filtered = questions
     .filter((q) => {
+      const qDiff = normalizeDiff(q.difficulty);
+      const qType = normalizeType(q.type);
       const matchSearch = !search || q.text.toLowerCase().includes(search.toLowerCase());
       const matchTopic = topicFilter === 'all' || q.topic === topicFilter;
-      const matchDiff = diffFilter === 'all' || normalizeDiff(q.difficulty) === diffFilter;
-      const matchType = typeFilter === 'all' || normalizeType(q.type) === typeFilter;
+      const matchDiff = diffFilter === 'all' || qDiff === diffFilter;
+      const matchType = typeFilter === 'all' || qType === typeFilter;
       return matchSearch && matchTopic && matchDiff && matchType;
     })
     .sort((a, b) => {
-      if (sortBy === 'difficulty') return diffRank(normalizeDiff(b.difficulty)) - diffRank(normalizeDiff(a.difficulty));
+      if (sortBy === 'difficulty') return (diffRank[normalizeDiff(b.difficulty)] || 0) - (diffRank[normalizeDiff(a.difficulty)] || 0);
       if (sortBy === 'marks') return b.marks - a.marks;
       return 0;
     });
@@ -291,10 +306,8 @@ export const QuestionBankPage = () => {
                 if (file.name.toLowerCase().endsWith('.csv')) {
                   const parsed = parseCsvSafe(text);
                   if (parsed.error) return toast.error(parsed.error);
-                  setImportFormat('csv');
-                  setImportText(text);
+                  setImportText(JSON.stringify(parsed.rows, null, 2));
                 } else {
-                  setImportFormat('json');
                   setImportText(text);
                 }
               }}
@@ -375,124 +388,156 @@ export const QuestionBankPage = () => {
           </div>
         )}
 
-        <div className="p-4">
-
-      {loading ? (
-        <div className="space-y-3">
-          <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-20 w-full" />
-        </div>
-      ) : error ? (
-        <ErrorState message={error} onRetry={load} />
-      ) : filtered.length === 0 ? (
-        <EmptyState title="No matching questions" description="Adjust filters or create a new question." />
-      ) : (
-        <>
-          <div ref={listRef} className="space-y-3">
-            {paged.map((q) => (
-              <div
-                key={q.id}
-                data-flip-id={q.id}
-                className="bg-surface border border-line rounded-xl p-4 flex items-start justify-between gap-4"
-              >
-                <div className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    aria-label={`Select question ${q.id}`}
-                    checked={selectedIds.includes(q.id)}
-                    onChange={(e) =>
-                      setSelectedIds((prev) =>
-                        e.target.checked ? [...prev, q.id] : prev.filter((x) => x !== q.id)
-                      )
-                    }
-                    className="mt-1 accent-[#2F5BFF]"
-                  />
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-ink-muted mb-1">
-                      <Badge tone="cobalt">
-                        {normalizeType(q.type) === 'single' ? 'Single Choice' : normalizeType(q.type) === 'multiple' ? 'Multi-Select' : 'Written'}
-                      </Badge>
-                      <span>{q.topic}</span>
-                      <Badge tone={normalizeDiff(q.difficulty) === 'easy' ? 'success' : normalizeDiff(q.difficulty) === 'medium' ? 'warning' : 'danger'}>
-                        {normalizeDiff(q.difficulty)}
-                      </Badge>
-                      <span>{q.marks} marks</span>
-                    </div>
-                    <p className="text-sm font-medium text-ink">{q.text}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1 shrink-0 relative">
-                  <Tooltip label="Edit question">
-                    <button
-                      onClick={() => openEdit(q)}
-                      aria-label="Edit question"
-                      className="p-2 text-ink-muted hover:text-ink rounded-lg transition-transform active:scale-95"
+        {loading ? (
+          <div className="space-y-3 p-5">
+            <Skeleton className="h-14 w-full" />
+            <Skeleton className="h-14 w-full" />
+          </div>
+        ) : error ? (
+          <div className="p-5">
+            <ErrorState message={error} onRetry={load} />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="p-6">
+            <EmptyState icon={BookOpen} title="No matching questions" description="Adjust filters or create a new question." />
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-zinc-50 dark:bg-white/[0.03] border-b border-[var(--line)] text-[var(--muted)] text-[11px] uppercase font-mono tracking-wider">
+                  <tr>
+                    <th className="px-4 py-3 w-10">
+                      <span className="sr-only">Select</span>
+                    </th>
+                    <th className="px-4 py-3 font-medium">Question &amp; Topic</th>
+                    <th className="px-4 py-3 font-medium">Type</th>
+                    <th className="px-4 py-3 font-medium">Difficulty</th>
+                    <th className="px-4 py-3 font-medium">Marks</th>
+                    <th className="px-4 py-3 font-medium text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody ref={listRef} className="divide-y divide-[var(--line)]">
+                  {paged.map((q) => (
+                    <motion.tr
+                      key={q.id}
+                      layout={!reduced}
+                      transition={{ layout: { type: 'spring', stiffness: 420, damping: 34 } }}
+                      data-flip-id={q.id}
+                      className="group hover:bg-zinc-50/90 dark:hover:bg-white/[0.03] transition-colors"
                     >
-                      <Edit3 className="w-4 h-4" strokeWidth={1.5} />
-                    </button>
-                  </Tooltip>
-                  <Tooltip label="Duplicate question">
-                    <button
-                      onClick={() => handleDuplicate(q)}
-                      aria-label="Duplicate question"
-                      className="p-2 text-ink-muted hover:text-ink rounded-lg transition-transform active:scale-95"
-                    >
-                      <Copy className="w-4 h-4" strokeWidth={1.5} />
-                    </button>
-                  </Tooltip>
-                  <Tooltip label="Delete question">
-                    <button
-                      onClick={() => setConfirmDeleteId(confirmDeleteId === q.id ? null : q.id)}
-                      aria-label="Delete question"
-                      className="p-2 text-ink-muted hover:text-status-danger rounded-lg transition-transform active:scale-95"
-                    >
-                      <Trash2 className="w-4 h-4" strokeWidth={1.5} />
-                    </button>
-                  </Tooltip>
-                  <AnimatePresence>
-                    {confirmDeleteId === q.id && (
-                      <motion.div
-                        initial={reduced ? { opacity: 1 } : { opacity: 0, scale: 0.94, y: -4 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.94, y: -4 }}
-                        transition={{ type: 'spring', stiffness: 450, damping: 28 }}
-                        style={{ transformOrigin: 'top right' }}
-                        className="absolute right-0 top-10 z-30 w-56 p-3 rounded-[12px] luxury-card space-y-2"
-                      >
-                        <p className="text-xs text-ink font-medium">Are you sure?</p>
-                        <div className="flex justify-end gap-1.5">
-                          <Button size="sm" variant="secondary" onClick={() => setConfirmDeleteId(null)}>Cancel</Button>
-                          <Button
-                            size="sm"
-                            variant="danger"
-                            onClick={async () => {
-                              await questionService.deleteQuestion(q.id);
-                              setQuestions((prev) => prev.filter((item) => item.id !== q.id));
-                              setConfirmDeleteId(null);
-                              toast.success('Question deleted');
-                            }}
-                          >
-                            Delete
-                          </Button>
+                      <td className="px-4 py-3.5 align-top">
+                        <input
+                          type="checkbox"
+                          aria-label={`Select question ${q.id}`}
+                          checked={selectedIds.includes(q.id)}
+                          onChange={(e) =>
+                            setSelectedIds((prev) =>
+                              e.target.checked ? [...prev, q.id] : prev.filter((x) => x !== q.id)
+                            )
+                          }
+                          className="mt-1 accent-[#059669]"
+                        />
+                      </td>
+                      <td className="px-4 py-3.5 max-w-lg">
+                        <p className="text-sm font-semibold text-[var(--ink)] line-clamp-2">{q.text}</p>
+                        <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--muted)] mt-1 inline-block">
+                          {q.topic}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <Badge tone="neutral">
+                          {normalizeType(q.type) === 'written' ? 'Subjective' : 'MCQ'}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        {(() => {
+                          const d = normalizeDiff(q.difficulty);
+                          return (
+                            <Badge tone={d === 'easy' ? 'success' : 'neutral'} dot={d === 'hard' ? 'slate' : undefined}>
+                              {d === 'easy' ? 'Easy' : d === 'medium' ? 'Medium' : 'Hard'}
+                            </Badge>
+                          );
+                        })()}
+                      </td>
+                      <td className="px-4 py-3.5 font-mono text-xs tabular-nums text-[var(--muted)]">
+                        {q.marks}
+                      </td>
+                      <td className="px-4 py-3.5 text-right relative">
+                        <div className="inline-flex items-center gap-1 justify-end">
+                          <Tooltip label="Edit question">
+                            <button
+                              onClick={() => openEdit(q)}
+                              aria-label="Edit question"
+                              className="p-2 text-[var(--muted)] hover:text-[var(--ink)] rounded-lg hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors"
+                            >
+                              <Edit3 className="w-4 h-4" strokeWidth={1.5} />
+                            </button>
+                          </Tooltip>
+                          <Tooltip label="Duplicate question">
+                            <button
+                              onClick={() => handleDuplicate(q)}
+                              aria-label="Duplicate question"
+                              className="p-2 text-[var(--muted)] hover:text-[var(--ink)] rounded-lg hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors"
+                            >
+                              <Copy className="w-4 h-4" strokeWidth={1.5} />
+                            </button>
+                          </Tooltip>
+                          <Tooltip label="Delete question">
+                            <button
+                              onClick={() => setConfirmDeleteId(confirmDeleteId === q.id ? null : q.id)}
+                              aria-label="Delete question"
+                              className="p-2 text-[var(--muted)] hover:text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" strokeWidth={1.5} />
+                            </button>
+                          </Tooltip>
                         </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex items-center justify-between text-xs font-mono text-ink-muted pt-2">
-            <span>Page {safePage} of {totalPages} ({filtered.length} questions)</span>
-            <div className="flex gap-2">
-              <Button size="sm" variant="secondary" disabled={safePage <= 1} onClick={() => setPage((p) => p - 1)}>Prev</Button>
-              <Button size="sm" variant="secondary" disabled={safePage >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</Button>
+                        <AnimatePresence>
+                          {confirmDeleteId === q.id && (
+                            <motion.div
+                              initial={reduced ? { opacity: 1 } : { opacity: 0, scale: 0.94, y: -4 }}
+                              animate={{ opacity: 1, scale: 1, y: 0 }}
+                              exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.94, y: -4 }}
+                              transition={{ type: 'spring', stiffness: 450, damping: 28 }}
+                              style={{ transformOrigin: 'top right' }}
+                              className="absolute right-4 top-12 z-30 w-56 p-3 rounded-xl luxury-card space-y-2 text-left"
+                            >
+                              <p className="text-xs text-[var(--ink)] font-medium">Are you sure?</p>
+                              <div className="flex justify-end gap-1.5">
+                                <Button size="sm" variant="secondary" onClick={() => setConfirmDeleteId(null)}>Cancel</Button>
+                                <Button
+                                  size="sm"
+                                  variant="danger"
+                                  onClick={async () => {
+                                    await questionService.deleteQuestion(q.id);
+                                    setQuestions((prev) => prev.filter((item) => item.id !== q.id));
+                                    setConfirmDeleteId(null);
+                                    toast.success('Question deleted');
+                                  }}
+                                >
+                                  Delete
+                                </Button>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </td>
+                    </motion.tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </div>
-        </>
-      )}
-        </div>
+
+            <div className="px-4 py-3 border-t border-[var(--line)] bg-zinc-50/50 dark:bg-white/[0.015] flex items-center justify-between text-xs font-mono text-[var(--muted)]">
+              <span className="tabular-nums">Page {safePage} of {totalPages} ({filtered.length} questions)</span>
+              <div className="flex gap-2">
+                <Button size="sm" variant="secondary" disabled={safePage <= 1} onClick={() => setPage((p) => p - 1)}>Prev</Button>
+                <Button size="sm" variant="secondary" disabled={safePage >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</Button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Create / Edit Question Dialog */}
@@ -528,16 +573,20 @@ export const QuestionBankPage = () => {
           <div>
             <span className="block text-xs font-semibold text-ink mb-1">Difficulty</span>
             <div className="grid grid-cols-3 gap-2">
-              {['easy', 'medium', 'hard'].map((d) => (
+              {[
+                { key: 'easy', label: 'Easy' },
+                { key: 'medium', label: 'Medium' },
+                { key: 'hard', label: 'Hard' },
+              ].map((d) => (
                 <button
-                  key={d}
+                  key={d.key}
                   type="button"
-                  onClick={() => setForm({ ...form, difficulty: d })}
-                  className={`py-2 rounded-lg text-xs font-mono border capitalize ${
-                    form.difficulty === d ? 'bg-cobalt text-white border-cobalt' : 'bg-canvas border-line'
+                  onClick={() => setForm({ ...form, difficulty: d.key })}
+                  className={`py-2 rounded-lg text-xs font-mono border ${
+                    form.difficulty === d.key ? 'bg-cobalt text-white border-cobalt' : 'bg-canvas border-line'
                   }`}
                 >
-                  {d}
+                  {d.label}
                 </button>
               ))}
             </div>
@@ -547,8 +596,7 @@ export const QuestionBankPage = () => {
             <Input
               label="Marks"
               type="number"
-              min={0.25}
-              step={0.25}
+              min={1}
               value={form.marks}
               onChange={(e) => setForm({ ...form, marks: Number(e.target.value) })}
             />

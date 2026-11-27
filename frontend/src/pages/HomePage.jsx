@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { getRoleHome } from '../context/AuthContext';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion, useReducedMotion, useInView, animate } from 'framer-motion';
 import {
   ArrowRight,
   CheckCircle2,
@@ -14,7 +14,10 @@ import {
   Clock,
   Lock,
   Check,
-  Minus,
+  WifiOff,
+  Scale,
+  QrCode,
+  X,
 } from 'lucide-react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
@@ -33,21 +36,21 @@ const ROLE_CARDS = [
     idx: '01',
     role: 'Candidate',
     desc: 'Take server-timed examinations with local outage resilience and view verifiable academic transcripts.',
-    to: '/login',
+    to: '/login?redirect=/candidate',
     icon: GraduationCap,
   },
   {
     idx: '02',
     role: 'Examiner',
     desc: 'Author balanced question banks, preview sandboxes, monitor live attempts, grade and publish.',
-    to: '/login',
+    to: '/login?redirect=/examiner',
     icon: ClipboardCheck,
   },
   {
     idx: '03',
     role: 'Administrator',
     desc: 'Provision institutional accounts, assign governance roles, and audit examination readiness.',
-    to: '/login',
+    to: '/login?redirect=/admin/users',
     icon: Building2,
   },
   {
@@ -72,13 +75,103 @@ const PulseDot = () => (
   </span>
 );
 
+const MetricCounter = ({ target, decimals = 0, prefix = '', suffix = '', reduced }) => {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, amount: 0.4 });
+  const [display, setDisplay] = useState(reduced ? target : 0);
+
+  useEffect(() => {
+    if (reduced || target === 0) {
+      setDisplay(target);
+      return;
+    }
+    if (!inView) return;
+    const ctrl = animate(0, target, {
+      duration: 1.1,
+      ease: [0.22, 1, 0.36, 1],
+      onUpdate: (v) => setDisplay(v),
+    });
+    return () => ctrl.stop();
+  }, [inView, target, reduced]);
+
+  const formatted = decimals > 0 ? Number(display).toFixed(decimals) : Math.round(display);
+  return (
+    <span ref={ref}>
+      {prefix}
+      {formatted}
+      {suffix}
+    </span>
+  );
+};
+
+const RoleCard = ({ item, reduced }) => {
+  const Icon = item.icon;
+  const [spot, setSpot] = useState({ x: 0, y: 0, active: false });
+
+  const handleMove = (e) => {
+    if (reduced || !window.matchMedia('(pointer: fine)').matches) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    setSpot({ x: e.clientX - rect.left, y: e.clientY - rect.top, active: true });
+  };
+
+  return (
+    <motion.div
+      whileHover={reduced ? undefined : { y: -2 }}
+      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+      className="relative rounded-2xl"
+    >
+      <Link
+        to={item.to}
+        onMouseMove={handleMove}
+        onMouseLeave={() => setSpot((s) => ({ ...s, active: false }))}
+        className="group relative overflow-hidden luxury-card luxury-card-hover rounded-2xl p-7 flex flex-col justify-between min-h-[205px]"
+      >
+        {!reduced && spot.active && (
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 rounded-2xl transition-opacity duration-200"
+            style={{
+              padding: '1.5px',
+              background: `radial-gradient(240px circle at ${spot.x}px ${spot.y}px, rgba(5, 150, 105, 0.45), transparent 65%)`,
+              WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+              WebkitMaskComposite: 'xor',
+              maskComposite: 'exclude',
+            }}
+          />
+        )}
+        <div className="relative z-10">
+          <div className="flex items-start justify-between gap-4 mb-5">
+            <span className="w-11 h-11 rounded-xl bg-[#ECFDF5] border border-[#A7F3D0] text-[#059669] flex items-center justify-center shrink-0">
+              <Icon className="w-5 h-5" strokeWidth={1.75} />
+            </span>
+            <span className="font-mono text-sm font-semibold text-[#059669] tabular-nums">{item.idx}</span>
+          </div>
+          <h3 className="font-display font-semibold text-xl sm:text-2xl tracking-[-0.02em] text-[#0B0F0E] mb-2">
+            {item.role}
+          </h3>
+          <p className="text-sm text-[#4B5563] leading-relaxed">{item.desc}</p>
+        </div>
+
+        <div className="relative z-10 pt-4 mt-5 border-t border-[#E4E8E6] flex items-center justify-end">
+          <span className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-[0.08em] text-[#059669] font-semibold">
+            Enter Portal
+            <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" strokeWidth={1.75} />
+          </span>
+        </div>
+      </Link>
+    </motion.div>
+  );
+};
+
 export const HomePage = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   const reduced = useReducedMotion();
   const rootRef = useRef(null);
   const stageRef = useRef(null);
   const ctaRef = useRef(null);
   const [loopIdx, setLoopIdx] = useState(0);
+  const [clockSec, setClockSec] = useState(42 * 60 + 18);
+  const [hoveredRow, setHoveredRow] = useState(null);
   const [parallax, setParallax] = useState({ x: 0, y: 0 });
   const [ctaOffset, setCtaOffset] = useState({ x: 0, y: 0 });
 
@@ -89,19 +182,30 @@ export const HomePage = () => {
         setLoopIdx((i) => (i + 1) % SAVE_LOOP.length);
       }
     }, 2400);
-    return () => clearInterval(id);
+    const secId = setInterval(() => {
+      if (!document.hidden) {
+        setClockSec((s) => (s > 60 ? s - 1 : 42 * 60 + 18));
+      }
+    }, 1000);
+    return () => {
+      clearInterval(id);
+      clearInterval(secId);
+    };
   }, [reduced]);
+
+  const clockFormatted = `${String(Math.floor(clockSec / 60)).padStart(2, '0')}:${String(clockSec % 60).padStart(2, '0')}`;
+  const clockDashOffset = 138.2 * (1 - clockSec / (50 * 60));
 
   useGSAP(
     () => {
       const mm = gsap.matchMedia();
       let lenis;
       mm.add('(prefers-reduced-motion: no-preference)', () => {
-        const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+        const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
         tl.fromTo(
           '.hero-line',
-          { y: 16, opacity: 0.1 },
-          { y: 0, opacity: 1, duration: 0.55, stagger: 0.06, clearProps: 'transform,opacity' }
+          { yPercent: 100, opacity: 1 },
+          { yPercent: 0, opacity: 1, duration: 0.65, stagger: 0.07, clearProps: 'transform' }
         )
           .fromTo(
             '.hero-fade',
@@ -181,20 +285,20 @@ export const HomePage = () => {
               <p className="hero-fade eyebrow-rule font-mono text-xs uppercase tracking-[0.12em] text-[#065F46]">
                 Established 2014 · Institutional Assessment Infrastructure
               </p>
-              <h1 className="font-display font-extrabold text-[clamp(40px,5.4vw,72px)] tracking-[-0.04em] leading-[1.02] text-[#0B0F0E]">
-                <span className="block overflow-hidden">
+              <h1 className="font-display font-extrabold text-[clamp(40px,5.4vw,72px)] tracking-[-0.04em] leading-[1.12] text-ink">
+                <span className="block overflow-hidden pb-[0.14em] -mb-[0.14em]">
                   <span className="hero-line block">Exams that stay</span>
                 </span>
-                <span className="block overflow-hidden">
+                <span className="block overflow-hidden pb-[0.14em] -mb-[0.14em]">
                   <span className="hero-line block">
                     <span className="text-[#059669]">fair</span> when everything
                   </span>
                 </span>
-                <span className="block overflow-hidden">
+                <span className="block overflow-hidden pb-[0.14em] -mb-[0.14em]">
                   <span className="hero-line block">else fails.</span>
                 </span>
               </h1>
-              <p className="hero-fade text-base sm:text-lg text-[#4B5563] max-w-[54ch] leading-relaxed">
+              <p className="hero-fade text-base sm:text-lg text-ink-muted max-w-[54ch] leading-relaxed">
                 Trusted by universities, medical boards, and licensing bodies to deliver server-timed, outage-resilient, and psychometrically fair assessments at scale.
               </p>
 
@@ -214,10 +318,19 @@ export const HomePage = () => {
                     />
                   )}
                   <span className="relative z-10 inline-flex items-center gap-2">
-                    {isAuthenticated ? `Open ${user.role} workspace` : 'Sign in'}
+                    {isAuthenticated ? `Open ${user.role} Workspace` : 'Sign in'}
                     <ArrowRight className="w-4 h-4 text-[#10B981]" strokeWidth={2} />
                   </span>
                 </Link>
+                {isAuthenticated && (
+                  <button
+                    type="button"
+                    onClick={logout}
+                    className="min-h-[48px] inline-flex items-center gap-2 border border-[#E4E8E6] hover:border-[#FECACA] bg-white hover:bg-[#FEF2F2] text-[#4B5563] hover:text-[#DC2626] font-medium px-5 py-3 rounded-full text-sm transition-colors shadow-sm"
+                  >
+                    Sign out / Switch account
+                  </button>
+                )}
                 <Link
                   to="/verify/VER-2026-SEMS-8841"
                   className="min-h-[48px] inline-flex items-center gap-2 border border-[#E4E8E6] hover:border-[#D1D8D5] bg-white hover:bg-[#F3F5F4] text-[#0B0F0E] font-medium px-6 py-3 rounded-full text-sm transition-all duration-200 shadow-sm"
@@ -240,9 +353,9 @@ export const HomePage = () => {
                 }}
                 className="luxury-card rounded-2xl p-5 sm:p-6 space-y-5 transition-transform duration-200 ease-out"
               >
-                <div className="flex items-center justify-between gap-2 pb-3.5 border-b border-[#E4E8E6]">
+                <div className="flex items-center justify-between gap-2 pb-3.5 border-b border-line">
                   <div className="min-w-0">
-                    <div className="inline-flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.1em] text-[#6B7280]">
+                    <div className="inline-flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.1em] text-ink-muted">
                       <PulseDot />
                       Live Attempt · CS-402
                     </div>
@@ -250,7 +363,7 @@ export const HomePage = () => {
                       {currentLoop.label}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#0B0F0E] text-white font-mono text-xs tabular-nums">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#0B0F0E] dark:bg-[#181F1D] text-white font-mono text-xs tabular-nums border border-transparent dark:border-white/15">
                     <svg width="16" height="16" viewBox="0 0 22 22" aria-hidden="true">
                       <circle cx="11" cy="11" r="8" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2.5" />
                       <circle
@@ -270,41 +383,41 @@ export const HomePage = () => {
                 </div>
 
                 <div className="space-y-3">
-                  <p className="font-display font-semibold text-lg tracking-[-0.02em] text-[#0B0F0E] leading-snug">
+                  <p className="font-display font-semibold text-lg tracking-[-0.02em] text-ink leading-snug">
                     Explain how a bounded late-sync window preserves fairness during a network outage.
                   </p>
-                  <div className="p-3 rounded-xl border border-[#E4E8E6] bg-[#F3F5F4] text-xs text-[#4B5563] font-mono">
+                  <div className="p-3 rounded-xl border border-line bg-[var(--hero-bar-bg)] text-xs text-[var(--hero-bar-ink)] font-mono">
                     {currentLoop.sub} · Deadline unchanged: 11:42 AM
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-2.5 border-t border-[#E4E8E6]">
+                <div className="flex items-center justify-between pt-2.5 border-t border-line">
                   <div className="flex gap-1.5 font-mono text-[11px]">
                     {[1, 2, 3, 4, 5].map((n) => (
                       <span
                         key={n}
                         className={`w-7 h-7 rounded-lg flex items-center justify-center border ${
                           n === 4
-                            ? 'border-[#0B0F0E] bg-[#0B0F0E] text-white font-semibold'
+                            ? 'border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-ink)] font-semibold'
                             : n < 4
-                            ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46] font-medium'
-                            : 'border-[#E4E8E6] text-[#6B7280]'
+                            ? 'bg-[var(--hero-chip-bg)] border-[var(--hero-chip-border)] text-[var(--hero-chip-ink)] font-medium'
+                            : 'border-line text-ink-muted'
                         }`}
                       >
                         {n}
                       </span>
                     ))}
                   </div>
-                  <span className="text-[11px] font-mono text-[#6B7280]">12 questions</span>
+                  <span className="text-[11px] font-mono text-ink-muted tabular-nums">12 questions</span>
                 </div>
               </div>
 
-              <div className="hidden sm:flex items-center gap-2 absolute -bottom-4 -left-3 bg-white border border-[#E4E8E6] shadow-md rounded-full px-3.5 py-1.5 text-[11px] font-mono text-[#0B0F0E]">
-                <ShieldCheck className="w-3.5 h-3.5 text-[#059669]" strokeWidth={2} />
+              <div className="hidden sm:flex items-center gap-2 absolute -bottom-4 -left-3 bg-[var(--hero-pill-bg)] border border-line shadow-md rounded-full px-3.5 py-1.5 text-[11px] font-mono text-ink tabular-nums">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#059669] dark:text-[#34D399]" strokeWidth={2} />
                 Verified · VER-8841
               </div>
-              <div className="hidden sm:flex items-center gap-2 absolute -top-3.5 -right-2 bg-white border border-[#E4E8E6] shadow-md rounded-full px-3.5 py-1.5 text-[11px] font-mono text-[#0B0F0E]">
-                Difficulty Index <strong className="text-[#059669]">2.10 / 2.10</strong>
+              <div className="hidden sm:flex items-center gap-2 absolute -top-3.5 -right-2 bg-[var(--hero-pill-bg)] border border-line shadow-md rounded-full px-3.5 py-1.5 text-[11px] font-mono text-ink tabular-nums">
+                Difficulty Index <strong className="text-[#059669] dark:text-[#34D399] tabular-nums">2.10 / 2.10</strong>
               </div>
             </div>
           </div>
@@ -317,7 +430,7 @@ export const HomePage = () => {
             </div>
             <div className="flex items-center gap-3">
               <span className="text-[#059669] font-semibold">02</span>
-              <span>Idempotent submission</span>
+              <span>Duplicate-safe submission</span>
             </div>
             <div className="flex items-center gap-3">
               <span className="text-[#059669] font-semibold">03</span>
@@ -359,14 +472,14 @@ export const HomePage = () => {
             className="grid grid-cols-2 lg:grid-cols-4 border-b border-[#E4E8E6] divide-y lg:divide-y-0 sm:divide-x divide-[#E4E8E6]"
           >
             {[
-              { val: '12+ Years', label: 'Serving Academic & Licensing Institutions' },
-              { val: '4.8M+', label: 'High-Stakes Attempts Delivered' },
-              { val: '99.99%', label: 'Verified Uptime Across Global Windows' },
-              { val: '0 sec', label: 'Tolerated Client-Clock Drift' },
+              { target: 12, decimals: 0, suffix: '+ Years', label: 'Serving Academic & Licensing Institutions' },
+              { target: 4.8, decimals: 1, suffix: 'M+', label: 'High-Stakes Attempts Delivered' },
+              { target: 99.99, decimals: 2, suffix: '%', label: 'Verified Uptime Across Global Windows' },
+              { target: 0, decimals: 0, suffix: ' sec', label: 'Tolerated Client-Clock Drift' },
             ].map((m) => (
-              <div key={m.val} className="py-6 px-4 first:pl-0 last:pr-0">
+              <div key={m.label} className="py-6 px-4 first:pl-0 last:pr-0">
                 <div className="font-display font-extrabold text-2xl sm:text-3xl tracking-[-0.03em] text-[#0B0F0E] tabular-nums">
-                  {m.val}
+                  <MetricCounter target={m.target} decimals={m.decimals} suffix={m.suffix} reduced={reduced} />
                 </div>
                 <div className="text-[11px] font-mono text-[#6B7280] mt-1">{m.label}</div>
               </div>
@@ -399,8 +512,16 @@ export const HomePage = () => {
             <article className="scroll-chapter grid grid-cols-1 lg:grid-cols-12 gap-8 items-center pb-12 border-b border-[#E4E8E6]">
               <div className="lg:col-span-5 space-y-3">
                 <span className="font-display font-extrabold text-4xl tracking-[-0.03em] text-[#059669] block">01</span>
-                <h3 className="font-display font-bold text-2xl sm:text-3xl tracking-[-0.02em] leading-[1.15] text-[#0B0F0E]">
-                  The server keeps the clock.
+                <h3 className="font-display font-bold text-2xl sm:text-3xl tracking-[-0.02em] leading-[1.15] text-[#0B0F0E] overflow-hidden">
+                  <motion.span
+                    className="block"
+                    initial={reduced ? false : { y: '100%' }}
+                    whileInView={{ y: '0%' }}
+                    viewport={{ once: true, amount: 0.4 }}
+                    transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    The server keeps the clock.
+                  </motion.span>
                 </h3>
                 <p className="text-sm sm:text-base text-[#4B5563] max-w-[54ch] leading-relaxed">
                   Every countdown is anchored to the server&apos;s UTC deadline via minimum-RTT offset sampling. Changing the local device clock never adds a single second.
@@ -431,7 +552,7 @@ export const HomePage = () => {
                       <div className="inline-flex items-center gap-1 text-[11px] font-mono uppercase text-[#10B981] mb-1">
                         <Lock className="w-3 h-3" /> Authoritative UTC Server Clock
                       </div>
-                      <div className="font-mono text-2xl text-white font-semibold tabular-nums">42:18</div>
+                      <div className="font-mono text-2xl text-white font-semibold tabular-nums">{clockFormatted}</div>
                       <div className="text-[11px] font-mono text-white/70 mt-1">Deadline: 11:42:00 UTC</div>
                     </div>
                     <svg width="56" height="56" viewBox="0 0 56 56" aria-hidden="true" className="shrink-0">
@@ -445,7 +566,7 @@ export const HomePage = () => {
                         strokeWidth="4"
                         strokeLinecap="round"
                         strokeDasharray="138.2"
-                        strokeDashoffset={28 + loopIdx * 6}
+                        strokeDashoffset={clockDashOffset}
                         transform="rotate(-90 28 28)"
                         style={{ transition: 'stroke-dashoffset 600ms ease-out' }}
                       />
@@ -459,8 +580,16 @@ export const HomePage = () => {
             <article className="scroll-chapter grid grid-cols-1 lg:grid-cols-12 gap-8 items-center pb-12 border-b border-[#E4E8E6]">
               <div className="lg:col-span-5 space-y-3">
                 <span className="font-display font-extrabold text-4xl tracking-[-0.03em] text-[#059669] block">02</span>
-                <h3 className="font-display font-bold text-2xl sm:text-3xl tracking-[-0.02em] leading-[1.15] text-[#0B0F0E]">
-                  Answers survive outages.
+                <h3 className="font-display font-bold text-2xl sm:text-3xl tracking-[-0.02em] leading-[1.15] text-[#0B0F0E] overflow-hidden">
+                  <motion.span
+                    className="block"
+                    initial={reduced ? false : { y: '100%' }}
+                    whileInView={{ y: '0%' }}
+                    viewport={{ once: true, amount: 0.4 }}
+                    transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    Answers survive outages.
+                  </motion.span>
                 </h3>
                 <p className="text-sm sm:text-base text-[#4B5563] max-w-[54ch] leading-relaxed">
                   Responses write to IndexedDB first with monotonic sequence numbers. On reconnect, queued answers flush in order within a bounded late-sync window.
@@ -471,9 +600,9 @@ export const HomePage = () => {
                   <span className="inline-flex items-center gap-1.5">
                     <Database className="w-3.5 h-3.5 text-[#059669]" /> Offline-First Sync Pipeline
                   </span>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46]">
-                    <PulseDot />
-                    Monotonic Seq • Idempotent
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white border border-[#E4E4E7] text-[#18181B]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" aria-hidden="true" />
+                    Ordered Sync • Duplicate-Safe
                   </span>
                 </div>
 
@@ -493,14 +622,22 @@ export const HomePage = () => {
                   </div>
 
                   <div className="flex flex-col items-center justify-center py-2">
-                    <div className="w-full flex items-center gap-2">
+                    <div className="relative w-full flex items-center gap-2 overflow-hidden">
                       <span className="h-[2px] flex-1 border-t-2 border-dashed border-[#059669]/40" />
-                      <span className="px-2.5 py-1 rounded-full bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46] font-mono text-[10px] font-semibold uppercase">
+                      <span className="relative z-10 px-2.5 py-1 rounded-full bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46] font-mono text-[10px] font-semibold uppercase">
                         Flush
                       </span>
                       <span className="h-[2px] flex-1 border-t-2 border-dashed border-[#059669]/40" />
+                      {!reduced && (
+                        <motion.span
+                          aria-hidden="true"
+                          className="absolute left-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-[#10B981] shadow-[0_0_8px_#10B981]"
+                          animate={{ x: ['0%', '1400%'], opacity: [0, 1, 1, 0] }}
+                          transition={{ duration: 1.8, repeat: Infinity, ease: 'linear' }}
+                        />
+                      )}
                     </div>
-                    <span className="text-[10px] font-mono text-[#6B7280] mt-1.5">Bounded late-sync</span>
+                    <span className="text-[10px] font-mono text-[#6B7280] mt-1.5">Verified late-sync</span>
                   </div>
 
                   <div className="rounded-xl p-3.5 bg-[#0B0F0E] border border-[#181F1D] space-y-1.5">
@@ -520,8 +657,16 @@ export const HomePage = () => {
             <article className="scroll-chapter grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
               <div className="lg:col-span-5 space-y-3">
                 <span className="font-display font-extrabold text-4xl tracking-[-0.03em] text-[#059669] block">03</span>
-                <h3 className="font-display font-bold text-2xl sm:text-3xl tracking-[-0.02em] leading-[1.15] text-[#0B0F0E]">
-                  Every paper is fair.
+                <h3 className="font-display font-bold text-2xl sm:text-3xl tracking-[-0.02em] leading-[1.15] text-[#0B0F0E] overflow-hidden">
+                  <motion.span
+                    className="block"
+                    initial={reduced ? false : { y: '100%' }}
+                    whileInView={{ y: '0%' }}
+                    viewport={{ once: true, amount: 0.4 }}
+                    transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    Every paper is fair.
+                  </motion.span>
                 </h3>
                 <p className="text-sm sm:text-base text-[#4B5563] max-w-[54ch] leading-relaxed">
                   Blueprint randomization draws distinct questions per candidate while locking topic and difficulty distribution across every generated paper.
@@ -571,86 +716,127 @@ export const HomePage = () => {
         </section>
 
         {/* "Why Institutions Switch" Comparison Matrix */}
-        <section aria-labelledby="comparison-heading" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 pb-4">
-          <div className="max-w-2xl mb-10">
+        <section aria-labelledby="comparison-heading" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 pb-8">
+          <div className="max-w-2xl mb-12">
             <p className="eyebrow-rule font-mono text-xs uppercase tracking-[0.12em] text-[#065F46]">
               The Institutional Standard
             </p>
-            <h2 id="comparison-heading" className="font-display font-bold text-3xl sm:text-4xl tracking-[-0.03em] leading-[1.1] text-[#0B0F0E] mt-2">
+            <h2 id="comparison-heading" className="font-display font-bold text-3xl sm:text-4xl tracking-[-0.03em] leading-[1.1] text-ink mt-2">
               Built where general learning platforms stop.
             </h2>
-            <p className="text-sm sm:text-base text-[#4B5563] mt-3 leading-relaxed">
+            <p className="text-sm sm:text-base text-ink-muted mt-3 leading-relaxed">
               Platforms like Coursera and Khan Academy excel at self-paced courses and practice quizzes. SEMS is purpose-built for degree-critical and licensing examinations.
             </p>
           </div>
 
-          <div className="luxury-card rounded-2xl overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[640px]">
-                <thead>
-                  <tr className="border-b border-[#E4E8E6]">
-                    <th className="py-4 px-6 text-xs font-mono uppercase tracking-[0.1em] text-[#6B7280] w-[24%]">
-                      Capability
-                    </th>
-                    <th className="py-4 px-6 text-xs font-mono uppercase tracking-[0.1em] text-[#6B7280] w-[36%]">
-                      General LMS &amp; MOOCs (Coursera, Khan Academy)
-                    </th>
-                    <th className="py-4 px-6 text-xs font-mono uppercase tracking-[0.1em] text-[#065F46] bg-[#ECFDF5] border-l border-[#A7F3D0] w-[40%]">
-                      <span className="inline-flex items-center gap-2 font-semibold">
-                        <PulseDot />
-                        SEMS Suite
-                      </span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#E4E8E6] text-sm">
-                  {[
-                    {
-                      cap: 'Timing Authority',
-                      mooc: 'Client-side browser timer',
-                      sems: 'Zero-trust UTC server clock (RTT-synced)',
-                    },
-                    {
-                      cap: 'Outage Resilience',
-                      mooc: 'Session lost on disconnect',
-                      sems: 'Offline IndexedDB vault & late-sync ledger',
-                    },
-                    {
-                      cap: 'Paper Fairness',
-                      mooc: 'Basic random question shuffle',
-                      sems: 'Blueprint-balanced difficulty distribution',
-                    },
-                    {
-                      cap: 'Integrity & Privacy',
-                      mooc: 'Invasive webcams or honor code',
-                      sems: 'Non-invasive telemetry & neutral audit trails',
-                    },
-                    {
-                      cap: 'Credential Trust',
-                      mooc: 'Static PDF or profile link',
-                      sems: 'Cryptographic QR transcripts & public registry',
-                    },
-                  ].map((row) => (
-                    <tr key={row.cap} className="hover:bg-[#FAFBF9]/60 transition-colors">
-                      <td className="py-4 px-6 font-display font-semibold text-[#0B0F0E]">{row.cap}</td>
-                      <td className="py-4 px-6 text-[#6B7280]">
-                        <span className="inline-flex items-center gap-2">
-                          <Minus className="w-3.5 h-3.5 text-[#9CA3AF] shrink-0" strokeWidth={2} />
-                          {row.mooc}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6 font-medium text-[#065F46] bg-[#ECFDF5]/60 border-l border-[#A7F3D0]">
-                        <span className="inline-flex items-center gap-2">
-                          <Check className="w-4 h-4 text-[#059669] shrink-0" strokeWidth={2.25} />
-                          {row.sems}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          {(() => {
+            const rows = [
+              {
+                cap: 'Timing Authority',
+                icon: Clock,
+                mooc: 'Client-side browser timer',
+                sems: 'Zero-trust UTC server clock (RTT-synced)',
+              },
+              {
+                cap: 'Outage Resilience',
+                icon: WifiOff,
+                mooc: 'Session lost on disconnect',
+                sems: 'Offline IndexedDB vault & late-sync ledger',
+              },
+              {
+                cap: 'Paper Fairness',
+                icon: Scale,
+                mooc: 'Basic random question shuffle',
+                sems: 'Blueprint-balanced difficulty distribution',
+              },
+              {
+                cap: 'Integrity & Privacy',
+                icon: ShieldCheck,
+                mooc: 'Invasive webcams or honor code',
+                sems: 'Non-invasive telemetry & neutral audit trails',
+              },
+              {
+                cap: 'Credential Trust',
+                icon: QrCode,
+                mooc: 'Static PDF or profile link',
+                sems: 'Cryptographic QR transcripts & public registry',
+              },
+            ];
+
+            return (
+              <div className="rounded-2xl border border-[#E4E4E7] dark:border-white/10 shadow-[var(--card-shadow)] overflow-hidden bg-white dark:bg-[#111615]">
+                {/* Unified Header Row */}
+                <div className="hidden md:grid md:grid-cols-[1.1fr_1.3fr_1.5fr] items-stretch border-b border-[#E4E4E7] dark:border-white/10">
+                  <div className="px-6 py-4 text-[11px] font-mono uppercase tracking-[0.1em] text-[#64748B] dark:text-[#9CA3AF] flex items-center">
+                    Capability
+                  </div>
+                  <div className="px-6 py-4 text-[11px] font-mono uppercase tracking-[0.1em] text-[#64748B] dark:text-[#9CA3AF] flex items-center">
+                    General LMS &amp; MOOCs (Coursera, Khan Academy)
+                  </div>
+                  <div className="px-6 py-4 bg-[#0A0A0A] text-white flex flex-wrap items-center justify-between gap-2">
+                    <span className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-[0.1em] font-semibold text-white">
+                      <PulseDot />
+                      SEMS Suite
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono uppercase tracking-[0.08em] text-[#34D399] bg-emerald-500/15 border border-emerald-500/30">
+                      Institutional Standard
+                    </span>
+                  </div>
+                </div>
+
+                {/* Unified Comparison Rows — Pixel-Aligned Across All 3 Columns */}
+                <div>
+                  {rows.map((row, idx) => {
+                    const Icon = row.icon;
+                    const isHovered = hoveredRow === idx;
+                    const rowBorder = idx > 0 ? 'border-t border-[#E4E4E7] dark:border-white/10' : '';
+                    return (
+                      <div
+                        key={row.cap}
+                        onMouseEnter={() => setHoveredRow(idx)}
+                        onMouseLeave={() => setHoveredRow(null)}
+                        className={`grid grid-cols-1 md:grid-cols-[1.1fr_1.3fr_1.5fr] items-stretch ${rowBorder}`}
+                      >
+                        {/* Capability Cell */}
+                        <div
+                          className={`px-6 py-4 flex items-center gap-2.5 transition-colors ${
+                            isHovered ? 'bg-[#FAFBF9] dark:bg-white/[0.03]' : ''
+                          }`}
+                        >
+                          <Icon className="w-4 h-4 text-[#64748B] dark:text-[#9CA3AF] shrink-0" strokeWidth={1.75} />
+                          <span className="font-display font-semibold text-sm text-[#0B0F0E] dark:text-[#F4F4F5]">
+                            {row.cap}
+                          </span>
+                        </div>
+
+                        {/* Competitor Cell */}
+                        <div
+                          className={`px-6 pb-3 md:py-4 flex items-center gap-2 text-sm text-[#64748B] dark:text-[#9CA3AF] transition-colors ${
+                            isHovered ? 'bg-[#FAFBF9] dark:bg-white/[0.03]' : ''
+                          }`}
+                        >
+                          <X className="w-3.5 h-3.5 text-[#94A3B8] shrink-0" strokeWidth={2} />
+                          <span>{row.mooc}</span>
+                        </div>
+
+                        {/* SEMS Suite Jet-Black Cell */}
+                        <div
+                          className={`px-6 py-4 bg-[#0A0A0A] text-white flex items-center gap-3 ${
+                            idx > 0 ? 'md:border-t md:border-white/[0.08]' : ''
+                          } ${isHovered ? 'bg-[#121615]' : ''} transition-colors`}
+                        >
+                          <span className="w-6 h-6 rounded-full bg-[#10B981]/15 border border-[#10B981]/30 flex items-center justify-center shrink-0">
+                            <Check className="w-3.5 h-3.5 text-[#10B981]" strokeWidth={2.5} />
+                          </span>
+                          <span className="text-sm font-medium text-white">{row.sems}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
         </section>
 
         {/* 2x2 Architectural Role Bento Grid */}
@@ -665,41 +851,9 @@ export const HomePage = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {ROLE_CARDS.map((item) => {
-              const Icon = item.icon;
-              return (
-                <motion.div
-                  key={item.role}
-                  whileHover={reduced ? undefined : { y: -2 }}
-                  transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  <Link
-                    to={item.to}
-                    className="group luxury-card luxury-card-hover rounded-2xl p-7 flex flex-col justify-between min-h-[205px]"
-                  >
-                    <div>
-                      <div className="flex items-start justify-between gap-4 mb-5">
-                        <span className="w-11 h-11 rounded-xl bg-[#ECFDF5] border border-[#A7F3D0] text-[#059669] flex items-center justify-center shrink-0">
-                          <Icon className="w-5 h-5" strokeWidth={1.75} />
-                        </span>
-                        <span className="font-mono text-sm font-semibold text-[#059669] tabular-nums">{item.idx}</span>
-                      </div>
-                      <h3 className="font-display font-semibold text-xl sm:text-2xl tracking-[-0.02em] text-[#0B0F0E] mb-2">
-                        {item.role}
-                      </h3>
-                      <p className="text-sm text-[#4B5563] leading-relaxed">{item.desc}</p>
-                    </div>
-
-                    <div className="pt-4 mt-5 border-t border-[#E4E8E6] flex items-center justify-end">
-                      <span className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-[0.08em] text-[#059669] font-semibold">
-                        Enter Portal
-                        <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" strokeWidth={1.75} />
-                      </span>
-                    </div>
-                  </Link>
-                </motion.div>
-              );
-            })}
+            {ROLE_CARDS.map((item) => (
+              <RoleCard key={item.role} item={item} reduced={reduced} />
+            ))}
           </div>
         </section>
 

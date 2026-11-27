@@ -51,8 +51,10 @@ export const AuthProvider = ({ children }) => {
         try {
           const res = await authService.getMe();
           setUser(res.data?.user || res.user);
-        } catch {
-          logout();
+        } catch (err) {
+          if (err?.statusCode === 401 || err?.statusCode === 403 || err?.code === 'UNAUTHENTICATED') {
+            logout();
+          }
         }
       }
       setLoading(false);

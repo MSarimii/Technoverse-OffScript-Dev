@@ -89,6 +89,64 @@ export const examService = {
   },
   getExamReportUrl: (examId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/exams/${examId}/report.pdf`,
   getDisputes: (examId) => (USE_MOCK ? mockApi.getExamDisputes(examId) : api.get(`/exams/${examId}/disputes`)),
-  resolveDispute: (disputeId, payload) =>
-    USE_MOCK ? mockApi.resolveDispute(disputeId, payload) : api.patch(`/disputes/${disputeId}/resolve`, payload),
+  getAllDisputes: async (examId) => {
+    if (USE_MOCK) return mockApi.getAllDisputes(examId);
+    if (examId) return api.get(`/exams/${examId}/disputes`);
+    const exRes = await api.get('/exams', { params: { limit: 100 } });
+    const exams = exRes.data?.exams || [];
+    const perExam = await Promise.all(
+      exams.map(async (ex) => {
+        try {
+          const r = await api.get(`/exams/${ex.id}/disputes`);
+          return (r.data?.disputes || []).map((d) => ({ ...d, examTitle: d.examTitle || ex.title }));
+        } catch {
+          return [];
+        }
+      })
+    );
+    return { success: true, data: { disputes: perExam.flat() } };
+  },
+  resolveDispute: (disputeId, payload) => {
+    if (USE_MOCK) return mockApi.resolveDispute(disputeId, payload);
+    const normalized = {
+      status: payload.status === 'resolved' ? 'accepted' : payload.status,
+      resolutionNote: payload.resolutionNote ?? payload.reason ?? '',
+      ...(payload.adjustedScore !== undefined
+        ? { adjustedScore: payload.adjustedScore }
+        : payload.newMarks !== undefined
+        ? { adjustedScore: payload.newMarks }
+        : {}),
+    };
+    return api.patch(`/disputes/${disputeId}/resolve`, normalized);
+  },
+  getIntegrityFlags: async (examId) => {
+    if (USE_MOCK) return mockApi.getIntegrityFlags(examId);
+    const mapIncidents = (list, examTitle) =>
+      (list || []).map((inc) => ({
+        ...inc,
+        examTitle: examTitle || inc.examTitle || 'Examination',
+        candidateName: inc.candidate?.name || inc.candidateName || 'Candidate',
+        timestamp: inc.occurredAt || inc.createdAt,
+        reviewed: inc.reviewStatus && inc.reviewStatus !== 'new',
+      }));
+    if (examId) {
+      const r = await api.get(`/exams/${examId}/incidents`);
+      return { success: true, data: { flags: mapIncidents(r.data?.incidents) } };
+    }
+    const exRes = await api.get('/exams', { params: { limit: 100 } });
+    const exams = exRes.data?.exams || [];
+    const perExam = await Promise.all(
+      exams.map(async (ex) => {
+        try {
+          const r = await api.get(`/exams/${ex.id}/incidents`);
+          return mapIncidents(r.data?.incidents, ex.title);
+        } catch {
+          return [];
+        }
+      })
+    );
+    return { success: true, data: { flags: perExam.flat() } };
+  },
+  markFlagReviewed: (flagId) =>
+    USE_MOCK ? mockApi.markFlagReviewed(flagId) : api.patch(`/incidents/${flagId}`, { reviewStatus: 'reviewed' }),
 };

@@ -1,19 +1,32 @@
-import { Toaster as SonnerToaster } from 'sonner';
-import { AlertCircle, CheckCircle2, Clock, WifiOff, RefreshCw, Inbox } from 'lucide-react';
+import { useState } from 'react';
+import { Toaster as SonnerToaster, toast } from 'sonner';
+import { AlertCircle, CheckCircle2, Clock, WifiOff, RefreshCw, Inbox, Copy, Check } from 'lucide-react';
 
 const BADGE_STYLES = {
-  neutral: 'bg-subtle text-ink border-line',
-  cobalt: 'bg-[#ECFDF5] text-[#065F46] border-[#A7F3D0]',
-  success: 'bg-[#ECFDF5] text-[#065F46] border-[#A7F3D0]',
-  warning: 'bg-amber-50 text-amber-900 border-amber-200',
-  danger: 'bg-[#FEF2F2] text-[#DC2626] border-[#FECACA]',
+  neutral: 'bg-[#F4F4F5] text-[#18181B] border-[#E4E4E7]',
+  cobalt: 'bg-white text-[#18181B] border-[#E4E4E7]',
+  success: 'bg-white text-[#18181B] border-[#E4E4E7]',
+  warning: 'bg-white text-[#18181B] border-[#E4E4E7]',
+  danger: 'bg-white text-[#18181B] border-[#E4E4E7]',
 };
 
-export const Badge = ({ tone = 'neutral', className = '', children }) => (
-  <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono border ${BADGE_STYLES[tone]} ${className}`}>
-    {children}
-  </span>
-);
+const DOT_COLORS = {
+  cobalt: 'bg-[#10B981]',
+  success: 'bg-[#10B981]',
+  warning: 'bg-[#F59E0B]',
+  danger: 'bg-[#EF4444]',
+  slate: 'bg-[#64748B]',
+};
+
+export const Badge = ({ tone = 'neutral', dot, className = '', children }) => {
+  const dotColor = dot ? DOT_COLORS[dot] : tone !== 'neutral' ? DOT_COLORS[tone] : null;
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${BADGE_STYLES[tone] || BADGE_STYLES.neutral} ${className}`}>
+      {dotColor && <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor}`} aria-hidden="true" />}
+      {children}
+    </span>
+  );
+};
 
 export const StatusChip = ({ status, label }) => {
   const map = {
@@ -59,10 +72,38 @@ export const Skeleton = ({ className = 'h-4 w-full' }) => (
   <div className={`animate-pulse rounded bg-subtle ${className}`} aria-hidden="true" />
 );
 
-export const EmptyState = ({ title, description, action }) => (
+export const CopyButton = ({ value, toastMessage, children, className = '' }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    if (!value) return;
+    navigator.clipboard?.writeText(value)?.catch(() => {});
+    setCopied(true);
+    toast.success(toastMessage || `Copied ${value}`);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      aria-label={copied ? `Copied ${value}` : `Copy ${value}`}
+      className={`inline-flex items-center gap-1.5 transition-colors ${className}`}
+    >
+      {children}
+      {copied ? (
+        <Check className="w-3.5 h-3.5 text-[#059669] shrink-0" strokeWidth={2.25} />
+      ) : (
+        <Copy className="w-3.5 h-3.5 text-ink-muted shrink-0" strokeWidth={1.75} />
+      )}
+    </button>
+  );
+};
+
+export const EmptyState = ({ icon: Icon = Inbox, title, description, action }) => (
   <div className="bg-surface border border-line rounded-xl p-10 text-center space-y-2">
-    <div className="w-10 h-10 rounded-lg bg-subtle text-ink-muted flex items-center justify-center mx-auto mb-2">
-      <Inbox className="w-5 h-5" aria-hidden="true" />
+    <div className="w-11 h-11 rounded-xl bg-[#F4F4F5] dark:bg-white/5 border border-line/60 text-ink-muted flex items-center justify-center mx-auto mb-3">
+      <Icon className="w-5 h-5" strokeWidth={1.6} aria-hidden="true" />
     </div>
     <h3 className="text-base font-semibold text-ink">{title}</h3>
     {description && <p className="text-sm text-ink-muted max-w-md mx-auto">{description}</p>}
