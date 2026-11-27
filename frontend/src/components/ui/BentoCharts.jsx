@@ -164,10 +164,10 @@ export const BentoDonutChart = ({
           </PieChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <span className="font-display font-bold text-2xl text-[#0A0A0A] dark:text-[#F4F4F5] tabular-nums tracking-[-0.03em] leading-none">
+          <span className="font-display font-bold text-2xl text-[var(--ink)] tabular-nums tracking-[-0.03em] leading-none">
             {total}
           </span>
-          <span className="font-mono text-[10px] uppercase tracking-widest text-zinc-500 dark:text-zinc-400 mt-1">
+          <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--muted)] mt-1">
             Total
           </span>
         </div>
@@ -184,11 +184,11 @@ export const BentoDonutChart = ({
                   style={{ backgroundColor: item.color }}
                   aria-hidden="true"
                 />
-                <span className="text-zinc-500 dark:text-zinc-400 truncate">{item.name}</span>
+                <span className="text-[var(--muted)] truncate">{item.name}</span>
               </div>
-              <div className="font-mono tabular-nums text-[#0A0A0A] dark:text-[#F4F4F5] font-medium shrink-0">
+              <div className="font-mono tabular-nums text-[var(--ink)] font-medium shrink-0">
                 {item.value}{' '}
-                <span className="text-zinc-500 dark:text-zinc-400 text-[11px]">({pct}%)</span>
+                <span className="text-[var(--muted)] text-[11px]">({pct}%)</span>
               </div>
             </div>
           );

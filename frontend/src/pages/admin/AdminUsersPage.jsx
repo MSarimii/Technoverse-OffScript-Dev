@@ -152,18 +152,18 @@ export const AdminUsersPage = () => {
           return (
             <div
               key={kpi.label}
-              className="rounded-2xl bg-white dark:bg-[#111615] border border-[#E4E4E7] dark:border-white/10 shadow-[0_1px_2px_rgba(0,0,0,0.03)] p-5 flex flex-col justify-between gap-2.5"
+              className="rounded-2xl bg-[var(--surface)] border border-[var(--line)] text-[var(--ink)] shadow-[0_1px_2px_rgba(0,0,0,0.03)] p-5 flex flex-col justify-between gap-2.5"
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="text-[11px] font-mono uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
+                <span className="text-[11px] font-mono uppercase tracking-widest text-[var(--muted)]">
                   {kpi.label}
                 </span>
-                <Icon className="w-4 h-4 text-zinc-400 shrink-0" strokeWidth={1.6} aria-hidden="true" />
+                <Icon className="w-4 h-4 text-[var(--muted)] shrink-0" strokeWidth={1.6} aria-hidden="true" />
               </div>
-              <div className="font-display font-bold text-3xl text-[#0A0A0A] dark:text-[#F4F4F5] tabular-nums tracking-[-0.03em]">
+              <div className="font-display font-bold text-3xl text-[var(--ink)] tabular-nums tracking-[-0.03em]">
                 {kpi.val}
               </div>
-              <span className="text-xs text-zinc-500 dark:text-zinc-400">{kpi.caption}</span>
+              <span className="text-xs text-[var(--muted)]">{kpi.caption}</span>
             </div>
           );
         })}
@@ -171,10 +171,10 @@ export const AdminUsersPage = () => {
 
       {/* Interactive Bento Analytics Row */}
       <section aria-label="Platform analytics" className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 min-w-0 rounded-2xl bg-white dark:bg-[#111615] border border-[#E4E4E7] dark:border-white/10 shadow-[0_1px_2px_rgba(0,0,0,0.03)] p-5 space-y-4">
+        <div className="lg:col-span-2 min-w-0 rounded-2xl bg-[var(--surface)] border border-[var(--line)] text-[var(--ink)] shadow-[0_1px_2px_rgba(0,0,0,0.03)] p-5 space-y-4">
           <div>
-            <p className="text-[11px] font-mono uppercase tracking-widest text-zinc-500 dark:text-zinc-400">7-Day Telemetry</p>
-            <h2 className="text-lg font-display font-bold text-[#0A0A0A] dark:text-[#F4F4F5] tracking-[-0.03em]">
+            <p className="text-[11px] font-mono uppercase tracking-widest text-[var(--muted)]">7-Day Telemetry</p>
+            <h2 className="text-lg font-display font-bold text-[var(--ink)] tracking-[-0.03em]">
               Platform Activity & Provisioning
             </h2>
           </div>
@@ -195,10 +195,10 @@ export const AdminUsersPage = () => {
           />
         </div>
 
-        <div className="min-w-0 rounded-2xl bg-white dark:bg-[#111615] border border-[#E4E4E7] dark:border-white/10 shadow-[0_1px_2px_rgba(0,0,0,0.03)] p-5 space-y-4">
+        <div className="min-w-0 rounded-2xl bg-[var(--surface)] border border-[var(--line)] text-[var(--ink)] shadow-[0_1px_2px_rgba(0,0,0,0.03)] p-5 space-y-4">
           <div>
-            <p className="text-[11px] font-mono uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Access Control</p>
-            <h2 className="text-lg font-display font-bold text-[#0A0A0A] dark:text-[#F4F4F5] tracking-[-0.03em]">
+            <p className="text-[11px] font-mono uppercase tracking-widest text-[var(--muted)]">Access Control</p>
+            <h2 className="text-lg font-display font-bold text-[var(--ink)] tracking-[-0.03em]">
               Role & Access Split
             </h2>
           </div>
@@ -206,7 +206,7 @@ export const AdminUsersPage = () => {
             data={[
               { name: 'Administrators', value: adminCount, color: resolvedTheme === 'dark' ? '#F4F4F5' : '#0A0A0A' },
               { name: 'Examiners', value: examinerCount, color: '#10B981' },
-              { name: 'Candidates', value: candidateCount, color: '#94A3B8' },
+              { name: 'Candidates', value: candidateCount, color: resolvedTheme === 'dark' ? '#64748B' : '#94A3B8' },
             ]}
           />
         </div>

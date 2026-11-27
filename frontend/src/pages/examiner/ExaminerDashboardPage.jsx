@@ -115,18 +115,18 @@ export const ExaminerDashboardPage = () => {
               type="button"
               key={tile.key}
               onClick={() => setFilter(tile.key)}
-              className="rounded-2xl bg-white dark:bg-[#111615] border border-[#E4E4E7] dark:border-white/10 shadow-[0_1px_2px_rgba(0,0,0,0.03)] p-5 text-left hover:border-line-strong transition-colors flex flex-col justify-between gap-2.5"
+              className="rounded-2xl bg-[var(--surface)] border border-[var(--line)] text-[var(--ink)] shadow-[0_1px_2px_rgba(0,0,0,0.03)] p-5 text-left hover:border-line-strong transition-colors flex flex-col justify-between gap-2.5"
             >
               <div className="flex items-center justify-between gap-2 w-full">
-                <span className="text-[11px] font-mono uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
+                <span className="text-[11px] font-mono uppercase tracking-widest text-[var(--muted)]">
                   {tile.label}
                 </span>
-                <Icon className="w-4 h-4 text-zinc-400 shrink-0" strokeWidth={1.6} aria-hidden="true" />
+                <Icon className="w-4 h-4 text-[var(--muted)] shrink-0" strokeWidth={1.6} aria-hidden="true" />
               </div>
-              <div className="font-display font-bold text-3xl text-[#0A0A0A] dark:text-[#F4F4F5] tabular-nums tracking-[-0.03em]">
+              <div className="font-display font-bold text-3xl text-[var(--ink)] tabular-nums tracking-[-0.03em]">
                 {tile.val}
               </div>
-              <span className="text-xs text-zinc-500 dark:text-zinc-400">{tile.caption}</span>
+              <span className="text-xs text-[var(--muted)]">{tile.caption}</span>
             </button>
           );
         })}
@@ -134,15 +134,15 @@ export const ExaminerDashboardPage = () => {
 
       {/* Interactive Bento Analytics Row */}
       <section aria-label="Examination analytics" className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 min-w-0 rounded-2xl bg-white dark:bg-[#111615] border border-[#E4E4E7] dark:border-white/10 shadow-[0_1px_2px_rgba(0,0,0,0.03)] p-5 space-y-4">
+        <div className="lg:col-span-2 min-w-0 rounded-2xl bg-[var(--surface)] border border-[var(--line)] text-[var(--ink)] shadow-[0_1px_2px_rgba(0,0,0,0.03)] p-5 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <p className="text-[11px] font-mono uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Cohort Throughput</p>
-              <h2 className="text-lg font-display font-bold text-[#0A0A0A] dark:text-[#F4F4F5] tracking-[-0.03em]">
+              <p className="text-[11px] font-mono uppercase tracking-widest text-[var(--muted)]">Cohort Throughput</p>
+              <h2 className="text-lg font-display font-bold text-[var(--ink)] tracking-[-0.03em]">
                 Submission & Completion Trend
               </h2>
             </div>
-            <span className="text-[11px] font-mono text-zinc-500 dark:text-zinc-400">Last 7 cycles</span>
+            <span className="text-[11px] font-mono text-[var(--muted)]">Last 7 cycles</span>
           </div>
           <BentoAreaChart
             data={[
@@ -161,10 +161,10 @@ export const ExaminerDashboardPage = () => {
           />
         </div>
 
-        <div className="min-w-0 rounded-2xl bg-white dark:bg-[#111615] border border-[#E4E4E7] dark:border-white/10 shadow-[0_1px_2px_rgba(0,0,0,0.03)] p-5 space-y-4">
+        <div className="min-w-0 rounded-2xl bg-[var(--surface)] border border-[var(--line)] text-[var(--ink)] shadow-[0_1px_2px_rgba(0,0,0,0.03)] p-5 space-y-4">
           <div>
-            <p className="text-[11px] font-mono uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Calibration</p>
-            <h2 className="text-lg font-display font-bold text-[#0A0A0A] dark:text-[#F4F4F5] tracking-[-0.03em]">
+            <p className="text-[11px] font-mono uppercase tracking-widest text-[var(--muted)]">Calibration</p>
+            <h2 className="text-lg font-display font-bold text-[var(--ink)] tracking-[-0.03em]">
               Question Bank Difficulty Mix
             </h2>
           </div>
@@ -172,7 +172,7 @@ export const ExaminerDashboardPage = () => {
             data={[
               { name: 'Easy (1.0)', value: 18, color: '#10B981' },
               { name: 'Medium (2.0)', value: 24, color: resolvedTheme === 'dark' ? '#F4F4F5' : '#0A0A0A' },
-              { name: 'Hard (3.0)', value: 12, color: '#94A3B8' },
+              { name: 'Hard (3.0)', value: 12, color: resolvedTheme === 'dark' ? '#64748B' : '#94A3B8' },
             ]}
           />
         </div>
