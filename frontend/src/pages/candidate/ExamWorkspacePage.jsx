@@ -20,6 +20,8 @@ import {
   FlaskConical,
   Bell,
   HelpCircle,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react';
 
 export const ExamWorkspacePage = () => {
@@ -53,6 +55,7 @@ export const ExamWorkspacePage = () => {
   const [showPrefs, setShowPrefs] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showQueueDetail, setShowQueueDetail] = useState(false);
+  const [focusMode, setFocusMode] = useState(false);
 
   // Scratchpad (4.8) & Announcements Drawer
   const [showScratchpad, setShowScratchpad] = useState(false);
@@ -609,6 +612,21 @@ export const ExamWorkspacePage = () => {
           </button>
 
           <button
+            onClick={() => setFocusMode((v) => !v)}
+            aria-label="Toggle focus mode"
+            aria-pressed={focusMode}
+            title={focusMode ? 'Show Question Palette' : 'Focus Mode (Hide Palette)'}
+            className={`min-h-[44px] inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors ${
+              focusMode
+                ? 'bg-[#0A0A0A] text-white border-[#0A0A0A] dark:bg-emerald-600 dark:border-emerald-600'
+                : 'border-line bg-canvas text-ink hover:bg-subtle'
+            }`}
+          >
+            {focusMode ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            <span className="hidden sm:inline">{focusMode ? 'Exit Focus' : 'Focus'}</span>
+          </button>
+
+          <button
             onClick={() => setShowShortcuts((v) => !v)}
             aria-label="Keyboard shortcuts"
             className="min-h-[44px] min-w-[44px] p-2 rounded-lg border border-line bg-canvas text-ink hover:bg-subtle flex items-center justify-center"
@@ -744,7 +762,7 @@ export const ExamWorkspacePage = () => {
           prefs.palettePosition === 'bottom' ? 'flex-col' : 'flex-col lg:flex-row'
         }`}
       >
-        {prefs.palettePosition === 'left' && paletteAside}
+        {!focusMode && prefs.palettePosition === 'left' && paletteAside}
 
         <main className={`flex-1 bg-surface border border-line rounded-xl ${paddingClass} flex flex-col justify-between`}>
           {currentQ ? (
@@ -893,7 +911,7 @@ export const ExamWorkspacePage = () => {
           </div>
         </main>
 
-        {(prefs.palettePosition === 'right' || prefs.palettePosition === 'bottom') && paletteAside}
+        {!focusMode && (prefs.palettePosition === 'right' || prefs.palettePosition === 'bottom') && paletteAside}
 
         {/* Digital Scratchpad Drawer (4.8) */}
         {showScratchpad && (

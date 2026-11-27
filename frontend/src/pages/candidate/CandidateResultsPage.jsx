@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { attemptService } from '../../services/attemptService';
 import { PageHeader } from '../../components/layout/AppLayout';
-import { Button, Skeleton, EmptyState, Tooltip } from '../../components/ui';
-import { ArrowRight, ShieldCheck, Copy, Printer, CheckCircle2 } from 'lucide-react';
+import { Button, Skeleton, EmptyState, Tooltip, CopyButton } from '../../components/ui';
+import { ArrowRight, ShieldCheck, Printer, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const CandidateResultsPage = () => {
@@ -146,18 +146,13 @@ export const CandidateResultsPage = () => {
                       )}
                       {r.verificationId && (
                         <Tooltip label="Copy verification ID">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              navigator.clipboard?.writeText(r.verificationId);
-                              toast.success(`Copied ${r.verificationId}`);
-                            }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ECFDF5] border border-[#A7F3D0] hover:border-[#059669] text-xs font-mono text-[#065F46] transition-colors"
+                          <CopyButton
+                            value={r.verificationId}
+                            className="px-3 py-1 rounded-full bg-[#ECFDF5] border border-[#A7F3D0] hover:border-[#059669] text-xs font-mono text-[#065F46]"
                           >
                             <ShieldCheck className="w-3.5 h-3.5 text-[#059669]" strokeWidth={1.75} />
                             <span>{r.verificationId}</span>
-                            <Copy className="w-3 h-3 text-[#059669]" />
-                          </button>
+                          </CopyButton>
                         </Tooltip>
                       )}
                     </div>

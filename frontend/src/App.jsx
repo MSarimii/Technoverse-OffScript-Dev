@@ -7,7 +7,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { Navbar } from './components/layout/Navbar';
 import { AppLayout } from './components/layout/AppLayout';
-import { Toaster } from './components/ui';
+import { Toaster, CommandPalette } from './components/ui';
 
 const DesignSystemPage = import.meta.env.DEV
   ? lazy(() => import('./pages/DesignSystemPage').then((m) => ({ default: m.DesignSystemPage })))
@@ -302,6 +302,7 @@ function AppShell() {
         Skip to content
       </a>
       <Toaster />
+      <CommandPalette />
       <Navbar />
       <div id="main-content" className="flex-1">
         <AnimatedRoutes />

@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { attemptService } from '../../services/attemptService';
 import { examService } from '../../services/examService';
-import { Button, Badge, Dialog, Select, Textarea } from '../../components/ui';
+import { Button, Badge, Dialog, Select, Textarea, CopyButton } from '../../components/ui';
 import { toast } from 'sonner';
-import { Printer, ShieldCheck, ArrowLeft, ExternalLink, Copy, Flag } from 'lucide-react';
+import { Printer, ShieldCheck, ArrowLeft, ExternalLink, Flag } from 'lucide-react';
 
 export const ResultDetailPage = () => {
   const { attemptId } = useParams();
@@ -69,8 +69,8 @@ export const ResultDetailPage = () => {
   };
 
   return (
-    <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <Link to="/candidate/results" className="inline-flex items-center gap-1.5 text-xs font-mono text-ink-muted hover:text-ink mb-4">
+    <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 print-transcript">
+      <Link to="/candidate/results" className="no-print inline-flex items-center gap-1.5 text-xs font-mono text-ink-muted hover:text-ink mb-4">
         <ArrowLeft className="w-3.5 h-3.5" /> Back to results
       </Link>
 
@@ -102,18 +102,16 @@ export const ResultDetailPage = () => {
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="no-print flex flex-wrap gap-2">
           {attempt.verificationId && (
             <>
-              <button
-                onClick={() => {
-                  navigator.clipboard?.writeText(attempt.verificationId);
-                  toast.success('Verification ID copied');
-                }}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-mono border border-line rounded-lg bg-canvas hover:bg-subtle"
+              <CopyButton
+                value={attempt.verificationId}
+                toastMessage="Verification ID copied"
+                className="px-3 py-2 text-xs font-mono border border-line rounded-lg bg-canvas hover:bg-subtle"
               >
-                <Copy className="w-3.5 h-3.5" /> Copy ID
-              </button>
+                <span>Copy ID</span>
+              </CopyButton>
               <Link
                 to={`/verify/${attempt.verificationId}`}
                 className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-mono border border-line rounded-lg bg-canvas hover:bg-subtle"
@@ -126,10 +124,11 @@ export const ResultDetailPage = () => {
           )}
           <button
             onClick={handleDownloadPdf}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-cobalt text-white rounded-lg active:scale-[0.97]"
+            disabled={downloadingPdf}
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-[#0B0F0E] hover:bg-[#181F1D] text-white rounded-lg active:scale-[0.97] disabled:opacity-50"
           >
             <Printer className="w-4 h-4" />
-            Download PDF Report
+            {downloadingPdf ? 'Downloading...' : 'Download PDF Report'}
           </button>
         </div>
       </div>

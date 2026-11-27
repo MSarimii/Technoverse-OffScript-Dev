@@ -1,5 +1,6 @@
-import { Toaster as SonnerToaster } from 'sonner';
-import { AlertCircle, CheckCircle2, Clock, WifiOff, RefreshCw, Inbox } from 'lucide-react';
+import { useState } from 'react';
+import { Toaster as SonnerToaster, toast } from 'sonner';
+import { AlertCircle, CheckCircle2, Clock, WifiOff, RefreshCw, Inbox, Copy, Check } from 'lucide-react';
 
 const BADGE_STYLES = {
   neutral: 'bg-[#F4F4F5] text-[#18181B] border-[#E4E4E7]',
@@ -70,6 +71,34 @@ export const ProgressRing = ({ progress = 1, size = 24, strokeWidth = 2.5, class
 export const Skeleton = ({ className = 'h-4 w-full' }) => (
   <div className={`animate-pulse rounded bg-subtle ${className}`} aria-hidden="true" />
 );
+
+export const CopyButton = ({ value, toastMessage, children, className = '' }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    if (!value) return;
+    navigator.clipboard?.writeText(value)?.catch(() => {});
+    setCopied(true);
+    toast.success(toastMessage || `Copied ${value}`);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      aria-label={copied ? `Copied ${value}` : `Copy ${value}`}
+      className={`inline-flex items-center gap-1.5 transition-colors ${className}`}
+    >
+      {children}
+      {copied ? (
+        <Check className="w-3.5 h-3.5 text-[#059669] shrink-0" strokeWidth={2.25} />
+      ) : (
+        <Copy className="w-3.5 h-3.5 text-ink-muted shrink-0" strokeWidth={1.75} />
+      )}
+    </button>
+  );
+};
 
 export const EmptyState = ({ title, description, action }) => (
   <div className="bg-surface border border-line rounded-xl p-10 text-center space-y-2">
