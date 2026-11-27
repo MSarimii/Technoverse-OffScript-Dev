@@ -33,21 +33,21 @@ const ROLE_CARDS = [
     idx: '01',
     role: 'Candidate',
     desc: 'Take server-timed examinations with local outage resilience and view verifiable academic transcripts.',
-    to: '/login',
+    to: '/login?redirect=/candidate',
     icon: GraduationCap,
   },
   {
     idx: '02',
     role: 'Examiner',
     desc: 'Author balanced question banks, preview sandboxes, monitor live attempts, grade and publish.',
-    to: '/login',
+    to: '/login?redirect=/examiner',
     icon: ClipboardCheck,
   },
   {
     idx: '03',
     role: 'Administrator',
     desc: 'Provision institutional accounts, assign governance roles, and audit examination readiness.',
-    to: '/login',
+    to: '/login?redirect=/admin/users',
     icon: Building2,
   },
   {
@@ -73,7 +73,7 @@ const PulseDot = () => (
 );
 
 export const HomePage = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   const reduced = useReducedMotion();
   const rootRef = useRef(null);
   const stageRef = useRef(null);
@@ -214,10 +214,19 @@ export const HomePage = () => {
                     />
                   )}
                   <span className="relative z-10 inline-flex items-center gap-2">
-                    {isAuthenticated ? `Open ${user.role} workspace` : 'Sign in'}
+                    {isAuthenticated ? `Open ${user.role} Workspace` : 'Sign in'}
                     <ArrowRight className="w-4 h-4 text-[#10B981]" strokeWidth={2} />
                   </span>
                 </Link>
+                {isAuthenticated && (
+                  <button
+                    type="button"
+                    onClick={logout}
+                    className="min-h-[48px] inline-flex items-center gap-2 border border-[#E4E8E6] hover:border-[#FECACA] bg-white hover:bg-[#FEF2F2] text-[#4B5563] hover:text-[#DC2626] font-medium px-5 py-3 rounded-full text-sm transition-colors shadow-sm"
+                  >
+                    Sign out / Switch account
+                  </button>
+                )}
                 <Link
                   to="/verify/VER-2026-SEMS-8841"
                   className="min-h-[48px] inline-flex items-center gap-2 border border-[#E4E8E6] hover:border-[#D1D8D5] bg-white hover:bg-[#F3F5F4] text-[#0B0F0E] font-medium px-6 py-3 rounded-full text-sm transition-all duration-200 shadow-sm"

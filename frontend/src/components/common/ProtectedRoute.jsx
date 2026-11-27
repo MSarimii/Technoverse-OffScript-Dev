@@ -1,10 +1,18 @@
-import { Navigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { ForbiddenPage } from '../../pages/ForbiddenPage';
 
 export const ProtectedRoute = ({ allowedRoles, children }) => {
   const { user, loading, isAuthenticated } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      navigate('/login', { state: { from: location.pathname }, replace: true });
+    }
+  }, [loading, isAuthenticated, navigate, location.pathname]);
 
   if (loading) {
     return (
@@ -15,7 +23,7 @@ export const ProtectedRoute = ({ allowedRoles, children }) => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+    return null;
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {

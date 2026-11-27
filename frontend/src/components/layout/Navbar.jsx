@@ -51,6 +51,12 @@ export const Navbar = () => {
     return null;
   }
 
+  const isPublicRoute =
+    location.pathname === '/' ||
+    location.pathname.startsWith('/verify') ||
+    location.pathname === '/login' ||
+    location.pathname === '/register';
+
   const handleLogout = () => {
     setProfileOpen(false);
     setMobileOpen(false);
@@ -112,13 +118,33 @@ export const Navbar = () => {
             </IconButton>
           </Tooltip>
 
-          {!isAuthenticated && (
-            <Link
-              to="/login"
-              className="min-h-[38px] inline-flex items-center text-sm font-medium bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-ink)] px-5 py-1.5 rounded-full transition-transform active:scale-[0.97]"
-            >
-              Sign in
-            </Link>
+          {isPublicRoute && (
+            isAuthenticated ? (
+              <div className="flex items-center gap-2 pl-2 border-l border-line">
+                <Link
+                  to={getRoleHome(user.role)}
+                  className="min-h-[38px] inline-flex items-center gap-1.5 text-sm font-medium bg-[#0B0F0E] hover:bg-[#181F1D] text-white px-4 py-1.5 rounded-full transition-all active:scale-[0.98]"
+                >
+                  <LayoutDashboard className="w-3.5 h-3.5 text-[#10B981]" />
+                  Dashboard
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="min-h-[38px] inline-flex items-center gap-1.5 text-xs font-medium px-3.5 py-1.5 rounded-full border border-line bg-surface hover:bg-[#FEF2F2] hover:text-[#DC2626] hover:border-[#FECACA] text-ink-muted transition-colors"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  Sign out
+                </button>
+              </div>
+            ) : (
+              <Link
+                to="/login"
+                className="min-h-[38px] inline-flex items-center text-sm font-medium bg-[#0B0F0E] hover:bg-[#181F1D] text-white px-5 py-1.5 rounded-full transition-transform active:scale-[0.98]"
+              >
+                Sign in
+              </Link>
+            )
           )}
         </nav>
 
