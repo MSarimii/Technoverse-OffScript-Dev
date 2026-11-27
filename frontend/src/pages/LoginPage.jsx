@@ -1,98 +1,168 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '../hooks/useAuth';
-import { Lock, Mail, AlertCircle, Loader2 } from 'lucide-react';
+import { getRoleHome } from '../context/AuthContext';
+import { USE_MOCK } from '../services/api';
+import { toast } from 'sonner';
+import { ArrowRight, ShieldCheck } from 'lucide-react';
+import { Button, Input } from '../components/ui';
+
+const loginSchema = z.object({
+  email: z.string().email('Enter a valid institutional email address.'),
+  password: z.string().min(4, 'Password must be at least 4 characters.'),
+});
+
+const DEMO_ACCOUNTS = [
+  { label: 'Candidate', name: 'Zainab Khan', email: 'candidate@sems.edu', role: 'candidate' },
+  { label: 'Examiner', name: 'Prof. Ayesha Siddiqui', email: 'examiner@sems.edu', role: 'examiner' },
+  { label: 'Admin', name: 'Dr. Tariq Mahmood', email: 'admin@sems.edu', role: 'admin' },
+];
+
+const ASCII_FRAMES = [
+  '┌──────────────────────┐\n│ SEMS // SEALED KEY   │\n│ [####........] SYNC  │\n└──────────────────────┘',
+  '┌──────────────────────┐\n│ SEMS // SEALED KEY   │\n│ [########....] SYNC  │\n└──────────────────────┘',
+  '┌──────────────────────┐\n│ SEMS // SEALED KEY   │\n│ [############] LOCK  │\n└──────────────────────┘',
+];
 
 export const LoginPage = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [serverError, setServerError] = useState('');
+  const [frame, setFrame] = useState(0);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: '', password: '' },
+  });
 
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (mq.matches) {
+      setFrame(2);
+      return;
+    }
+    const id = setInterval(() => setFrame((f) => (f + 1) % ASCII_FRAMES.length), 1400);
+    return () => clearInterval(id);
+  }, []);
+
+  const onSubmit = async (values) => {
+    setServerError('');
     try {
-      await login(email, password);
-      navigate('/dashboard');
+      const user = await login(values.email.trim(), values.password);
+      toast.success(`Signed in as ${user.name}`);
+      navigate(getRoleHome(user.role), { replace: true });
     } catch (err) {
-      setError(err.message || 'Failed to sign in. Please check your credentials.');
-    } finally {
-      setLoading(false);
+      setServerError(err.message || 'Sign in failed.');
+    }
+  };
+
+  const handleDemoLogin = async (demoEmail) => {
+    setServerError('');
+    try {
+      const user = await login(demoEmail, 'demo1234');
+      toast.success(`Signed in as ${user.name} (${user.role})`);
+      navigate(getRoleHome(user.role), { replace: true });
+    } catch (err) {
+      setServerError(err.message || 'Demo sign in failed.');
     }
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12 relative">
-      <div className="w-full max-w-md glass-panel p-8 rounded-3xl relative z-10 shadow-2xl">
-        <div className="text-center mb-8">
-          <h2 className="font-heading text-2xl font-bold text-white">Welcome Back</h2>
-          <p className="text-sm text-slate-400 mt-1">Sign in to your TechnoVerse account</p>
-        </div>
-
-        {error && (
-          <div className="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-sm flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
-            <span>{error}</span>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <main className="max-w-4xl mx-auto px-4 py-10 sm:py-14">
+      <div className="grid grid-cols-1 md:grid-cols-2 bg-surface border border-line rounded-xl overflow-hidden">
+        {/* Brand Panel */}
+        <section className="bg-subtle p-6 sm:p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-line">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-              Email Address
-            </label>
-            <div className="relative">
-              <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="alice@example.com"
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900/60 border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 transition-colors"
-              />
+            <div className="inline-flex items-center gap-2 text-xs font-mono text-cobalt uppercase mb-3">
+              <ShieldCheck className="w-4 h-4" /> Calm Examination Hall
             </div>
+            <h1 className="font-serif text-3xl sm:text-4xl text-ink leading-tight mb-3">
+              Server-authoritative assessments, built for trust.
+            </h1>
+            <p className="text-sm text-ink-muted leading-relaxed">
+              Role-scoped access for Administrators, Examiners, and Candidates with offline-resilient answer queues.
+            </p>
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-              Password
-            </label>
-            <div className="relative">
-              <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••••••"
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900/60 border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 transition-colors"
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full mt-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl shadow-lg shadow-blue-600/25 transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2 text-sm"
+          <pre
+            aria-hidden="true"
+            className="mt-8 p-3 rounded-lg bg-surface border border-line font-mono text-[11px] leading-snug text-ink-muted overflow-x-auto"
           >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Sign In'}
-          </button>
-        </form>
+            {ASCII_FRAMES[frame]}
+          </pre>
+        </section>
 
-        <div className="mt-6 text-center text-xs text-slate-400">
-          Don't have an account?{' '}
-          <Link to="/register" className="text-blue-400 hover:underline font-medium">
-            Register here
-          </Link>
-        </div>
+        {/* Form Panel */}
+        <section className="p-6 sm:p-8">
+          <h2 className="font-serif text-2xl text-ink mb-1">Sign in to SEMS</h2>
+          <p className="text-xs text-ink-muted mb-5">
+            Accounts are provisioned by your institution administrator.
+          </p>
+
+          {serverError && (
+            <div role="alert" className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-xs text-status-danger">
+              {serverError}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
+            <Input
+              label="Institutional Email"
+              type="email"
+              placeholder="name@sems.edu"
+              error={errors.email?.message}
+              {...register('email')}
+            />
+
+            <Input
+              label="Password"
+              type="password"
+              placeholder="••••••••"
+              error={errors.password?.message}
+              {...register('password')}
+            />
+
+            <Button type="submit" loading={isSubmitting} className="w-full">
+              {isSubmitting ? 'Signing in...' : 'Sign in'}
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </form>
+
+          {import.meta.env.DEV && USE_MOCK && (
+            <div className="mt-6 pt-5 border-t border-line">
+              <p className="text-xs font-mono text-ink-muted mb-2.5">
+                Demo Credentials (Dev Mock Mode)
+              </p>
+              <div className="grid grid-cols-1 gap-2">
+                {DEMO_ACCOUNTS.map((acc) => (
+                  <button
+                    key={acc.email}
+                    type="button"
+                    disabled={isSubmitting}
+                    onClick={() => handleDemoLogin(acc.email)}
+                    className="min-h-[44px] flex items-center justify-between px-3 py-2 rounded-lg border border-line bg-canvas hover:bg-subtle text-left transition-colors active:scale-[0.98]"
+                  >
+                    <div>
+                      <span className="text-xs font-semibold text-ink block">{acc.name}</span>
+                      <span className="text-[11px] font-mono text-ink-muted">{acc.email}</span>
+                    </div>
+                    <span className="text-[11px] font-mono uppercase px-2 py-0.5 rounded bg-navy-50 text-cobalt">
+                      {acc.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
       </div>
-    </div>
+    </main>
   );
 };
