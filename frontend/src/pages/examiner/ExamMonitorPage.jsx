@@ -183,6 +183,16 @@ export const ExamMonitorPage = () => {
           </form>
 
           <div className="pt-3 border-t border-line space-y-2">
+            <h3 className="text-xs font-mono uppercase text-ink-muted">5.3 How Resilience Works</h3>
+            <ol className="text-xs text-ink-muted space-y-1.5 list-decimal list-inside">
+              <li>Server sets an immutable <code className="font-mono">deadlineAt</code> at attempt start.</li>
+              <li>Candidate answers queue locally with monotonic <code className="font-mono">seq</code> during outages.</li>
+              <li>On reconnect, queued answers flush in order within a bounded 3-min late-sync window.</li>
+              <li>Trade-off: no extra time is ever granted; late-synced answers are flagged for review.</li>
+            </ol>
+          </div>
+
+          <div className="pt-3 border-t border-line space-y-2">
             <h3 className="text-xs font-mono uppercase text-ink-muted">Broadcast History</h3>
             {announcements.length === 0 ? (
               <p className="text-xs text-ink-muted">None sent yet.</p>
@@ -210,13 +220,21 @@ export const ExamMonitorPage = () => {
             <div>Status: <strong>{selectedAttempt.status}</strong></div>
             <div>Progress: {selectedAttempt.answeredCount}/{selectedAttempt.totalQuestions}</div>
             <div className="pt-2 border-t border-line">
-              <div className="text-ink-muted mb-1">Connectivity Ledger (5.3)</div>
+              <div className="text-ink-muted mb-1">Connectivity Timeline (5.3)</div>
+              <p className="text-[11px] text-ink-muted mb-2">Gaps are context, not evidence of misconduct.</p>
+              <div className="h-3 w-full rounded bg-emerald-200 overflow-hidden flex mb-2" aria-label="Connectivity strip">
+                <div className="bg-status-answered flex-1" />
+                {(selectedAttempt.connectivityLedger || []).map((_, idx) => (
+                  <div key={idx} className="bg-status-review w-6" title="Disconnected interval" />
+                ))}
+                <div className="bg-status-answered flex-1" />
+              </div>
               {(selectedAttempt.connectivityLedger || []).length === 0 ? (
-                <p className="text-ink-muted">No recorded outages.</p>
+                <p className="text-ink-muted">Continuous connection — no recorded outages.</p>
               ) : (
                 selectedAttempt.connectivityLedger.map((gap, i) => (
                   <div key={i} className="p-2 rounded bg-canvas border border-line mb-1">
-                    Outage: {gap.durationSec}s
+                    Outage: {gap.durationSec}s · Late-synced: {selectedAttempt.lateSyncedCount || 0}
                   </div>
                 ))
               )}

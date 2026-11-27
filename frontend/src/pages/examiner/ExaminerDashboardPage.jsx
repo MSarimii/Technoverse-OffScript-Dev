@@ -208,6 +208,12 @@ export const ExaminerDashboardPage = () => {
                   >
                     <BarChart3 className="w-3.5 h-3.5" /> Analytics
                   </Link>
+                  <Link
+                    to={`/examiner/exams/${exam.id}/fairness`}
+                    className="min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-line rounded-lg bg-canvas hover:bg-subtle"
+                  >
+                    Fairness
+                  </Link>
                 </div>
               </div>
             </article>

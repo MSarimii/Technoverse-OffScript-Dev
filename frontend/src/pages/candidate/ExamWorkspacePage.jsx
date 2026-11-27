@@ -49,6 +49,7 @@ export const ExamWorkspacePage = () => {
   const [prefs, setPrefs] = useState(DEFAULT_PREFS);
   const [showPrefs, setShowPrefs] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showQueueDetail, setShowQueueDetail] = useState(false);
 
   // Scratchpad (4.8) & Announcements Drawer
   const [showScratchpad, setShowScratchpad] = useState(false);
@@ -131,6 +132,7 @@ export const ExamWorkspacePage = () => {
     answers,
     markedForReview,
     queuedCount,
+    queuedQuestionIds,
     isOnline,
     syncStatus,
     lateSyncedCount,
@@ -450,8 +452,10 @@ export const ExamWorkspacePage = () => {
       <header className="sticky top-0 z-30 bg-surface border-b border-line px-3 sm:px-6 min-h-[64px] py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div className="min-w-0 flex items-center justify-between sm:block gap-2">
           <h1 className="font-semibold text-sm sm:text-base text-ink truncate">{attempt.examTitle}</h1>
-          <div className="flex items-center gap-2 text-xs font-mono shrink-0">
-            <span
+          <div className="flex items-center gap-2 text-xs font-mono shrink-0 relative">
+            <button
+              type="button"
+              onClick={() => setShowQueueDetail((v) => !v)}
               role="status"
               aria-live="polite"
               className={`inline-flex items-center gap-1 px-2 py-0.5 rounded ${
@@ -465,7 +469,7 @@ export const ExamWorkspacePage = () => {
               }`}
             >
               {effectiveOffline
-                ? `Offline — ${queuedCount} queued`
+                ? `Answers kept on this device (${queuedCount})`
                 : syncStatus === 'saved'
                 ? 'Saved'
                 : syncStatus === 'saving'
@@ -473,14 +477,36 @@ export const ExamWorkspacePage = () => {
                 : syncStatus === 'retrying'
                 ? 'Reconnecting...'
                 : 'Sync failed'}
-            </span>
+            </button>
+            {showQueueDetail && (
+              <div className="absolute top-7 left-0 z-40 w-64 p-3 rounded-lg bg-surface border border-line shadow-lg text-[11px] font-mono space-y-1">
+                <div className="font-semibold text-ink">
+                  Deadline: {new Date(attempt.deadlineAt).toLocaleTimeString()} (fixed)
+                </div>
+                {queuedQuestionIds.length === 0 ? (
+                  <div className="text-ink-muted">All responses synced to server.</div>
+                ) : (
+                  <div className="text-amber-900">
+                    Queued:{' '}
+                    {queuedQuestionIds
+                      .map((qid) => {
+                        const idx = questions.findIndex((q) => q.id === qid);
+                        return idx >= 0 ? `Q${idx + 1}` : qid;
+                      })
+                      .join(', ')}
+                  </div>
+                )}
+              </div>
+            )}
             {syncStatus === 'error' && (
               <button onClick={() => flushQueue()} className="text-cobalt hover:underline inline-flex items-center gap-1">
                 <RefreshCw className="w-3 h-3" /> Retry
               </button>
             )}
             {lateSyncedCount > 0 && (
-              <span className="text-[11px] text-amber-800">({lateSyncedCount} late-synced)</span>
+              <span className="text-[11px] text-amber-800" title="Some answers were saved after your connection returned. They were accepted. Your exam time did not change.">
+                ({lateSyncedCount} late-synced · deadline unchanged)
+              </span>
             )}
           </div>
         </div>
@@ -576,7 +602,7 @@ export const ExamWorkspacePage = () => {
         <div role="alert" className="bg-amber-100 border-b border-amber-300 px-4 py-2 text-xs text-amber-950 flex items-center justify-center gap-2">
           <WifiOff className="w-4 h-4 shrink-0" />
           <span>
-            Connection lost. Keep working: your answers are saved on this device ({queuedCount} queued) and the server timer keeps running.
+            Connection lost. Keep working: {queuedCount} answer(s) saved on this device. Your deadline has not changed ({new Date(attempt.deadlineAt).toLocaleTimeString()}).
           </span>
         </div>
       )}

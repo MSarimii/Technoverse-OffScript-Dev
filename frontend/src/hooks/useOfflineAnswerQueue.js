@@ -162,6 +162,7 @@ export function useOfflineAnswerQueue({ attemptId, initialAnswers, initialMarked
     answers,
     markedForReview,
     queuedCount: queue.length,
+    queuedQuestionIds: queue.map((item) => item.qid),
     isOnline,
     syncStatus,
     lateSyncedCount,
