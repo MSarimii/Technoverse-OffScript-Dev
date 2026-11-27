@@ -112,62 +112,7 @@ export const Navbar = () => {
             </IconButton>
           </Tooltip>
 
-          {isAuthenticated ? (
-            <div ref={profileRef} className="relative pl-2 border-l border-line">
-              <button
-                type="button"
-                onClick={() => setProfileOpen((v) => !v)}
-                aria-expanded={profileOpen}
-                aria-haspopup="menu"
-                className="flex items-center gap-2.5 px-3 py-1.5 min-h-[40px] rounded-full bg-surface border border-line hover:border-champagne/50 transition-colors shadow-sm"
-              >
-                <span className="w-6 h-6 rounded-full bg-[var(--accent)] text-[var(--accent-ink)] text-xs font-mono flex items-center justify-center">
-                  {user.name?.[0] || 'U'}
-                </span>
-                <span className="text-xs font-medium text-ink">{user.name}</span>
-                <ChevronDown className="w-3.5 h-3.5 text-ink-muted" />
-              </button>
-
-              <AnimatePresence>
-                {profileOpen && (
-                  <motion.div
-                    role="menu"
-                    initial={reduced ? { opacity: 1 } : { opacity: 0, scale: 0.95, y: -4 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: -4 }}
-                    transition={{ type: 'spring', stiffness: 450, damping: 30 }}
-                    style={{ transformOrigin: 'top right' }}
-                    className="absolute right-0 mt-2 w-60 rounded-[14px] luxury-card p-2 z-50"
-                  >
-                    <div className="px-3 py-2 border-b border-line mb-1">
-                      <div className="text-xs font-semibold text-ink">{user.name}</div>
-                      <div className="text-[11px] font-mono text-ink-muted truncate">{user.email}</div>
-                      <div className="text-[10px] font-mono uppercase tracking-wider text-champagne mt-0.5">
-                        {user.role}
-                      </div>
-                    </div>
-                    <Link
-                      role="menuitem"
-                      to={getRoleHome(user.role)}
-                      onClick={() => setProfileOpen(false)}
-                      className="flex items-center gap-2 px-3 py-2 text-xs text-ink hover:bg-subtle rounded-lg"
-                    >
-                      <LayoutDashboard className="w-3.5 h-3.5 text-champagne" />
-                      Open Workspace
-                    </Link>
-                    <button
-                      role="menuitem"
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-status-danger hover:bg-red-500/10 rounded-lg text-left"
-                    >
-                      <LogOut className="w-3.5 h-3.5" />
-                      Sign out
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          ) : (
+          {!isAuthenticated && (
             <Link
               to="/login"
               className="min-h-[38px] inline-flex items-center text-sm font-medium bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-ink)] px-5 py-1.5 rounded-full transition-transform active:scale-[0.97]"

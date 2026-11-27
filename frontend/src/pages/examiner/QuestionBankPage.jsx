@@ -284,58 +284,61 @@ export const QuestionBankPage = () => {
         </div>
       )}
 
-      {/* Filters */}
-      <div className="bg-surface border border-line rounded-xl p-4 grid grid-cols-1 sm:grid-cols-5 gap-3">
-        <input
-          value={search}
-          onChange={(e) => triggerFlip(() => { setSearch(e.target.value); setPage(1); })}
-          placeholder="Search question text..."
-          aria-label="Search questions"
-          className="px-3 py-2 min-h-[44px] text-sm bg-canvas border border-line rounded-lg"
-        />
-        <Select
-          aria-label="Filter by topic"
-          value={topicFilter}
-          onChange={(e) => triggerFlip(() => { setTopicFilter(e.target.value); setPage(1); })}
-        >
-          <option value="all">All Topics</option>
-          {topics.map((t) => <option key={t} value={t}>{t}</option>)}
-        </Select>
-        <Select
-          aria-label="Filter by difficulty"
-          value={diffFilter}
-          onChange={(e) => triggerFlip(() => { setDiffFilter(e.target.value); setPage(1); })}
-        >
-          <option value="all">All Difficulties</option>
-          <option value="1">Difficulty 1</option>
-          <option value="2">Difficulty 2</option>
-          <option value="3">Difficulty 3</option>
-        </Select>
-        <Select
-          aria-label="Filter by type"
-          value={typeFilter}
-          onChange={(e) => triggerFlip(() => { setTypeFilter(e.target.value); setPage(1); })}
-        >
-          <option value="all">All Types</option>
-          <option value="mcq_single">Single MCQ</option>
-          <option value="mcq_multi">Multi-Select</option>
-          <option value="written">Written</option>
-        </Select>
-        <Select aria-label="Sort questions" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-          <option value="newest">Sort: Default</option>
-          <option value="difficulty">Sort: Difficulty</option>
-          <option value="marks">Sort: Marks</option>
-        </Select>
-      </div>
-
-      {selectedIds.length > 0 && (
-        <div className="flex items-center justify-between bg-navy-50 border border-navy-100 rounded-xl px-4 py-2.5 text-xs font-mono">
-          <span>{selectedIds.length} question(s) selected</span>
-          <Button size="sm" variant="danger" onClick={handleBulkDelete}>
-            <Trash2 className="w-3.5 h-3.5" /> Delete Selected
-          </Button>
+      {/* Unified Question Bank Card & Inline Toolbar */}
+      <div className="luxury-card rounded-2xl border-t-2 border-t-[#0B0F0E] overflow-hidden">
+        <div className="p-4 border-b border-line bg-surface grid grid-cols-1 sm:grid-cols-5 gap-3">
+          <input
+            value={search}
+            onChange={(e) => triggerFlip(() => { setSearch(e.target.value); setPage(1); })}
+            placeholder="Search question text..."
+            aria-label="Search questions"
+            className="px-3 py-2 min-h-[40px] text-sm bg-canvas border border-line rounded-lg"
+          />
+          <Select
+            aria-label="Filter by topic"
+            value={topicFilter}
+            onChange={(e) => triggerFlip(() => { setTopicFilter(e.target.value); setPage(1); })}
+          >
+            <option value="all">All Topics</option>
+            {topics.map((t) => <option key={t} value={t}>{t}</option>)}
+          </Select>
+          <Select
+            aria-label="Filter by difficulty"
+            value={diffFilter}
+            onChange={(e) => triggerFlip(() => { setDiffFilter(e.target.value); setPage(1); })}
+          >
+            <option value="all">All Difficulties</option>
+            <option value="1">Difficulty 1</option>
+            <option value="2">Difficulty 2</option>
+            <option value="3">Difficulty 3</option>
+          </Select>
+          <Select
+            aria-label="Filter by type"
+            value={typeFilter}
+            onChange={(e) => triggerFlip(() => { setTypeFilter(e.target.value); setPage(1); })}
+          >
+            <option value="all">All Types</option>
+            <option value="mcq_single">Single MCQ</option>
+            <option value="mcq_multi">Multi-Select</option>
+            <option value="written">Written</option>
+          </Select>
+          <Select aria-label="Sort questions" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+            <option value="newest">Sort: Default</option>
+            <option value="difficulty">Sort: Difficulty</option>
+            <option value="marks">Sort: Marks</option>
+          </Select>
         </div>
-      )}
+
+        {selectedIds.length > 0 && (
+          <div className="flex items-center justify-between bg-[#ECFDF5] border-b border-[#A7F3D0] px-4 py-2.5 text-xs font-mono text-[#065F46]">
+            <span>{selectedIds.length} question(s) selected</span>
+            <Button size="sm" variant="danger" onClick={handleBulkDelete}>
+              <Trash2 className="w-3.5 h-3.5" /> Delete Selected
+            </Button>
+          </div>
+        )}
+
+        <div className="p-4">
 
       {loading ? (
         <div className="space-y-3">
@@ -452,6 +455,8 @@ export const QuestionBankPage = () => {
           </div>
         </>
       )}
+        </div>
+      </div>
 
       {/* Create / Edit Question Dialog */}
       <Dialog

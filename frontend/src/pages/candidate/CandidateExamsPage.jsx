@@ -94,7 +94,9 @@ export const CandidateExamsPage = () => {
             return (
               <article
                 key={exam.id}
-                className="bg-surface border border-line rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                className={`luxury-card luxury-card-hover rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t-2 ${
+                  exam.derivedStatus === 'ongoing' ? 'border-t-[#059669]' : 'border-t-[#0B0F0E]'
+                }`}
               >
                 <div className="space-y-1.5 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
@@ -124,7 +126,7 @@ export const CandidateExamsPage = () => {
                   {tab === 'available' && (
                     <Link
                       to={`/candidate/exams/${exam.id}`}
-                      className="min-h-[44px] inline-flex items-center gap-2 bg-cobalt hover:bg-navy-800 text-white text-sm font-semibold px-4 py-2.5 rounded-lg active:scale-[0.97]"
+                      className="min-h-[44px] inline-flex items-center gap-2 bg-[#0B0F0E] hover:bg-[#181F1D] text-white text-sm font-semibold px-4 py-2.5 rounded-lg shadow-sm active:scale-[0.98] transition-all"
                     >
                       {exam.attemptStatus === 'in_progress' ? (
                         <>

@@ -2,20 +2,24 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../context/ThemeContext';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, animate, useReducedMotion } from 'framer-motion';
 import {
   Users,
   ClipboardCheck,
   BookOpen,
   Award,
   PanelLeftClose,
-  PanelLeftOpen,
   LogOut,
   Sun,
   Moon,
   Monitor,
   ChevronUp,
+  GripVertical,
 } from 'lucide-react';
+
+const EXPANDED_W = 240;
+const COLLAPSED_W = 72;
+const MIDPOINT_W = (EXPANDED_W + COLLAPSED_W) / 2;
 
 export const Sidebar = () => {
   const { user, logout } = useAuth();
@@ -28,6 +32,22 @@ export const Sidebar = () => {
   const [hoveredTo, setHoveredTo] = useState(null);
   const [footerOpen, setFooterOpen] = useState(false);
   const footerRef = useRef(null);
+  const draggingRef = useRef(false);
+  const widthMV = useMotionValue(EXPANDED_W);
+
+  useEffect(() => {
+    const target = collapsed ? COLLAPSED_W : EXPANDED_W;
+    if (reduced) {
+      widthMV.set(target);
+      return;
+    }
+    const ctrl = animate(widthMV, target, {
+      type: 'spring',
+      stiffness: 380,
+      damping: 32,
+    });
+    return () => ctrl.stop();
+  }, [collapsed, reduced, widthMV]);
 
   useEffect(() => {
     if (!footerOpen) return;
@@ -44,6 +64,41 @@ export const Sidebar = () => {
       document.removeEventListener('mousedown', onClick);
     };
   }, [footerOpen]);
+
+  const handleEdgePointerDown = (e) => {
+    if (reduced) {
+      setCollapsed((v) => !v);
+      return;
+    }
+    e.preventDefault();
+    draggingRef.current = true;
+    const startX = e.clientX;
+    const startW = widthMV.get();
+
+    const onMove = (ev) => {
+      if (!draggingRef.current) return;
+      const next = Math.max(COLLAPSED_W, Math.min(EXPANDED_W, startW + (ev.clientX - startX)));
+      widthMV.set(next);
+    };
+
+    const onUp = () => {
+      if (!draggingRef.current) return;
+      draggingRef.current = false;
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      const current = widthMV.get();
+      const nextCollapsed = current < MIDPOINT_W;
+      setCollapsed(nextCollapsed);
+      animate(widthMV, nextCollapsed ? COLLAPSED_W : EXPANDED_W, {
+        type: 'spring',
+        stiffness: 380,
+        damping: 32,
+      });
+    };
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  };
 
   const links =
     user?.role === 'admin'
@@ -67,18 +122,35 @@ export const Sidebar = () => {
   return (
     <motion.aside
       aria-label="Workspace navigation"
-      animate={reduced ? undefined : { width: collapsed ? 72 : 240 }}
-      transition={{ type: 'spring', stiffness: 360, damping: 32 }}
-      style={{ width: collapsed ? 72 : 240 }}
-      className="hidden md:flex flex-col shrink-0 min-h-[calc(100vh-64px)] bg-surface text-ink border-r border-line"
+      style={{ width: widthMV }}
+      className="relative hidden md:flex flex-col shrink-0 min-h-[calc(100vh-64px)] bg-surface text-ink border-r border-line select-none"
     >
+      {/* Tactile Drag-to-Roll Gesture Handle */}
+      <div
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Drag to resize sidebar"
+        onPointerDown={handleEdgePointerDown}
+        title="Drag to roll sidebar open or closed"
+        className="group absolute top-0 -right-1.5 bottom-0 w-3 cursor-ew-resize z-30 flex items-center justify-center"
+      >
+        <span className="w-1 h-10 rounded-full bg-transparent group-hover:bg-[#059669]/50 transition-colors flex items-center justify-center">
+          <GripVertical className="w-3 h-3 text-transparent group-hover:text-[#059669]" />
+        </span>
+      </div>
+
       <div className="sticky top-16 flex flex-col justify-between h-[calc(100vh-64px)] p-3">
         <div className="space-y-1.5">
           <div className="flex items-center justify-between px-2 py-2 border-b border-line mb-2">
             {!collapsed && (
-              <span className="text-[11px] font-mono uppercase tracking-[0.12em] text-[#059669] font-semibold">
+              <motion.span
+                initial={reduced ? false : { opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+                className="text-[11px] font-mono uppercase tracking-[0.12em] text-[#059669] font-semibold whitespace-nowrap"
+              >
                 {user.role} Portal
-              </span>
+              </motion.span>
             )}
             <button
               type="button"
@@ -86,16 +158,18 @@ export const Sidebar = () => {
               aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               className="p-1.5 rounded-lg text-ink-muted hover:text-ink hover:bg-subtle transition-colors ml-auto"
             >
-              {collapsed ? (
-                <PanelLeftOpen className="w-4 h-4" strokeWidth={1.5} />
-              ) : (
+              <motion.span
+                className="inline-flex"
+                animate={reduced ? undefined : { rotate: collapsed ? 180 : 0 }}
+                transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+              >
                 <PanelLeftClose className="w-4 h-4" strokeWidth={1.5} />
-              )}
+              </motion.span>
             </button>
           </div>
 
-          <nav className="space-y-1">
-            {links.map(({ to, label, icon: Icon }) => {
+          <nav className="space-y-1" style={{ perspective: 500 }}>
+            {links.map(({ to, label, icon: Icon }, idx) => {
               const active = location.pathname === to;
               return (
                 <div
@@ -120,8 +194,8 @@ export const Sidebar = () => {
                     )}
                     <motion.span
                       className="relative z-10 inline-flex"
-                      whileHover={reduced ? undefined : { x: 2 }}
-                      transition={{ type: 'spring', stiffness: 450, damping: 28 }}
+                      whileHover={reduced ? undefined : { y: -1.5 }}
+                      transition={{ type: 'spring', stiffness: 450, damping: 26 }}
                     >
                       <Icon
                         className={`w-4 h-4 shrink-0 ${
@@ -131,7 +205,22 @@ export const Sidebar = () => {
                         aria-hidden="true"
                       />
                     </motion.span>
-                    {!collapsed && <span className="relative z-10 truncate">{label}</span>}
+                    {!collapsed && (
+                      <motion.span
+                        key={`${to}-label-${collapsed}`}
+                        initial={reduced ? false : { opacity: 0, y: 6, rotateX: -25 }}
+                        animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                        transition={{
+                          type: 'spring',
+                          stiffness: 400,
+                          damping: 28,
+                          delay: reduced ? 0 : idx * 0.035,
+                        }}
+                        className="relative z-10 truncate"
+                      >
+                        {label}
+                      </motion.span>
+                    )}
                   </Link>
 
                   <AnimatePresence>
