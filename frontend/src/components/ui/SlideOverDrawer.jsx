@@ -49,7 +49,7 @@ export const SlideOverDrawer = ({
             exit={reduced ? { opacity: 0 } : { opacity: 0 }}
             transition={{ duration: reduced ? 0.01 : 0.18 }}
             onClick={onClose}
-            className="fixed inset-0 z-[100] bg-black/40 dark:bg-black/65 backdrop-blur-[2px]"
+            className="fixed inset-0 z-[100] bg-black/45 backdrop-blur-[2px]"
           />
 
           <motion.aside
@@ -63,7 +63,7 @@ export const SlideOverDrawer = ({
                 : { type: 'spring', stiffness: 420, damping: 38, mass: 0.8 }
             }
             onClick={(e) => e.stopPropagation()}
-            className="fixed top-0 right-0 bottom-0 h-dvh w-full max-w-md z-[101] bg-white dark:bg-[#0E1311] border-l border-[var(--line)] text-[var(--ink)] shadow-2xl flex flex-col"
+            className="fixed top-0 right-0 bottom-0 h-dvh w-full max-w-md z-[101] bg-[var(--surface)] border-l border-[var(--line)] text-[var(--ink)] shadow-2xl flex flex-col"
           >
             <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[var(--line)] shrink-0">
               <div>
@@ -93,7 +93,7 @@ export const SlideOverDrawer = ({
             </div>
 
             {footer && (
-              <div className="shrink-0 px-6 py-4 border-t border-[var(--line)] bg-white dark:bg-[#0E1311]">
+              <div className="shrink-0 px-6 py-4 border-t border-[var(--line)] bg-[var(--surface)]">
                 {footer}
               </div>
             )}
