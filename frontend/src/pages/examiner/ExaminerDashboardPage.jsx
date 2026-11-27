@@ -80,21 +80,26 @@ export const ExaminerDashboardPage = () => {
         }
       />
 
-      {/* Lifecycle Summary Tiles (glass allowed) */}
-      <section aria-label="Lifecycle summary" className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {/* Hairline-Separated KPI Strip with Serif Numerals & Sparklines */}
+      <section aria-label="Lifecycle summary" className="grid grid-cols-2 sm:grid-cols-4 border-y border-line divide-y sm:divide-y-0 sm:divide-x divide-line bg-surface rounded-[14px]">
         {[
-          { key: 'draft', label: 'Drafts', val: counts.draft },
-          { key: 'published', label: 'Scheduled', val: counts.published },
-          { key: 'ongoing', label: 'Ongoing Live', val: counts.ongoing },
-          { key: 'completed', label: 'Completed', val: counts.completed },
+          { key: 'draft', label: 'Drafts', val: counts.draft, pts: '0,14 12,10 24,12 36,6 48,8' },
+          { key: 'published', label: 'Scheduled', val: counts.published, pts: '0,16 12,14 24,8 36,10 48,4' },
+          { key: 'ongoing', label: 'Ongoing Live', val: counts.ongoing, pts: '0,12 12,8 24,4 36,6 48,2' },
+          { key: 'completed', label: 'Completed', val: counts.completed, pts: '0,16 12,12 24,10 36,4 48,3' },
         ].map((tile) => (
           <button
             key={tile.key}
             onClick={() => setFilter(tile.key)}
-            className="glass-tile rounded-xl p-4 text-left hover:border-cobalt transition-colors"
+            className="p-5 text-left hover:bg-subtle/50 transition-colors flex items-end justify-between gap-2"
           >
-            <div className="text-xs font-mono text-ink-muted">{tile.label}</div>
-            <div className="font-serif text-3xl text-ink mt-1 tabular-nums">{tile.val}</div>
+            <div>
+              <div className="text-[11px] font-mono uppercase tracking-[0.1em] text-ink-muted">{tile.label}</div>
+              <div className="font-serif text-4xl text-ink mt-1 tabular-nums">{tile.val}</div>
+            </div>
+            <svg width="48" height="18" viewBox="0 0 48 18" aria-hidden="true" className="text-champagne shrink-0">
+              <polyline fill="none" stroke="currentColor" strokeWidth="1.5" points={tile.pts} />
+            </svg>
           </button>
         ))}
       </section>

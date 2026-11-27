@@ -1,60 +1,37 @@
-:root {
-  --bg: #F6F3EC;
-  --surface: #FFFFFF;
-  --surface-2: #FBF9F4;
-  --ink: #0B1020;
-  --muted: #5B6275;
-  --line: #E3DFD4;
-  --focus: #2F5BFF;
-
-  --accent: #2F5BFF;
-  --accent-ink: #FFFFFF;
-  --success: #1F9D66;
-  --warning: #F5A524;
-  --danger: #D64545;
-  --current: #7A5CFF;
-  --info: #2E8BC0;
-
-  /* Tailwind variable aliases */
-  --bg-canvas: var(--bg);
-  --bg-surface: var(--surface);
-  --bg-subtle: #EDE9DF;
-  --ink-primary: var(--ink);
-  --ink-secondary: var(--muted);
-  --border-line: var(--line);
-  --accent-primary: var(--accent);
-  --status-answered: var(--success);
-  --status-review: var(--warning);
-  --status-unanswered: var(--muted);
-  --status-danger: var(--danger);
-  --status-current: var(--current);
-
-  color-scheme: light;
-}
-
+:root,
 [data-theme='dark'] {
-  --bg: #0B1020;
-  --surface: #141A2E;
-  --surface-2: #1A2240;
-  --ink: #E8EAF2;
-  --muted: #9AA3BD;
-  --line: #262D47;
-  --focus: #6C8BFF;
+  --bg: #070A14;
+  --surface: #0C1122;
+  --surface-2: #121933;
+  --ink: #F4EFE6;
+  --muted: #B9B3A6;
+  --tertiary: #7C7A74;
+  --line: rgba(244, 239, 230, 0.12);
+  --line-strong: rgba(244, 239, 230, 0.24);
+  --focus: #CBA96B;
 
-  --accent: #2F5BFF;
-  --accent-ink: #FFFFFF;
+  --champagne: #CBA96B;
+  --champagne-lit: #E2C58A;
+  --champagne-deep: #8E7440;
+
+  --accent: #F4EFE6;
+  --accent-ink: #070A14;
+  --app-accent: #6C8BFF;
+
   --success: #24B476;
   --warning: #F5A524;
   --danger: #E85D5D;
-  --current: #8F75FF;
+  --current: #CBA96B;
+  --info: #4AA3D8;
 
+  /* Tailwind variable aliases */
   --bg-canvas: var(--bg);
   --bg-surface: var(--surface);
   --bg-subtle: var(--surface-2);
   --ink-primary: var(--ink);
   --ink-secondary: var(--muted);
   --border-line: var(--line);
-  --accent-primary: var(--focus);
+  --accent-primary: var(--champagne);
   --status-answered: var(--success);
   --status-review: var(--warning);
   --status-unanswered: var(--muted);
@@ -64,27 +41,70 @@
   color-scheme: dark;
 }
 
-@media (prefers-color-scheme: dark) {
-  [data-theme='system'] {
-    --bg: #0B1020;
-    --surface: #141A2E;
-    --surface-2: #1A2240;
-    --ink: #E8EAF2;
-    --muted: #9AA3BD;
-    --line: #262D47;
-    --focus: #6C8BFF;
+[data-theme='light'] {
+  --bg: #F6F2EA;
+  --surface: #FFFFFF;
+  --surface-2: #FBF9F4;
+  --ink: #0B1020;
+  --muted: #52586A;
+  --tertiary: #7C7A74;
+  --line: rgba(11, 16, 32, 0.12);
+  --line-strong: rgba(11, 16, 32, 0.24);
+  --focus: #8E7440;
 
+  --champagne: #8E7440;
+  --champagne-lit: #A68A52;
+  --champagne-deep: #6E582E;
+
+  --accent: #0B1020;
+  --accent-ink: #F6F2EA;
+  --app-accent: #2F5BFF;
+
+  --success: #1F9D66;
+  --warning: #B45309;
+  --danger: #D64545;
+  --current: #7A5CFF;
+  --info: #2E8BC0;
+
+  --bg-canvas: var(--bg);
+  --bg-surface: var(--surface);
+  --bg-subtle: var(--surface-2);
+  --ink-primary: var(--ink);
+  --ink-secondary: var(--muted);
+  --border-line: var(--line);
+  --accent-primary: var(--champagne);
+  --status-answered: var(--success);
+  --status-review: var(--warning);
+  --status-unanswered: var(--muted);
+  --status-danger: var(--danger);
+  --status-current: var(--current);
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: light) {
+  [data-theme='system'] {
+    --bg: #F6F2EA;
+    --surface: #FFFFFF;
+    --surface-2: #FBF9F4;
+    --ink: #0B1020;
+    --muted: #52586A;
+    --line: rgba(11, 16, 32, 0.12);
+    --line-strong: rgba(11, 16, 32, 0.24);
+    --focus: #8E7440;
+    --champagne: #8E7440;
+    --champagne-lit: #A68A52;
+    --champagne-deep: #6E582E;
+    --accent: #0B1020;
+    --accent-ink: #F6F2EA;
     --bg-canvas: var(--bg);
     --bg-surface: var(--surface);
     --bg-subtle: var(--surface-2);
     --ink-primary: var(--ink);
     --ink-secondary: var(--muted);
     --border-line: var(--line);
-    --accent-primary: var(--focus);
-    --status-answered: #24B476;
-    --status-danger: #E85D5D;
-    --status-current: #8F75FF;
-    color-scheme: dark;
+    --accent-primary: var(--champagne);
+    color-scheme: light;
   }
 }
 
@@ -96,6 +116,7 @@
   --ink-secondary: #E5E7EB;
   --border-line: #FFFFFF;
   --accent-primary: #FACC15;
+  --champagne: #FACC15;
   --status-answered: #22C55E;
   --status-review: #FACC15;
   --status-unanswered: #D1D5DB;

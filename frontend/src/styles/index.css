@@ -1,13 +1,11 @@
 @import '@fontsource/instrument-serif/400.css';
 @import '@fontsource/instrument-serif/400-italic.css';
-@import '@fontsource/ibm-plex-sans/400.css';
-@import '@fontsource/ibm-plex-sans/500.css';
-@import '@fontsource/ibm-plex-sans/600.css';
-@import '@fontsource/ibm-plex-sans/700.css';
+@import '@fontsource/inter-tight/400.css';
+@import '@fontsource/inter-tight/500.css';
+@import '@fontsource/inter-tight/600.css';
 @import '@fontsource/jetbrains-mono/400.css';
 @import '@fontsource/jetbrains-mono/500.css';
 @import '@fontsource/jetbrains-mono/600.css';
-@import '@fontsource/jetbrains-mono/700.css';
 @import './tokens.css';
 
 @tailwind base;
@@ -15,44 +13,51 @@
 @tailwind utilities;
 
 body {
-  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-family: 'Inter Tight', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.625;
 }
 
-/* Visible 2px cobalt focus ring for keyboard accessibility */
+.font-display {
+  font-family: 'Instrument Serif', Georgia, serif;
+  letter-spacing: -0.01em;
+  line-height: 1.06;
+}
+
+/* Visible 2px champagne focus ring */
 *:focus-visible {
-  outline: 2px solid var(--accent-primary);
+  outline: 2px solid var(--champagne);
   outline-offset: 2px;
 }
 
 .glass-nav {
-  background: rgba(246, 243, 236, 0.86);
+  background: rgba(12, 17, 34, 0.72);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--border-line);
+  border-bottom: 1px solid var(--line);
+}
+
+[data-theme='light'] .glass-nav {
+  background: rgba(246, 242, 234, 0.85);
+}
+
+@media (prefers-color-scheme: light) {
+  [data-theme='system'] .glass-nav {
+    background: rgba(246, 242, 234, 0.85);
+  }
 }
 
 .glass-tile {
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border-line);
+  background: rgba(12, 17, 34, 0.65);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--line);
 }
 
-[data-theme='dark'] .glass-nav {
-  background: rgba(11, 16, 32, 0.88);
-}
-
-[data-theme='dark'] .glass-tile {
-  background: rgba(20, 26, 46, 0.78);
-}
-
-@media (prefers-color-scheme: dark) {
-  [data-theme='system'] .glass-nav {
-    background: rgba(11, 16, 32, 0.88);
-  }
-  [data-theme='system'] .glass-tile {
-    background: rgba(20, 26, 46, 0.78);
-  }
+[data-theme='light'] .glass-tile {
+  background: rgba(255, 255, 255, 0.78);
 }
 
 @supports not (backdrop-filter: blur(1px)) {
@@ -71,8 +76,45 @@ body {
   }
 }
 
+/* Subtle SVG film-grain overlay (disabled in Exam Workspace and reduced-motion/transparency) */
+.film-grain::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 45;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@media (prefers-reduced-motion: reduce), (prefers-reduced-transparency: reduce) {
+  .film-grain::after {
+    display: none;
+  }
+}
+
+/* Champagne eyebrow rule */
+.eyebrow-rule::before {
+  content: '';
+  display: inline-block;
+  width: 24px;
+  height: 1px;
+  background: var(--champagne);
+  vertical-align: middle;
+  margin-right: 10px;
+}
+
 .tabular-nums {
   font-variant-numeric: tabular-nums;
+}
+
+@keyframes rowFlash {
+  0% { background-color: rgba(203, 169, 107, 0.14); }
+  100% { background-color: transparent; }
+}
+
+.animate-row-flash {
+  animation: rowFlash 600ms ease-out;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -81,5 +123,8 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  .animate-row-flash {
+    animation: none;
   }
 }

@@ -732,7 +732,11 @@ export const ExamWorkspacePage = () => {
                 </div>
               </div>
 
-              <p dir="auto" style={fontSizeStyle} className={`${lineSpacingClass} text-ink font-medium mb-6 max-w-[72ch] break-words`}>
+              <p
+                dir="auto"
+                style={{ fontSize: `${Math.max(20, (prefs.fontSizePx || 16) + 6)}px` }}
+                className={`${lineSpacingClass} font-serif text-ink mb-6 max-w-[62ch] break-words`}
+              >
                 {currentQ.text}
               </p>
 

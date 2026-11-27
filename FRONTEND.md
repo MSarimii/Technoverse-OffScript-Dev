@@ -20,15 +20,16 @@ npm run build   # Builds production bundle to frontend/dist/
 
 ---
 
-## 2. Design System & Tokens ("Calm Examination Hall")
+## 2. Design System & Tokens ("Quiet Luxury / Editorial Institution")
 
-- **Self-Hosted Fonts (`@fontsource`)**: `Instrument Serif` (display), `IBM Plex Sans` (UI/body), `JetBrains Mono` (`tabular-nums` timers, IDs, scores).
-- **Light Theme (Default)**: `--bg: #F6F3EC`, `--surface: #FFFFFF`, `--surface-2: #FBF9F4`, `--ink: #0B1020`, `--muted: #5B6275`, `--line: #E3DFD4`, `--focus: #2F5BFF`
-- **Dark Theme (`data-theme="dark"` / `system`)**: `--bg: #0B1020`, `--surface: #141A2E`, `--surface-2: #1A2240`, `--ink: #E8EAF2`, `--muted: #9AA3BD`, `--line: #262D47`, `--focus: #6C8BFF`
+- **Self-Hosted Fonts (`@fontsource`)**: `Instrument Serif` (display, `-0.01em` tracking, `1.06` line-height), `Inter Tight` (UI/body, `400/500/600`), `JetBrains Mono` (`tabular-nums` timers, IDs, scores).
+- **Dark Theme (Default Brand Layer)**: `--bg: #070A14`, `--surface: #0C1122`, `--surface-2: #121933`, `--ink: #F4EFE6`, `--muted: #B9B3A6`, `--champagne: #CBA96B`, `--line: rgba(244,239,230,0.12)`, `--focus: #CBA96B`
+- **Light Theme (`data-theme="light"`)**: `--bg: #F6F2EA`, `--surface: #FFFFFF`, `--surface-2: #FBF9F4`, `--ink: #0B1020`, `--muted: #52586A`, `--champagne: #8E7440`, `--line: rgba(11,16,32,0.12)`, `--focus: #8E7440`
 - **WCAG AA Contrast Verification**:
-  - Light `#0B1020` on `#F6F3EC` (~16.8:1), `#5B6275` on `#FFFFFF` (~6.1:1), `#FFFFFF` on `#2F5BFF` (~4.8:1).
-  - Dark `#E8EAF2` on `#0B1020` (~15.4:1), `#9AA3BD` on `#141A2E` (~6.4:1).
-- **Semantic Status (Color + Shape)**: Cobalt `#2F5BFF`, Amber `#F5A524` (Flag), Green `#1F9D66` (Check), Red `#D64545` (Alert / Dashed Ring), Violet `#7A5CFF` (Current Question Ring).
+  - Dark `#F4EFE6` on `#070A14` (~17.1:1), `#B9B3A6` on `#0C1122` (~8.4:1), `#CBA96B` on `#070A14` (~8.9:1), `#070A14` on `#CBA96B` (~8.9:1).
+  - Light `#0B1020` on `#F6F2EA` (~16.8:1), `#52586A` on `#FFFFFF` (~6.4:1), `#8E7440` on `#FFFFFF` (~4.6:1).
+- **Intentionally Calm Zone**: Exam Workspace (`/candidate/exam/*`) disables film-grain overlay, glassmorphism, and decorative motion; only opacity/transform micro-feedback and `aria-live` updates remain.
+- **Landing Structure**: Glass navbar (`DEV MOCK` badge hidden in production), asymmetric 2-column hero with Live Product Stage (HTML/CSS/SVG), credibility strip, 3-chapter lazy-loaded `ScrollTrigger` + `Lenis` story, editorial role rows, and closing CTA band.
 
 ---
 

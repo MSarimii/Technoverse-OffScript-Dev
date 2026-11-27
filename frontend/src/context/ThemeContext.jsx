@@ -3,19 +3,15 @@ import { createContext, useContext, useEffect, useState } from 'react';
 const ThemeContext = createContext(null);
 
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(() => localStorage.getItem('sems_theme') || 'system');
+  const [theme, setTheme] = useState(() => localStorage.getItem('sems_theme') || 'dark');
 
   useEffect(() => {
     localStorage.setItem('sems_theme', theme);
-    if (theme === 'light') {
-      document.documentElement.removeAttribute('data-theme');
-    } else {
-      document.documentElement.setAttribute('data-theme', theme);
-    }
+    document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
   const cycleTheme = () => {
-    setTheme((prev) => (prev === 'light' ? 'dark' : prev === 'dark' ? 'system' : 'light'));
+    setTheme((prev) => (prev === 'dark' ? 'light' : prev === 'light' ? 'system' : 'dark'));
   };
 
   return (

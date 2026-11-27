@@ -8,10 +8,8 @@
     <script>
       (function () {
         try {
-          var t = localStorage.getItem('sems_theme') || 'system';
-          if (t !== 'light') {
-            document.documentElement.setAttribute('data-theme', t);
-          }
+          var t = localStorage.getItem('sems_theme') || 'dark';
+          document.documentElement.setAttribute('data-theme', t);
         } catch (e) {}
       })();
     </script>

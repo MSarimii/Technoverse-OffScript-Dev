@@ -12,15 +12,20 @@ export default {
           muted: 'var(--ink-secondary)',
         },
         line: 'var(--border-line)',
-        navy: {
-          50: '#EEF2FF',
-          100: '#DCE5FF',
-          600: '#2F5BFF',
-          800: '#2447CC',
-          900: '#2F5BFF',
+        champagne: {
+          DEFAULT: 'var(--champagne)',
+          lit: 'var(--champagne-lit)',
+          deep: 'var(--champagne-deep)',
         },
-        cobalt: '#2F5BFF',
-        violet: '#7A5CFF',
+        navy: {
+          50: 'rgba(203, 169, 107, 0.12)',
+          100: 'rgba(203, 169, 107, 0.22)',
+          600: 'var(--champagne)',
+          800: 'var(--champagne-lit)',
+          900: 'var(--accent)',
+        },
+        cobalt: 'var(--champagne)',
+        violet: 'var(--status-current)',
         status: {
           answered: 'var(--status-answered)',
           review: 'var(--status-review)',
@@ -30,7 +35,7 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['"IBM Plex Sans"', 'system-ui', 'sans-serif'],
+        sans: ['"Inter Tight"', 'system-ui', '-apple-system', 'sans-serif'],
         serif: ['"Instrument Serif"', 'Georgia', 'serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
