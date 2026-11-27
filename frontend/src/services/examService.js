@@ -70,35 +70,14 @@ export const examService = {
   getQuestionAnalytics: (examId) =>
     USE_MOCK ? mockApi.getQuestionAnalytics(examId) : api.get(`/exams/${examId}/questions/analytics`),
   getFairness: (examId) => (USE_MOCK ? mockApi.getFairness(examId) : api.get(`/exams/${examId}/fairness`)),
-  async suggestGradeAI({ questionText, rubric, answerText, maxMarks }) {
-    if (USE_MOCK) return mockApi.suggestGradeAI({ questionText, rubric, answerText, maxMarks });
-    const prompt = [
-      `You are an objective academic grading assistant. Evaluate the student answer against the rubric and respond ONLY with a JSON object like {"suggestedMarks": number, "rationale": "short 1-2 sentence rationale"}.`,
-      `Max Marks: ${maxMarks}`,
-      `Question: ${questionText}`,
-      rubric ? `Rubric: ${rubric}` : '',
-      `Candidate Answer: ${answerText}`,
-    ]
-      .filter(Boolean)
-      .join('\n');
-    const res = await api.post('/ai/test', { prompt });
-    const raw = res.data?.content || '';
-    let suggestedMarks = 0;
-    let rationale = raw;
-    try {
-      const jsonMatch = raw.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        if (typeof parsed.suggestedMarks === 'number') {
-          suggestedMarks = Math.max(0, Math.min(maxMarks, parsed.suggestedMarks));
-        }
-        if (parsed.rationale) rationale = String(parsed.rationale);
-      }
-    } catch {
-      const numMatch = raw.match(/(\d+(?:\.\d+)?)/);
-      if (numMatch) suggestedMarks = Math.max(0, Math.min(maxMarks, Number(numMatch[1])));
-    }
-    return { data: { suggestedMarks, rationale } };
+  testAiStatus: () => (USE_MOCK ? Promise.resolve({ success: true, ok: true, source: 'mock', model: 'mock' }) : api.post('/ai/test')),
+  suggestGradeAI: (attemptIdOrPayload, questionId) => {
+    if (USE_MOCK) return mockApi.suggestGradeAI(attemptIdOrPayload);
+    const body =
+      typeof attemptIdOrPayload === 'object' && attemptIdOrPayload !== null
+        ? { attemptId: attemptIdOrPayload.attemptId, questionId: attemptIdOrPayload.questionId }
+        : { attemptId: attemptIdOrPayload, questionId };
+    return api.post('/ai/suggest-grade', body);
   },
   async downloadExamReportPdf(examId) {
     const blob = await api.get(`/exams/${examId}/report.pdf`, { responseType: 'blob' });

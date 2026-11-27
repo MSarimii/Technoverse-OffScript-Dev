@@ -4,7 +4,21 @@ import { examService } from '../../services/examService';
 import { PageHeader } from '../../components/layout/AppLayout';
 import { Button, Badge, Dialog, Skeleton, EmptyState } from '../../components/ui';
 import { toast } from 'sonner';
-import { Sparkles, CheckCircle2, Send, AlertTriangle, Download, RefreshCw } from 'lucide-react';
+import { Sparkles, CheckCircle2, Send, AlertTriangle, Download, RefreshCw, Check } from 'lucide-react';
+
+function mapAiErrorMessage(err) {
+  const code = err?.code;
+  if (code === 'AI_NOT_APPLICABLE' || err?.statusCode === 422) {
+    return err?.message || 'AI grading unavailable for this question (requires written answer and rubric).';
+  }
+  if (code === 'AI_RATE_LIMITED' || err?.statusCode === 429) {
+    return err?.message || 'Too many AI requests. Retry shortly.';
+  }
+  if (code === 'AI_UNAVAILABLE' || code === 'AI_BAD_OUTPUT' || err?.statusCode === 502 || err?.statusCode === 503) {
+    return err?.message || 'AI service unavailable. Grade manually.';
+  }
+  return err?.message || 'AI suggestion unavailable. Grade manually.';
+}
 
 export const ExamGradingPage = () => {
   const { id } = useParams();
@@ -16,6 +30,8 @@ export const ExamGradingPage = () => {
   const [scoreErrors, setScoreErrors] = useState({});
   const [comments, setComments] = useState({});
   const [aiHints, setAiHints] = useState({});
+  const [aiLoading, setAiLoading] = useState({});
+  const [aiStatus, setAiStatus] = useState(null);
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
 
   const load = async () => {
@@ -67,6 +83,10 @@ export const ExamGradingPage = () => {
 
   useEffect(() => {
     load();
+    examService
+      .testAiStatus()
+      .then((res) => setAiStatus(res))
+      .catch(() => setAiStatus({ ok: false, source: 'offline' }));
   }, [id]);
 
   const handleScoreChange = (attemptId, qid, rawVal, maxMarks) => {
@@ -114,21 +134,26 @@ export const ExamGradingPage = () => {
     }
   };
 
-  const handleAiSuggest = async (attemptId, q, answerText) => {
+  const handleAiSuggest = async (attemptId, q) => {
     const qid = q.questionId || q.id;
+    const key = `${attemptId}-${qid}`;
+    setAiLoading((prev) => ({ ...prev, [key]: true }));
     try {
-      const res = await examService.suggestGradeAI({
-        questionText: q.text,
-        rubric: q.rubric,
-        answerText,
-        maxMarks: q.marks,
-      });
-      const hint = res.data;
-      setAiHints((prev) => ({ ...prev, [`${attemptId}-${qid}`]: hint }));
-      handleScoreChange(attemptId, qid, hint.suggestedMarks, q.marks);
+      const res = await examService.suggestGradeAI(attemptId, qid);
+      const suggestion = res?.suggestion || res?.data?.suggestion || res?.data;
+      const meta = res?.meta || res?.data?.meta || { source: 'mock', disclaimer: 'Suggestion only. The examiner decides.' };
+      setAiHints((prev) => ({ ...prev, [key]: { ...suggestion, meta } }));
     } catch (err) {
-      toast.error(err.message || 'AI suggestion unavailable');
+      toast.error(mapAiErrorMessage(err));
+    } finally {
+      setAiLoading((prev) => ({ ...prev, [key]: false }));
     }
+  };
+
+  const handleApplySuggestion = (attemptId, q, hint) => {
+    const qid = q.questionId || q.id;
+    handleScoreChange(attemptId, qid, hint.suggestedMarks, q.marks);
+    toast.success(`Applied suggested score (${hint.suggestedMarks}/${q.marks}) — review and click Save when ready.`);
   };
 
   const handlePublishResults = async () => {
@@ -162,6 +187,63 @@ export const ExamGradingPage = () => {
     return attempt.answers?.[qid]?.value || '';
   };
 
+  const renderAiSuggestionPanel = (aid, q) => {
+    const qid = q.questionId || q.id;
+    const hint = aiHints[`${aid}-${qid}`];
+    if (!hint) return null;
+    const isLive = hint.meta?.source === 'openrouter';
+
+    return (
+      <div className="p-3.5 rounded-lg bg-navy-50/60 border border-cobalt/30 space-y-2 text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2 font-mono">
+            <span className="font-bold text-cobalt">
+              Suggested: {hint.suggestedMarks} / {q.marks}
+            </span>
+            {hint.confidence && (
+              <Badge tone={hint.confidence === 'high' ? 'success' : hint.confidence === 'medium' ? 'warning' : 'neutral'}>
+                Confidence: {hint.confidence}
+              </Badge>
+            )}
+            <Badge tone={isLive ? 'cobalt' : 'neutral'}>
+              {isLive ? 'OpenRouter AI' : 'Mock AI'}
+            </Badge>
+          </div>
+          <Button size="sm" variant="secondary" onClick={() => handleApplySuggestion(aid, q, hint)}>
+            <Check className="w-3.5 h-3.5 text-status-answered" /> Apply ({hint.suggestedMarks})
+          </Button>
+        </div>
+
+        {hint.rationale && <p className="text-ink leading-relaxed">{hint.rationale}</p>}
+
+        {(hint.matchedPoints?.length > 0 || hint.missingPoints?.length > 0) && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 font-mono text-[11px]">
+            {hint.matchedPoints?.length > 0 && (
+              <div className="space-y-0.5">
+                <div className="text-status-answered font-semibold">Matched Points</div>
+                {hint.matchedPoints.map((pt, i) => (
+                  <div key={i} className="text-ink-muted">✓ {pt}</div>
+                ))}
+              </div>
+            )}
+            {hint.missingPoints?.length > 0 && (
+              <div className="space-y-0.5">
+                <div className="text-status-review font-semibold">Missing Points</div>
+                {hint.missingPoints.map((pt, i) => (
+                  <div key={i} className="text-ink-muted">• {pt}</div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        <p className="text-[11px] font-mono text-ink-muted border-t border-line/60 pt-1.5">
+          {hint.meta?.disclaimer || 'Suggestion only. The examiner decides.'}
+        </p>
+      </div>
+    );
+  };
+
   return (
     <main className="space-y-6">
       <PageHeader
@@ -169,7 +251,12 @@ export const ExamGradingPage = () => {
         subtitle={exam?.title}
         breadcrumbs={[{ label: 'Examiner', to: '/examiner' }, { label: 'Grading' }]}
         actions={
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {aiStatus && (
+              <Badge tone={aiStatus.ok ? (aiStatus.source === 'openrouter' ? 'cobalt' : 'neutral') : 'warning'}>
+                AI: {aiStatus.ok ? (aiStatus.source === 'openrouter' ? 'OpenRouter Live' : 'Mock Mode') : 'Offline'}
+              </Badge>
+            )}
             <Button size="sm" variant={groupBy === 'candidate' ? 'primary' : 'secondary'} onClick={() => setGroupBy('candidate')}>
               By Candidate
             </Button>
@@ -232,7 +319,7 @@ export const ExamGradingPage = () => {
                   writtenQs.map((q) => {
                     const qid = q.questionId || q.id;
                     const ansText = getAnswerText(a, qid) || '(No written response)';
-                    const hint = aiHints[`${aid}-${qid}`];
+                    const isSuggesting = Boolean(aiLoading[`${aid}-${qid}`]);
                     const errMsg = scoreErrors[`${aid}-${qid}`];
                     return (
                       <div key={qid} className="p-4 rounded-lg bg-canvas border border-line space-y-2.5">
@@ -262,15 +349,17 @@ export const ExamGradingPage = () => {
                             onChange={(e) => setComments((c) => ({ ...c, [`${aid}-${qid}`]: e.target.value }))}
                             className="flex-1 min-w-[160px] px-2.5 py-1 text-xs bg-surface border border-line rounded-lg"
                           />
-                          <Button size="sm" variant="secondary" onClick={() => handleAiSuggest(aid, q, ansText)}>
-                            <Sparkles className="w-3.5 h-3.5 text-cobalt" /> AI Suggest (Examiner Decides)
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            loading={isSuggesting}
+                            disabled={isSuggesting}
+                            onClick={() => handleAiSuggest(aid, q)}
+                          >
+                            <Sparkles className="w-3.5 h-3.5 text-cobalt" /> Suggest with AI
                           </Button>
                         </div>
-                        {hint && (
-                          <p className="text-[11px] font-mono text-cobalt">
-                            AI Suggestion ({hint.suggestedMarks}/{q.marks}): {hint.rationale}
-                          </p>
-                        )}
+                        {renderAiSuggestionPanel(aid, q)}
                       </div>
                     );
                   })
@@ -291,24 +380,37 @@ export const ExamGradingPage = () => {
                   <h2 className="text-sm font-semibold text-ink">{q.text} (Max {q.marks})</h2>
                   {attempts.map((a) => {
                     const aid = a.attemptId || a.id;
+                    const isSuggesting = Boolean(aiLoading[`${aid}-${qid}`]);
                     return (
-                      <div key={aid} className="p-3 rounded-lg bg-canvas border border-line flex flex-wrap items-center justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                          <div className="text-xs font-mono text-ink-muted mb-1">{a.candidate?.name || a.candidateName}</div>
-                          <p className="text-sm text-ink">{getAnswerText(a, qid) || '(No response)'}</p>
+                      <div key={aid} className="p-3 rounded-lg bg-canvas border border-line space-y-2.5">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="text-xs font-mono text-ink-muted mb-1">{a.candidate?.name || a.candidateName}</div>
+                            <p className="text-sm text-ink">{getAnswerText(a, qid) || '(No response)'}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              min={0}
+                              max={q.marks}
+                              step={0.5}
+                              value={draftScores[aid]?.[qid] ?? 0}
+                              onChange={(e) => handleScoreChange(aid, qid, e.target.value, q.marks)}
+                              className="w-20 px-2 py-1 text-sm font-mono bg-surface border border-line rounded-lg"
+                            />
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              loading={isSuggesting}
+                              disabled={isSuggesting}
+                              onClick={() => handleAiSuggest(aid, q)}
+                            >
+                              <Sparkles className="w-3.5 h-3.5 text-cobalt" /> Suggest with AI
+                            </Button>
+                            <Button size="sm" onClick={() => handleSaveGrade(a)}>Save</Button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="number"
-                            min={0}
-                            max={q.marks}
-                            step={0.5}
-                            value={draftScores[aid]?.[qid] ?? 0}
-                            onChange={(e) => handleScoreChange(aid, qid, e.target.value, q.marks)}
-                            className="w-20 px-2 py-1 text-sm font-mono bg-surface border border-line rounded-lg"
-                          />
-                          <Button size="sm" onClick={() => handleSaveGrade(a)}>Save</Button>
-                        </div>
+                        {renderAiSuggestionPanel(aid, q)}
                       </div>
                     );
                   })}
