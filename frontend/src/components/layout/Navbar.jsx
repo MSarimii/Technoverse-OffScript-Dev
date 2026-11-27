@@ -123,7 +123,7 @@ export const Navbar = () => {
             Verify a report
           </Link>
 
-          <Tooltip label={`Theme: ${theme}`}>
+          <Tooltip label={`Theme: ${theme}`} placement="bottom" align="right">
             <IconButton label={`Theme: ${theme} (click to switch)`} onClick={cycleTheme} variant="ghost">
               <ThemeIcon className="w-4 h-4" strokeWidth={1.5} />
             </IconButton>

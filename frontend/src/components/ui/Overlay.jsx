@@ -109,7 +109,7 @@ export const Popover = ({ open, children, className = '' }) => {
   );
 };
 
-export const Tooltip = ({ label, children }) => {
+export const Tooltip = ({ label, placement = 'top', align = 'center', children }) => {
   const [show, setShow] = useState(false);
   const reduced = useReducedMotion();
   const timerRef = useRef(null);
@@ -122,6 +122,10 @@ export const Tooltip = ({ label, children }) => {
     setShow(false);
   };
 
+  const posClass = placement === 'bottom' ? 'top-full mt-2' : 'bottom-full mb-1.5';
+  const alignClass = align === 'right' ? 'right-0' : 'left-1/2 -translate-x-1/2';
+  const yOffset = placement === 'bottom' ? -4 : 4;
+
   return (
     <span className="relative inline-flex" onMouseEnter={open} onMouseLeave={close} onFocus={open} onBlur={close}>
       {children}
@@ -129,11 +133,11 @@ export const Tooltip = ({ label, children }) => {
         {show && (
           <motion.span
             role="tooltip"
-            initial={reduced ? { opacity: 1 } : { opacity: 0, y: 4 }}
+            initial={reduced ? { opacity: 1 } : { opacity: 0, y: yOffset }}
             animate={{ opacity: 1, y: 0 }}
-            exit={reduced ? { opacity: 0 } : { opacity: 0, y: 4 }}
+            exit={reduced ? { opacity: 0 } : { opacity: 0, y: yOffset }}
             transition={{ type: 'spring', stiffness: 460, damping: 28 }}
-            className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1 rounded-lg bg-[#0B0F0E] text-white border border-[#181F1D] shadow-md text-[11px] font-mono whitespace-nowrap z-50"
+            className={`absolute ${posClass} ${alignClass} px-2.5 py-1 rounded-lg bg-[#0B0F0E] text-white border border-[#181F1D] shadow-md text-[11px] font-mono whitespace-nowrap pointer-events-none z-50`}
           >
             {label}
           </motion.span>

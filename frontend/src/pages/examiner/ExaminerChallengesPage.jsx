@@ -230,21 +230,15 @@ export const ExaminerChallengesPage = () => {
           <>
             <div className="space-y-4">
               <DrawerSection index={0} className="flex flex-wrap items-center justify-between gap-2">
-                <Badge
-                  tone={
-                    selectedDispute.status === 'resolved'
-                      ? 'success'
-                      : selectedDispute.status === 'rejected'
-                      ? 'neutral'
-                      : 'warning'
-                  }
-                >
-                  {selectedDispute.status === 'resolved'
-                    ? 'Upheld'
-                    : selectedDispute.status === 'rejected'
-                    ? 'Dismissed'
-                    : 'Pending'}
-                </Badge>
+                {selectedDispute.status === 'resolved' ? (
+                  <Badge tone="success">Upheld</Badge>
+                ) : selectedDispute.status === 'rejected' ? (
+                  <Badge tone="neutral" dot="slate">Dismissed</Badge>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/25">
+                    Pending
+                  </span>
+                )}
                 <span className="text-xs font-mono text-[var(--muted)] tabular-nums">
                   Score: <strong className="text-[var(--ink)]">{selectedDispute.currentMarks}</strong> / {selectedDispute.maxMarks}
                 </span>
