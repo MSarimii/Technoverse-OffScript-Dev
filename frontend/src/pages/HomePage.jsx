@@ -14,7 +14,10 @@ import {
   Clock,
   Lock,
   Check,
-  Minus,
+  WifiOff,
+  Scale,
+  QrCode,
+  X,
 } from 'lucide-react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
@@ -168,6 +171,7 @@ export const HomePage = () => {
   const ctaRef = useRef(null);
   const [loopIdx, setLoopIdx] = useState(0);
   const [clockSec, setClockSec] = useState(42 * 60 + 18);
+  const [hoveredRow, setHoveredRow] = useState(null);
   const [parallax, setParallax] = useState({ x: 0, y: 0 });
   const [ctaOffset, setCtaOffset] = useState({ x: 0, y: 0 });
 
@@ -712,8 +716,8 @@ export const HomePage = () => {
         </section>
 
         {/* "Why Institutions Switch" Comparison Matrix */}
-        <section aria-labelledby="comparison-heading" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 pb-4">
-          <div className="max-w-2xl mb-10">
+        <section aria-labelledby="comparison-heading" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 pb-8">
+          <div className="max-w-2xl mb-12">
             <p className="eyebrow-rule font-mono text-xs uppercase tracking-[0.12em] text-[#065F46]">
               The Institutional Standard
             </p>
@@ -725,73 +729,115 @@ export const HomePage = () => {
             </p>
           </div>
 
-          <div className="luxury-card rounded-2xl overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[640px]">
-                <thead>
-                  <tr className="border-b border-[#E4E8E6]">
-                    <th className="py-4 px-6 text-xs font-mono uppercase tracking-[0.1em] text-[#6B7280] w-[24%]">
-                      Capability
-                    </th>
-                    <th className="py-4 px-6 text-xs font-mono uppercase tracking-[0.1em] text-[#6B7280] w-[36%]">
-                      General LMS &amp; MOOCs (Coursera, Khan Academy)
-                    </th>
-                    <th className="py-4 px-6 text-xs font-mono uppercase tracking-[0.1em] text-[#065F46] bg-[#ECFDF5] border-l border-[#A7F3D0] w-[40%]">
-                      <span className="inline-flex items-center gap-2 font-semibold">
-                        <PulseDot />
-                        SEMS Suite
-                      </span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#E4E8E6] text-sm">
-                  {[
-                    {
-                      cap: 'Timing Authority',
-                      mooc: 'Client-side browser timer',
-                      sems: 'Zero-trust UTC server clock (RTT-synced)',
-                    },
-                    {
-                      cap: 'Outage Resilience',
-                      mooc: 'Session lost on disconnect',
-                      sems: 'Offline IndexedDB vault & late-sync ledger',
-                    },
-                    {
-                      cap: 'Paper Fairness',
-                      mooc: 'Basic random question shuffle',
-                      sems: 'Blueprint-balanced difficulty distribution',
-                    },
-                    {
-                      cap: 'Integrity & Privacy',
-                      mooc: 'Invasive webcams or honor code',
-                      sems: 'Non-invasive telemetry & neutral audit trails',
-                    },
-                    {
-                      cap: 'Credential Trust',
-                      mooc: 'Static PDF or profile link',
-                      sems: 'Cryptographic QR transcripts & public registry',
-                    },
-                  ].map((row) => (
-                    <tr key={row.cap} className="hover:bg-[#FAFBF9]/60 transition-colors">
-                      <td className="py-4 px-6 font-display font-semibold text-[#0B0F0E]">{row.cap}</td>
-                      <td className="py-4 px-6 text-[#6B7280]">
-                        <span className="inline-flex items-center gap-2">
-                          <Minus className="w-3.5 h-3.5 text-[#9CA3AF] shrink-0" strokeWidth={2} />
-                          {row.mooc}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6 font-medium text-[#065F46] bg-[#ECFDF5]/60 border-l border-[#A7F3D0]">
-                        <span className="inline-flex items-center gap-2">
-                          <Check className="w-4 h-4 text-[#059669] shrink-0" strokeWidth={2.25} />
-                          {row.sems}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          {(() => {
+            const rows = [
+              {
+                cap: 'Timing Authority',
+                icon: Clock,
+                mooc: 'Client-side browser timer',
+                sems: 'Zero-trust UTC server clock (RTT-synced)',
+              },
+              {
+                cap: 'Outage Resilience',
+                icon: WifiOff,
+                mooc: 'Session lost on disconnect',
+                sems: 'Offline IndexedDB vault & late-sync ledger',
+              },
+              {
+                cap: 'Paper Fairness',
+                icon: Scale,
+                mooc: 'Basic random question shuffle',
+                sems: 'Blueprint-balanced difficulty distribution',
+              },
+              {
+                cap: 'Integrity & Privacy',
+                icon: ShieldCheck,
+                mooc: 'Invasive webcams or honor code',
+                sems: 'Non-invasive telemetry & neutral audit trails',
+              },
+              {
+                cap: 'Credential Trust',
+                icon: QrCode,
+                mooc: 'Static PDF or profile link',
+                sems: 'Cryptographic QR transcripts & public registry',
+              },
+            ];
+
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-5 md:gap-0 items-stretch">
+                {/* Left & Middle Columns: Pure White Architectural Table */}
+                <div className="md:col-span-7 bg-white border border-[#E4E4E7] md:border-r-0 rounded-2xl md:rounded-r-none shadow-[var(--card-shadow)] overflow-hidden flex flex-col">
+                  <div className="hidden sm:grid grid-cols-12 items-center px-6 py-4 border-b border-[#E4E4E7] text-[11px] font-mono uppercase tracking-[0.1em] text-[#64748B]">
+                    <div className="col-span-5">Capability</div>
+                    <div className="col-span-7">General LMS &amp; MOOCs (Coursera, Khan Academy)</div>
+                  </div>
+                  <div className="divide-y divide-[#E4E4E7] flex-1 flex flex-col justify-between">
+                    {rows.map((row, idx) => {
+                      const Icon = row.icon;
+                      const isHovered = hoveredRow === idx;
+                      return (
+                        <div
+                          key={row.cap}
+                          onMouseEnter={() => setHoveredRow(idx)}
+                          onMouseLeave={() => setHoveredRow(null)}
+                          className={`grid grid-cols-1 sm:grid-cols-12 items-center gap-1.5 sm:gap-3 px-6 py-4 min-h-[68px] transition-colors ${
+                            isHovered ? 'bg-[#FAFBF9]' : 'bg-white'
+                          }`}
+                        >
+                          <div className="sm:col-span-5 flex items-center gap-2.5">
+                            <Icon className="w-4 h-4 text-[#64748B] shrink-0" strokeWidth={1.75} />
+                            <span className="font-display font-semibold text-sm text-[#0B0F0E]">{row.cap}</span>
+                          </div>
+                          <div className="sm:col-span-7 flex items-center gap-2 text-sm text-[#64748B]">
+                            <X className="w-3.5 h-3.5 text-[#94A3B8] shrink-0" strokeWidth={2} />
+                            <span>{row.mooc}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Right Column: Elevated Jet-Black Featured SEMS Card */}
+                <div className="md:col-span-5 bg-[#0A0A0A] text-white rounded-2xl border border-[#181F1D] shadow-2xl md:-my-3 z-10 overflow-hidden flex flex-col">
+                  <div className="px-6 py-4 md:py-[22px] border-b border-white/[0.08] flex flex-wrap items-center justify-between gap-2">
+                    <span className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-[0.1em] font-semibold text-white">
+                      <PulseDot />
+                      SEMS Suite
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono uppercase tracking-[0.08em] text-[#10B981] bg-[#10B981]/15 border border-[#10B981]/25">
+                      Institutional Standard
+                    </span>
+                  </div>
+                  <div className="divide-y divide-white/[0.08] flex-1 flex flex-col justify-between md:pb-3">
+                    {rows.map((row, idx) => {
+                      const isHovered = hoveredRow === idx;
+                      return (
+                        <div
+                          key={row.cap}
+                          onMouseEnter={() => setHoveredRow(idx)}
+                          onMouseLeave={() => setHoveredRow(null)}
+                          className={`flex items-center gap-3 px-6 py-4 min-h-[68px] transition-colors ${
+                            isHovered ? 'bg-white/[0.04]' : ''
+                          }`}
+                        >
+                          <span className="w-6 h-6 rounded-full bg-[#10B981]/15 border border-[#10B981]/30 flex items-center justify-center shrink-0">
+                            <Check className="w-3.5 h-3.5 text-[#10B981]" strokeWidth={2.5} />
+                          </span>
+                          <div className="min-w-0">
+                            <div className="sm:hidden text-[10px] font-mono uppercase tracking-[0.08em] text-white/50 mb-0.5">
+                              {row.cap}
+                            </div>
+                            <span className="text-sm font-medium text-white">{row.sems}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </section>
 
         {/* 2x2 Architectural Role Bento Grid */}
