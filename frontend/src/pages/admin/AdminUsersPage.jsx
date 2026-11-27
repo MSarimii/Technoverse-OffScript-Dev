@@ -4,10 +4,11 @@ import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../context/ThemeContext';
 import { PageHeader } from '../../components/layout/AppLayout';
 import { getInitials } from '../../lib/initials';
+import { sanitizeCell } from '../../lib/csv';
 import { Button, Input, Select, Badge, Dialog, Skeleton, EmptyState, ErrorState, Tooltip, BentoAreaChart, BentoDonutChart } from '../../components/ui';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { toast } from 'sonner';
-import { UserPlus, Search, ShieldAlert, Users, ShieldCheck, GraduationCap, BookOpen } from 'lucide-react';
+import { UserPlus, Search, ShieldAlert, Users, ShieldCheck, GraduationCap, BookOpen, Download, Copy, Check } from 'lucide-react';
 
 const PAGE_SIZE = 8;
 
@@ -29,6 +30,7 @@ export const AdminUsersPage = () => {
 
   const [pendingRoleChange, setPendingRoleChange] = useState(null); // { user, nextRole }
   const [confirmDeactivateId, setConfirmDeactivateId] = useState(null);
+  const [copiedEmailId, setCopiedEmailId] = useState(null);
   const reduced = useReducedMotion();
 
   const loadUsers = async () => {
@@ -119,6 +121,36 @@ export const AdminUsersPage = () => {
   const adminCount = users.filter((u) => u.role === 'admin').length;
   const examinerCount = users.filter((u) => u.role === 'examiner').length;
   const candidateCount = users.filter((u) => u.role === 'candidate').length;
+
+  const handleCopyEmail = (user) => {
+    if (!user?.email) return;
+    navigator.clipboard?.writeText(user.email)?.catch(() => {});
+    setCopiedEmailId(user.id);
+    toast.success(`Copied ${user.email}`);
+    setTimeout(() => setCopiedEmailId((prev) => (prev === user.id ? null : prev)), 1500);
+  };
+
+  const handleExportCsv = () => {
+    const header = ['Name', 'Email', 'Role', 'Status'];
+    const lines = [
+      header.join(','),
+      ...filtered.map((u) =>
+        [u.name, u.email, u.role, u.isActive ? 'active' : 'inactive']
+          .map((cell) => `"${sanitizeCell(cell).replace(/"/g, '""')}"`)
+          .join(',')
+      ),
+    ];
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'sems-users.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${filtered.length} ${filtered.length === 1 ? 'user' : 'users'} to CSV`);
+  };
 
   const avatarClass = (role) =>
     role === 'admin'
@@ -212,48 +244,69 @@ export const AdminUsersPage = () => {
         </div>
       </section>
 
-      {/* Unified Table Card with Inline Toolbar */}
-      <div className="luxury-card rounded-2xl overflow-hidden">
-        <div className="p-4 border-b border-line bg-surface grid grid-cols-1 sm:grid-cols-4 gap-3">
-          <div className="sm:col-span-2 relative flex items-center">
-            <Search className="w-4 h-4 text-ink-muted absolute left-3 pointer-events-none" />
-            <input
-              type="text"
-              aria-label="Search users"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Search by name or email..."
-              className="w-full pl-9 pr-3 py-2 min-h-[40px] text-sm bg-canvas border border-line rounded-lg text-ink"
-            />
+      {/* Unified Table Card with Anchored Toolbar */}
+      <div className="rounded-2xl bg-[var(--surface)] border border-[var(--line)] text-[var(--ink)] shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
+        <div className="p-4 border-b border-[var(--line)] bg-[var(--surface)] flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 flex-1">
+            <div className="relative flex items-center flex-1 max-w-sm">
+              <Search className="w-4 h-4 text-[var(--muted)] absolute left-3 pointer-events-none" />
+              <input
+                type="text"
+                aria-label="Search users"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                placeholder="Search by name or email..."
+                className="w-full h-9 pl-9 pr-3 text-sm bg-canvas border border-[var(--line)] rounded-lg text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:border-zinc-400 dark:focus:border-white/25"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                aria-label="Filter by role"
+                value={roleFilter}
+                onChange={(e) => {
+                  setRoleFilter(e.target.value);
+                  setPage(1);
+                }}
+                className="h-9 px-3 text-xs font-medium rounded-lg bg-[var(--surface)] border border-[var(--line)] text-[var(--ink)] hover:border-zinc-400 dark:hover:border-white/20 transition-colors"
+              >
+                <option value="all">All Roles</option>
+                <option value="admin">Admin</option>
+                <option value="examiner">Examiner</option>
+                <option value="candidate">Candidate</option>
+              </select>
+              <select
+                aria-label="Filter by status"
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setPage(1);
+                }}
+                className="h-9 px-3 text-xs font-medium rounded-lg bg-[var(--surface)] border border-[var(--line)] text-[var(--ink)] hover:border-zinc-400 dark:hover:border-white/20 transition-colors"
+              >
+                <option value="all">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
           </div>
-          <Select
-            aria-label="Filter by role"
-            value={roleFilter}
-            onChange={(e) => {
-              setRoleFilter(e.target.value);
-              setPage(1);
-            }}
-          >
-            <option value="all">All Roles</option>
-            <option value="admin">Admin</option>
-            <option value="examiner">Examiner</option>
-            <option value="candidate">Candidate</option>
-          </Select>
-          <Select
-            aria-label="Filter by status"
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setPage(1);
-            }}
-          >
-            <option value="all">All Statuses</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </Select>
+
+          <div className="flex items-center gap-2.5 shrink-0">
+            <span className="inline-flex items-center px-2.5 h-7 rounded-full bg-zinc-100 dark:bg-white/[0.06] border border-[var(--line)] text-[11px] font-mono tabular-nums text-[var(--muted)]">
+              {filtered.length} {filtered.length === 1 ? 'user' : 'users'}
+            </span>
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              disabled={filtered.length === 0}
+              className="h-9 px-3 rounded-lg text-xs font-medium text-[var(--muted)] hover:text-[var(--ink)] hover:bg-zinc-100 dark:hover:bg-white/5 border border-[var(--line)] inline-flex items-center gap-1.5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Download className="w-3.5 h-3.5" strokeWidth={1.75} />
+              Export CSV
+            </button>
+          </div>
         </div>
 
         {loading ? (
@@ -279,26 +332,27 @@ export const AdminUsersPage = () => {
           <>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
-                <thead className="bg-subtle/70 text-ink-muted text-[11px] uppercase font-mono tracking-[0.08em]">
+                <thead className="bg-zinc-50/80 dark:bg-white/[0.02] border-b border-[var(--line)] text-[var(--muted)] text-[11px] uppercase font-mono tracking-[0.08em]">
                   <tr>
-                    <th className="px-4 py-3">Name</th>
-                    <th className="px-4 py-3">Email</th>
-                    <th className="px-4 py-3">Role</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3 text-right">Action</th>
+                    <th className="px-4 py-3 font-medium">Name</th>
+                    <th className="px-4 py-3 font-medium">Email</th>
+                    <th className="px-4 py-3 font-medium">Role</th>
+                    <th className="px-4 py-3 font-medium">Status</th>
+                    <th className="px-4 py-3 font-medium text-right">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-line">
+                <tbody className="divide-y divide-[var(--line)]">
                   {paged.map((u) => {
                     const isSelf = u.id === currentUser?.id;
+                    const isCopied = copiedEmailId === u.id;
                     return (
                       <motion.tr
                         key={u.id}
                         layout={!reduced}
                         transition={{ layout: { type: 'spring', stiffness: 420, damping: 34 } }}
-                        className="hover:bg-canvas/70 transition-colors"
+                        className="group hover:bg-zinc-50/80 dark:hover:bg-white/[0.025] transition-colors"
                       >
-                        <td className="px-4 py-3 font-medium text-ink">
+                        <td className="px-4 py-3.5 font-medium text-[var(--ink)]">
                           <div className="flex items-center gap-3">
                             <span
                               className={`w-8 h-8 rounded-full font-mono text-xs font-semibold flex items-center justify-center shrink-0 ${avatarClass(u.role)}`}
@@ -309,31 +363,49 @@ export const AdminUsersPage = () => {
                             {isSelf && <Badge tone="cobalt">You</Badge>}
                           </div>
                         </td>
-                        <td className="px-4 py-3 font-mono text-xs text-ink-muted">{u.email}</td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3.5 font-mono text-xs text-[var(--muted)]">
+                          <div className="inline-flex items-center gap-1.5">
+                            <span>{u.email}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleCopyEmail(u)}
+                              aria-label={isCopied ? `Copied ${u.email}` : `Copy ${u.email}`}
+                              className={`p-1 rounded-md transition-opacity hover:bg-zinc-200/70 dark:hover:bg-white/10 ${
+                                isCopied ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus:opacity-100'
+                              }`}
+                            >
+                              {isCopied ? (
+                                <Check className="w-3.5 h-3.5 text-[#10B981]" strokeWidth={2.25} />
+                              ) : (
+                                <Copy className="w-3.5 h-3.5 text-[var(--muted)]" strokeWidth={1.75} />
+                              )}
+                            </button>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3.5">
                           <select
                             aria-label={`Role for ${u.name}`}
                             disabled={isSelf}
                             value={u.role}
                             onChange={(e) => setPendingRoleChange({ user: u, nextRole: e.target.value })}
-                            className="px-3 py-1 min-h-[32px] text-xs font-mono bg-subtle/70 border border-line hover:border-line-strong rounded-full disabled:opacity-50"
+                            className="h-8 px-2.5 text-xs font-medium rounded-lg bg-zinc-50/80 dark:bg-white/[0.04] border border-[var(--line)] hover:border-zinc-400 dark:hover:border-white/20 text-[var(--ink)] disabled:opacity-50 transition-colors"
                           >
                             <option value="candidate">candidate</option>
                             <option value="examiner">examiner</option>
                             <option value="admin">admin</option>
                           </select>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3.5">
                           <Badge tone={u.isActive ? 'success' : 'danger'}>
                             {u.isActive ? 'active' : 'inactive'}
                           </Badge>
                         </td>
-                        <td className="px-4 py-3 text-right relative">
+                        <td className="px-4 py-3.5 text-right relative">
                           {isSelf ? (
                             <Tooltip label="Current session">
                               <button
                                 disabled
-                                className="px-2.5 py-1 rounded-full text-xs font-medium text-[#64748B] opacity-45 cursor-not-allowed"
+                                className="h-8 px-3 rounded-lg text-xs font-medium border border-transparent text-[var(--muted)] opacity-40 cursor-not-allowed"
                               >
                                 Deactivate
                               </button>
@@ -343,7 +415,7 @@ export const AdminUsersPage = () => {
                               <button
                                 type="button"
                                 onClick={() => setConfirmDeactivateId(confirmDeactivateId === u.id ? null : u.id)}
-                                className="px-2.5 py-1 rounded-full text-xs font-medium text-[#64748B] hover:text-[#DC2626] hover:bg-[#FEF2F2] transition-colors"
+                                className="h-8 px-3 rounded-lg text-xs font-medium border border-transparent text-[var(--muted)] hover:text-red-600 hover:bg-red-50 hover:border-red-200 dark:hover:text-red-400 dark:hover:bg-red-500/10 dark:hover:border-red-500/20 transition-colors"
                               >
                                 Deactivate
                               </button>
@@ -381,7 +453,7 @@ export const AdminUsersPage = () => {
                             <button
                               type="button"
                               onClick={() => handleToggleActive(u)}
-                              className="px-2.5 py-1 rounded-full text-xs font-medium text-[#059669] hover:bg-[#ECFDF5] transition-colors"
+                              className="h-8 px-3 rounded-lg text-xs font-medium border border-transparent text-[#059669] dark:text-emerald-400 hover:bg-emerald-50 hover:border-emerald-200 dark:hover:bg-emerald-500/10 dark:hover:border-emerald-500/20 transition-colors"
                             >
                               Activate
                             </button>
@@ -394,27 +466,43 @@ export const AdminUsersPage = () => {
               </table>
             </div>
 
-            <div className="px-4 py-3 border-t border-line flex items-center justify-between text-xs font-mono text-ink-muted">
-              <span>
+            <div className="px-4 py-3 border-t border-[var(--line)] bg-zinc-50/50 dark:bg-white/[0.015] flex flex-wrap items-center justify-between gap-3 text-xs font-mono text-[var(--muted)]">
+              <span className="tabular-nums">
                 Showing {paged.length} of {filtered.length} users (Page {safePage}/{totalPages})
               </span>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="secondary"
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
                   disabled={safePage <= 1}
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  className="h-8 px-3 rounded-lg text-xs font-sans font-medium border border-[var(--line)] bg-[var(--surface)] text-[var(--ink)] hover:bg-zinc-100 dark:hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   Prev
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                  <button
+                    key={pageNum}
+                    type="button"
+                    onClick={() => setPage(pageNum)}
+                    aria-label={`Page ${pageNum}`}
+                    aria-current={pageNum === safePage ? 'page' : undefined}
+                    className={`h-8 min-w-[32px] px-2 rounded-lg text-xs font-mono tabular-nums font-medium border transition-colors ${
+                      pageNum === safePage
+                        ? 'bg-[#0A0A0A] text-white border-[#0A0A0A] dark:bg-[#F4F4F5] dark:text-[#0A0A0A] dark:border-[#F4F4F5]'
+                        : 'border-[var(--line)] bg-[var(--surface)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-zinc-100 dark:hover:bg-white/5'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                ))}
+                <button
+                  type="button"
                   disabled={safePage >= totalPages}
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  className="h-8 px-3 rounded-lg text-xs font-sans font-medium border border-[var(--line)] bg-[var(--surface)] text-[var(--ink)] hover:bg-zinc-100 dark:hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   Next
-                </Button>
+                </button>
               </div>
             </div>
           </>
