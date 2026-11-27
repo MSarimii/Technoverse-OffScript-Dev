@@ -90,13 +90,6 @@ export const Navbar = () => {
               Secure Examination Suite
             </span>
           </Link>
-          {import.meta.env.DEV && USE_MOCK && (
-            <span
-              title="Dev Mock Mode Active"
-              className="w-1.5 h-1.5 rounded-full bg-[#10B981] inline-block"
-              aria-label="Dev mock mode active"
-            />
-          )}
           {!online && (
             <Badge tone="danger" className="hidden sm:inline-flex">
               <WifiOff className="w-3 h-3" strokeWidth={1.5} /> Offline
