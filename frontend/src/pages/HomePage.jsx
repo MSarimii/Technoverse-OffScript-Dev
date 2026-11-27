@@ -338,78 +338,70 @@ export const HomePage = () => {
           </section>
         </section>
 
-        {/* Full-Bleed Heritage Emerald Band: 3-Chapter Feature Showcase */}
+        {/* Architectural Off-White Band: 3-Chapter Feature Showcase */}
         <section
           aria-labelledby="story-heading"
-          className="bg-[#134E3A] text-[#F7F5F0] py-16 sm:py-20 border-y border-[#C5A059]/25"
+          className="bg-[#F8F9F7] text-[#111827] py-16 sm:py-20 border-y border-[#E5E7EB]"
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-14">
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[#F7F5F0]/15 pb-6">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[#E5E7EB] pb-6">
               <div>
-                <p className="font-mono text-xs uppercase tracking-[0.14em] text-[#C5A059]">
+                <p className="font-mono text-xs uppercase tracking-[0.14em] text-[#047857]">
                   Architectural Guarantees
                 </p>
-                <h2 id="story-heading" className="font-serif text-3xl sm:text-5xl text-[#F7F5F0] mt-1">
+                <h2 id="story-heading" className="font-serif text-3xl sm:text-5xl text-[#111827] mt-1">
                   How SEMS keeps exams fair and resilient.
                 </h2>
               </div>
-              <span className="text-xs font-mono text-[#B2C9BF] uppercase tracking-[0.1em]">
-                01 — 03 · Verified Mechanics
+              <span className="text-xs font-mono text-[#047857] uppercase tracking-[0.1em]">
+                01 – 03 • Verified Mechanics
               </span>
             </div>
 
             {/* Chapter 01: Server keeps the clock */}
-            <article className="scroll-chapter grid grid-cols-1 lg:grid-cols-12 gap-8 items-center pb-12 border-b border-[#C5A059]/25">
+            <article className="scroll-chapter grid grid-cols-1 lg:grid-cols-12 gap-8 items-center pb-12 border-b border-[#E5E7EB]">
               <div className="lg:col-span-5 space-y-3">
-                <span className="font-serif text-5xl text-[#C5A059] block">01</span>
-                <h3 className="font-serif text-3xl sm:text-4xl text-[#F7F5F0]">The server keeps the clock.</h3>
-                <p className="text-sm sm:text-base text-[#D7E6DF] max-w-[54ch] leading-relaxed">
+                <span className="font-serif text-5xl text-[#047857] block">01</span>
+                <h3 className="font-serif text-3xl sm:text-4xl text-[#111827]">The server keeps the clock.</h3>
+                <p className="text-sm sm:text-base text-[#4B5563] max-w-[54ch] leading-relaxed">
                   Every countdown is anchored to the server&apos;s UTC deadline via minimum-RTT offset sampling. Changing the local device clock never adds a single second.
                 </p>
               </div>
-              <div
-                className="lg:col-span-7 min-h-[240px] rounded-[16px] p-5 sm:p-6 flex flex-col justify-between gap-5"
-                style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                  border: '1px solid rgba(197, 160, 89, 0.28)',
-                  backgroundImage: 'radial-gradient(rgba(247, 245, 240, 0.14) 1px, transparent 1px)',
-                  backgroundSize: '18px 18px',
-                }}
-              >
-                <div className="flex items-center justify-between text-[11px] font-mono uppercase tracking-[0.1em] text-[#B2C9BF]">
+              <div className="lg:col-span-7 min-h-[240px] rounded-[16px] bg-white border border-[#E5E7EB] shadow-[0_1px_3px_rgba(17,24,39,0.04),0_10px_28px_rgba(17,24,39,0.04)] p-5 sm:p-6 flex flex-col justify-between gap-5">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono uppercase tracking-[0.1em] text-[#4B5563]">
                   <span className="inline-flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5 text-[#C5A059]" /> Clock Authority Comparison
+                    <Clock className="w-3.5 h-3.5 text-[#047857]" /> Clock Authority Comparison
                   </span>
-                  <span className="px-2.5 py-0.5 rounded-full bg-[#19674D] border border-[#C5A059]/40 text-[#F7F5F0]">
-                    RTT Offset: 14ms · Locked
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46]">
+                    RTT Offset: 14ms • Locked
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Dimmed Tampered Device Clock */}
-                  <div className="rounded-[12px] p-4 bg-black/20 border border-white/10 opacity-65">
-                    <div className="text-[11px] font-mono uppercase text-[#B2C9BF] mb-1">Local Device Clock</div>
-                    <div className="font-mono text-xl text-red-300 line-through tabular-nums">12:12:00 (+30m Tampered)</div>
-                    <div className="text-[11px] font-mono text-red-200/80 mt-2">Ignored by submission gate</div>
+                  {/* Neutral Tampered Device Clock */}
+                  <div className="rounded-[12px] p-4 bg-[#F9FAFB] border border-[#E5E7EB]">
+                    <div className="text-[11px] font-mono uppercase text-[#4B5563] mb-1">Local Device Clock</div>
+                    <div className="font-mono text-xl text-[#DC2626] line-through tabular-nums">12:12:00 (+30m Tampered)</div>
+                    <div className="text-[11px] font-mono text-[#6B7280] mt-2">Ignored by submission gate</div>
                   </div>
 
-                  {/* Luminous Authoritative UTC Server Clock */}
-                  <div className="rounded-[12px] p-4 bg-[#0F2E23]/90 border border-[#C5A059]/60 shadow-lg flex items-center justify-between gap-3">
+                  {/* High-Contrast Authoritative UTC Server Clock */}
+                  <div className="rounded-[12px] p-4 bg-[#064E3B] border border-[#064E3B] shadow-sm flex items-center justify-between gap-3">
                     <div>
-                      <div className="inline-flex items-center gap-1 text-[11px] font-mono uppercase text-[#C5A059] mb-1">
+                      <div className="inline-flex items-center gap-1 text-[11px] font-mono uppercase text-[#A7F3D0] mb-1">
                         <Lock className="w-3 h-3" /> Authoritative UTC Server Clock
                       </div>
-                      <div className="font-mono text-2xl text-[#F7F5F0] font-semibold tabular-nums">42:18</div>
-                      <div className="text-[11px] font-mono text-[#B2C9BF] mt-1">Deadline: 11:42:00 UTC</div>
+                      <div className="font-mono text-2xl text-white font-semibold tabular-nums">42:18</div>
+                      <div className="text-[11px] font-mono text-[#D1FAE5] mt-1">Deadline: 11:42:00 UTC</div>
                     </div>
                     <svg width="56" height="56" viewBox="0 0 56 56" aria-hidden="true" className="shrink-0">
-                      <circle cx="28" cy="28" r="22" fill="none" stroke="rgba(247,245,240,0.18)" strokeWidth="4" />
+                      <circle cx="28" cy="28" r="22" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="4" />
                       <circle
                         cx="28"
                         cy="28"
                         r="22"
                         fill="none"
-                        stroke="#C5A059"
+                        stroke="#34D399"
                         strokeWidth="4"
                         strokeLinecap="round"
                         strokeDasharray="138.2"
@@ -424,41 +416,33 @@ export const HomePage = () => {
             </article>
 
             {/* Chapter 02: Answers survive outages */}
-            <article className="scroll-chapter grid grid-cols-1 lg:grid-cols-12 gap-8 items-center pb-12 border-b border-[#C5A059]/25">
+            <article className="scroll-chapter grid grid-cols-1 lg:grid-cols-12 gap-8 items-center pb-12 border-b border-[#E5E7EB]">
               <div className="lg:col-span-5 space-y-3">
-                <span className="font-serif text-5xl text-[#C5A059] block">02</span>
-                <h3 className="font-serif text-3xl sm:text-4xl text-[#F7F5F0]">Answers survive outages.</h3>
-                <p className="text-sm sm:text-base text-[#D7E6DF] max-w-[54ch] leading-relaxed">
+                <span className="font-serif text-5xl text-[#047857] block">02</span>
+                <h3 className="font-serif text-3xl sm:text-4xl text-[#111827]">Answers survive outages.</h3>
+                <p className="text-sm sm:text-base text-[#4B5563] max-w-[54ch] leading-relaxed">
                   Responses write to IndexedDB first with monotonic sequence numbers. On reconnect, queued answers flush in order within a bounded late-sync window.
                 </p>
               </div>
-              <div
-                className="lg:col-span-7 min-h-[240px] rounded-[16px] p-5 sm:p-6 flex flex-col justify-between gap-5"
-                style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                  border: '1px solid rgba(197, 160, 89, 0.28)',
-                  backgroundImage: 'radial-gradient(rgba(247, 245, 240, 0.14) 1px, transparent 1px)',
-                  backgroundSize: '18px 18px',
-                }}
-              >
-                <div className="flex items-center justify-between text-[11px] font-mono uppercase tracking-[0.1em] text-[#B2C9BF]">
+              <div className="lg:col-span-7 min-h-[240px] rounded-[16px] bg-white border border-[#E5E7EB] shadow-[0_1px_3px_rgba(17,24,39,0.04),0_10px_28px_rgba(17,24,39,0.04)] p-5 sm:p-6 flex flex-col justify-between gap-5">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono uppercase tracking-[0.1em] text-[#4B5563]">
                   <span className="inline-flex items-center gap-1.5">
-                    <Database className="w-3.5 h-3.5 text-[#C5A059]" /> Offline-First Sync Pipeline
+                    <Database className="w-3.5 h-3.5 text-[#047857]" /> Offline-First Sync Pipeline
                   </span>
-                  <span className="px-2.5 py-0.5 rounded-full bg-white/10 border border-white/15 text-[#F7F5F0]">
-                    Monotonic Seq · Idempotent
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46]">
+                    Monotonic Seq • Idempotent
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
                   {/* Step 1: IndexedDB Local Vault */}
-                  <div className="rounded-[12px] p-3.5 bg-[#0F2E23]/85 border border-white/15 space-y-2">
-                    <div className="text-[11px] font-mono uppercase text-[#C5A059]">IndexedDB Local Vault</div>
+                  <div className="rounded-[12px] p-3.5 bg-[#F9FAFB] border border-[#E5E7EB] space-y-2">
+                    <div className="text-[11px] font-mono uppercase text-[#4B5563]">IndexedDB Local Vault</div>
                     <div className="flex flex-wrap gap-1.5">
                       {['Q3 · #14', 'Q4 · #15', 'Q5 · #16'].map((chip) => (
                         <span
                           key={chip}
-                          className="px-2 py-1 rounded-md bg-white/10 border border-[#C5A059]/35 font-mono text-[11px] text-[#F7F5F0]"
+                          className="px-2 py-1 rounded-md bg-white border border-[#E5E7EB] font-mono text-[11px] text-[#111827]"
                         >
                           {chip}
                         </span>
@@ -466,27 +450,27 @@ export const HomePage = () => {
                     </div>
                   </div>
 
-                  {/* Step 2: Animated dashed brass sync connector */}
+                  {/* Step 2: Dashed emerald sync connector */}
                   <div className="flex flex-col items-center justify-center py-2">
                     <div className="w-full flex items-center gap-2">
-                      <span className="h-[2px] flex-1 border-t-2 border-dashed border-[#C5A059]" />
-                      <span className="px-2.5 py-1 rounded-full bg-[#C5A059] text-[#134E3A] font-mono text-[10px] font-semibold uppercase">
+                      <span className="h-[2px] flex-1 border-t-2 border-dashed border-[#059669]/50" />
+                      <span className="px-2.5 py-1 rounded-full bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46] font-mono text-[10px] font-semibold uppercase">
                         Flush
                       </span>
-                      <span className="h-[2px] flex-1 border-t-2 border-dashed border-[#C5A059]" />
+                      <span className="h-[2px] flex-1 border-t-2 border-dashed border-[#059669]/50" />
                     </div>
-                    <span className="text-[10px] font-mono text-[#B2C9BF] mt-1.5">Bounded late-sync</span>
+                    <span className="text-[10px] font-mono text-[#6B7280] mt-1.5">Bounded late-sync</span>
                   </div>
 
                   {/* Step 3: Server Ledger */}
-                  <div className="rounded-[12px] p-3.5 bg-[#0F2E23]/95 border border-[#C5A059]/60 space-y-1.5">
-                    <div className="inline-flex items-center gap-1.5 text-[11px] font-mono uppercase text-[#C5A059]">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-[#C5A059]" /> Server Ledger
+                  <div className="rounded-[12px] p-3.5 bg-[#064E3B] border border-[#064E3B] space-y-1.5">
+                    <div className="inline-flex items-center gap-1.5 text-[11px] font-mono uppercase text-[#A7F3D0]">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#34D399]" /> Server Ledger
                     </div>
-                    <div className="text-xs font-mono text-[#F7F5F0] font-medium">
+                    <div className="text-xs font-mono text-white font-medium">
                       Accepted · Deadline Unchanged
                     </div>
-                    <div className="text-[11px] font-mono text-[#B2C9BF]">3/3 responses committed</div>
+                    <div className="text-[11px] font-mono text-[#D1FAE5]">3/3 responses committed</div>
                   </div>
                 </div>
               </div>
@@ -495,25 +479,17 @@ export const HomePage = () => {
             {/* Chapter 03: Every paper is fair */}
             <article className="scroll-chapter grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
               <div className="lg:col-span-5 space-y-3">
-                <span className="font-serif text-5xl text-[#C5A059] block">03</span>
-                <h3 className="font-serif text-3xl sm:text-4xl text-[#F7F5F0]">Every paper is fair.</h3>
-                <p className="text-sm sm:text-base text-[#D7E6DF] max-w-[54ch] leading-relaxed">
+                <span className="font-serif text-5xl text-[#047857] block">03</span>
+                <h3 className="font-serif text-3xl sm:text-4xl text-[#111827]">Every paper is fair.</h3>
+                <p className="text-sm sm:text-base text-[#4B5563] max-w-[54ch] leading-relaxed">
                   Blueprint randomization draws distinct questions per candidate while locking topic and difficulty distribution across every generated paper.
                 </p>
               </div>
-              <div
-                className="lg:col-span-7 min-h-[240px] rounded-[16px] p-5 sm:p-6 flex flex-col justify-between gap-5"
-                style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                  border: '1px solid rgba(197, 160, 89, 0.28)',
-                  backgroundImage: 'radial-gradient(rgba(247, 245, 240, 0.14) 1px, transparent 1px)',
-                  backgroundSize: '18px 18px',
-                }}
-              >
-                <div className="flex items-center justify-between text-[11px] font-mono uppercase tracking-[0.1em] text-[#B2C9BF]">
+              <div className="lg:col-span-7 min-h-[240px] rounded-[16px] bg-white border border-[#E5E7EB] shadow-[0_1px_3px_rgba(17,24,39,0.04),0_10px_28px_rgba(17,24,39,0.04)] p-5 sm:p-6 flex flex-col justify-between gap-5">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono uppercase tracking-[0.1em] text-[#4B5563]">
                   <span>Blueprint Parity Matrix</span>
-                  <span className="px-2.5 py-0.5 rounded-full bg-[#19674D] border border-[#C5A059]/40 text-[#F7F5F0]">
-                    Variance: 0.00 · Balanced
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46]">
+                    Variance: 0.00 • Balanced
                   </span>
                 </div>
 
@@ -521,27 +497,27 @@ export const HomePage = () => {
                   {PAPER_CARDS.map((paper) => (
                     <div
                       key={paper.name}
-                      className="rounded-[12px] p-3.5 bg-[#0F2E23]/90 border border-white/15 space-y-3"
+                      className="rounded-[12px] p-3.5 bg-[#F9FAFB] border border-[#E5E7EB] space-y-3"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-serif text-lg text-[#F7F5F0]">{paper.name}</span>
-                        <span className="font-mono text-xs text-[#C5A059] font-semibold tabular-nums">2.10</span>
+                        <span className="font-serif text-lg text-[#111827]">{paper.name}</span>
+                        <span className="font-mono text-xs text-[#047857] font-semibold tabular-nums">2.10</span>
                       </div>
                       <div className="flex flex-wrap gap-1">
                         {paper.topics.map((t) => (
                           <span
                             key={t}
-                            className="px-1.5 py-0.5 rounded bg-white/10 font-mono text-[10px] text-[#D7E6DF]"
+                            className="px-1.5 py-0.5 rounded bg-white border border-[#E5E7EB] font-mono text-[10px] text-[#4B5563]"
                           >
                             {t}
                           </span>
                         ))}
                       </div>
                       <div className="space-y-1">
-                        <div className="h-2 rounded-full bg-white/10 overflow-hidden">
-                          <div className="h-full bg-[#C5A059] rounded-full" style={{ width: paper.pct }} />
+                        <div className="h-2 rounded-full bg-[#E5E7EB] overflow-hidden">
+                          <div className="h-full bg-[#059669] rounded-full" style={{ width: paper.pct }} />
                         </div>
-                        <div className="text-[10px] font-mono text-[#B2C9BF]">Difficulty Index</div>
+                        <div className="text-[10px] font-mono text-[#6B7280]">Difficulty Index</div>
                       </div>
                     </div>
                   ))}
