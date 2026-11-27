@@ -1,6 +1,6 @@
 import { INITIAL_MOCK_DB } from './mockData';
 
-const STORAGE_KEY = 'sems_mock_db_v1';
+const STORAGE_KEY = 'sems_mock_db_v2';
 
 function loadDb() {
   try {

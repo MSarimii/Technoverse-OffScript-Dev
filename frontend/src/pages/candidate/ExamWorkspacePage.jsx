@@ -115,7 +115,7 @@ export const ExamWorkspacePage = () => {
     };
   }, [examId, isSandboxRequest, location.state, navigate]);
 
-  // Apply theme attribute
+  // Apply theme attribute and restore global ThemeContext on unmount
   useEffect(() => {
     const theme = prefs.theme || 'light';
     if (theme === 'light' || theme === 'paper') {
@@ -124,7 +124,12 @@ export const ExamWorkspacePage = () => {
       document.documentElement.setAttribute('data-theme', theme);
     }
     return () => {
-      document.documentElement.removeAttribute('data-theme');
+      const savedTheme = localStorage.getItem('sems_theme') || 'system';
+      if (savedTheme === 'light') {
+        document.documentElement.removeAttribute('data-theme');
+      } else {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      }
     };
   }, [prefs.theme]);
 
