@@ -63,36 +63,31 @@ export const LoginPage = () => {
 
   return (
     <main className="max-w-5xl mx-auto px-4 py-12 sm:py-16">
-      <div className="grid grid-cols-1 md:grid-cols-12 bg-surface border border-line rounded-[14px] overflow-hidden">
+      <div className="grid grid-cols-1 md:grid-cols-12 bg-surface border border-line rounded-2xl overflow-hidden shadow-[var(--card-shadow)]">
         {/* Brand Panel */}
-        <section className="md:col-span-5 bg-canvas p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-line relative overflow-hidden">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -top-16 -left-16 w-64 h-64 rounded-full blur-[80px]"
-            style={{ background: 'radial-gradient(circle, rgba(203,169,107,0.12) 0%, transparent 70%)' }}
-          />
+        <section className="md:col-span-5 bg-[#0B0F0E] text-white p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-[#181F1D] relative overflow-hidden">
           <div className="relative space-y-4">
-            <p className="eyebrow-rule font-mono text-[11px] uppercase tracking-[0.12em] text-champagne">
+            <p className="eyebrow-rule font-mono text-[11px] uppercase tracking-[0.12em] text-[#10B981]">
               Institutional Access
             </p>
-            <h1 className="font-serif text-3xl sm:text-4xl text-ink leading-tight">
-              Server-authoritative assessments, built for <em className="italic text-champagne">trust</em>.
+            <h1 className="font-display font-bold text-3xl sm:text-4xl tracking-[-0.03em] text-white leading-[1.1]">
+              Server-authoritative assessments, built for <span className="text-[#10B981]">trust</span>.
             </h1>
-            <p className="text-sm text-ink-muted leading-relaxed">
+            <p className="text-sm text-white/70 leading-relaxed">
               Role-scoped access for Administrators, Examiners, and Candidates with offline-resilient answer queues.
             </p>
           </div>
 
-          <div className="relative mt-10 pt-5 border-t border-line space-y-2 font-mono text-xs text-ink-muted">
-            <div className="flex justify-between"><span>01</span><span>Server clock authority</span></div>
-            <div className="flex justify-between"><span>02</span><span>Outage-resilient queue</span></div>
-            <div className="flex justify-between"><span>03</span><span>Balanced paper fairness</span></div>
+          <div className="relative mt-10 pt-5 border-t border-[#181F1D] space-y-2 font-mono text-xs text-white/70">
+            <div className="flex justify-between"><span className="text-[#10B981]">01</span><span>Server clock authority</span></div>
+            <div className="flex justify-between"><span className="text-[#10B981]">02</span><span>Outage-resilient queue</span></div>
+            <div className="flex justify-between"><span className="text-[#10B981]">03</span><span>Balanced paper fairness</span></div>
           </div>
         </section>
 
         {/* Form Panel */}
         <section className="md:col-span-7 p-8 sm:p-10">
-          <h2 className="font-serif text-3xl text-ink mb-1">Sign in to SEMS</h2>
+          <h2 className="font-display font-bold text-2xl sm:text-3xl tracking-[-0.02em] text-ink mb-1">Sign in to SEMS</h2>
           <p className="text-xs text-ink-muted mb-6">
             Accounts are provisioned by your institution administrator.
           </p>

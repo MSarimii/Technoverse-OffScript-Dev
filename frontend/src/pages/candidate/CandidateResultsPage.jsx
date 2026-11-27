@@ -4,7 +4,7 @@ import { attemptService } from '../../services/attemptService';
 import { USE_MOCK } from '../../services/api';
 import { PageHeader } from '../../components/layout/AppLayout';
 import { Button, Skeleton, EmptyState, Tooltip } from '../../components/ui';
-import { ArrowRight, ShieldCheck, Copy, Printer } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Copy, Printer, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const CandidateResultsPage = () => {
@@ -32,23 +32,43 @@ export const CandidateResultsPage = () => {
     <main className="space-y-8">
       <PageHeader
         title="Academic Transcripts"
-        subtitle="Official finalized examination results and verifiable credentials."
+        subtitle="Cryptographically verifiable examination results and official telemetry credentials."
         breadcrumbs={[{ label: 'Candidate', to: '/candidate' }, { label: 'Results' }]}
       />
 
-      {/* Editorial 3-Column Summary Strip */}
-      <section aria-label="Transcript summary" className="grid grid-cols-1 sm:grid-cols-3 border border-line divide-y sm:divide-y-0 sm:divide-x divide-line luxury-card card-top-emerald rounded-[14px] overflow-hidden">
-        <div className="p-5">
-          <div className="text-[11px] font-mono uppercase tracking-[0.1em] text-ink-muted">Cumulative Average</div>
-          <div className="font-serif text-4xl text-ink mt-1 tabular-nums">{avgPct}%</div>
+      {/* High-Contrast Deep Obsidian Telemetry Header */}
+      <section
+        aria-label="Transcript summary"
+        className="rounded-2xl bg-[#0B0F0E] border border-[#181F1D] text-white overflow-hidden shadow-lg"
+      >
+        <div className="px-6 py-4 border-b border-[#181F1D] flex flex-wrap items-center justify-between gap-3">
+          <div className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-[0.1em] text-[#10B981]">
+            <CheckCircle2 className="w-4 h-4 text-[#10B981]" />
+            Verified Integrity Status · Ledger Synced
+          </div>
+          <span className="text-[11px] font-mono text-white/60 uppercase tracking-[0.08em]">
+            Tabulation: Authoritative UTC
+          </span>
         </div>
-        <div className="p-5">
-          <div className="text-[11px] font-mono uppercase tracking-[0.1em] text-ink-muted">Published Transcripts</div>
-          <div className="font-serif text-4xl text-ink mt-1 tabular-nums">{results.length}</div>
-        </div>
-        <div className="p-5">
-          <div className="text-[11px] font-mono uppercase tracking-[0.1em] text-ink-muted">Verified Credentials</div>
-          <div className="font-serif text-4xl text-champagne-deep mt-1 tabular-nums">{verifiedCount}</div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#181F1D]">
+          <div className="p-6">
+            <div className="text-[11px] font-mono uppercase tracking-[0.1em] text-white/60">Cumulative Average</div>
+            <div className="font-display font-bold text-4xl text-white mt-1.5 tabular-nums tracking-[-0.03em]">
+              {avgPct}%
+            </div>
+          </div>
+          <div className="p-6">
+            <div className="text-[11px] font-mono uppercase tracking-[0.1em] text-white/60">Published Transcripts</div>
+            <div className="font-display font-bold text-4xl text-white mt-1.5 tabular-nums tracking-[-0.03em]">
+              {results.length}
+            </div>
+          </div>
+          <div className="p-6">
+            <div className="text-[11px] font-mono uppercase tracking-[0.1em] text-white/60">Verified Credentials</div>
+            <div className="font-display font-bold text-4xl text-[#10B981] mt-1.5 tabular-nums tracking-[-0.03em]">
+              {verifiedCount}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -73,10 +93,10 @@ export const CandidateResultsPage = () => {
             return (
               <article
                 key={r.attemptId}
-                className="luxury-card card-top-brass rounded-[14px] p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6"
+                className="luxury-card luxury-card-hover rounded-2xl p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6"
               >
-                <div className="flex items-center gap-5 min-w-0">
-                  {/* Heritage Emerald & Brass Score Ring */}
+                <div className="flex items-center gap-5 min-w-0 flex-1">
+                  {/* Surgical Emerald Score Ring */}
                   <div className="shrink-0 flex flex-col items-center">
                     <svg width="80" height="80" viewBox="0 0 80 80" aria-label={`Score ${pct}%`}>
                       <circle cx="40" cy="40" r={radius} fill="none" stroke="var(--line)" strokeWidth="6" />
@@ -85,7 +105,7 @@ export const CandidateResultsPage = () => {
                         cy="40"
                         r={radius}
                         fill="none"
-                        stroke="#19674D"
+                        stroke="#059669"
                         strokeWidth="6"
                         strokeLinecap="round"
                         strokeDasharray={circumference}
@@ -93,8 +113,7 @@ export const CandidateResultsPage = () => {
                         transform="rotate(-90 40 40)"
                         style={{ transition: 'stroke-dashoffset 700ms ease-out' }}
                       />
-                      <circle cx="40" cy="8" r="2.5" fill="#C5A059" />
-                      <text x="40" y="44" textAnchor="middle" className="fill-ink font-mono text-sm font-semibold">
+                      <text x="40" y="45" textAnchor="middle" className="fill-ink font-mono text-sm font-semibold">
                         {pct}%
                       </text>
                     </svg>
@@ -103,14 +122,22 @@ export const CandidateResultsPage = () => {
                     </span>
                   </div>
 
-                  {/* Center Metadata */}
-                  <div className="min-w-0 space-y-1.5">
-                    <p className="eyebrow-rule font-mono text-[11px] uppercase tracking-[0.1em] text-champagne-deep">
+                  {/* Center Telemetry Metadata */}
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <p className="eyebrow-rule font-mono text-[11px] uppercase tracking-[0.1em] text-[#065F46]">
                       CS-301 · Official Transcript
                     </p>
-                    <h2 className="font-serif text-2xl sm:text-3xl text-ink leading-tight break-words">
+                    <h2 className="font-display font-semibold text-xl sm:text-2xl tracking-[-0.02em] text-ink leading-tight break-words">
                       {r.examTitle}
                     </h2>
+
+                    {/* Visual Score Bar */}
+                    <div className="max-w-sm space-y-1">
+                      <div className="h-1.5 rounded-full bg-subtle overflow-hidden">
+                        <div className="h-full bg-[#059669] rounded-full" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+
                     <div className="flex flex-wrap items-center gap-3 pt-1">
                       {r.submittedAt && (
                         <span className="text-xs font-mono text-ink-muted">
@@ -125,11 +152,11 @@ export const CandidateResultsPage = () => {
                               navigator.clipboard?.writeText(r.verificationId);
                               toast.success(`Copied ${r.verificationId}`);
                             }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E6F3EE] border border-[#19674D]/25 hover:border-champagne text-xs font-mono text-[#134E3A] transition-colors"
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ECFDF5] border border-[#A7F3D0] hover:border-[#059669] text-xs font-mono text-[#065F46] transition-colors"
                           >
-                            <ShieldCheck className="w-3.5 h-3.5 text-champagne-deep" strokeWidth={1.5} />
+                            <ShieldCheck className="w-3.5 h-3.5 text-[#059669]" strokeWidth={1.75} />
                             <span>{r.verificationId}</span>
-                            <Copy className="w-3 h-3 text-[#19674D]" />
+                            <Copy className="w-3 h-3 text-[#059669]" />
                           </button>
                         </Tooltip>
                       )}
@@ -149,7 +176,7 @@ export const CandidateResultsPage = () => {
                     <Printer className="w-4 h-4" strokeWidth={1.5} /> Download PDF
                   </Button>
                   <Button onClick={() => navigate(`/candidate/results/${r.attemptId}`)}>
-                    View Transcript <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
+                    View Transcript <ArrowRight className="w-4 h-4 text-[#10B981]" strokeWidth={1.75} />
                   </Button>
                 </div>
               </article>

@@ -49,7 +49,7 @@ export const ExamAnalyticsPage = () => {
           <Link to="/examiner" className="inline-flex items-center gap-1.5 text-xs font-mono text-ink-muted hover:text-ink mb-2">
             <ArrowLeft className="w-3.5 h-3.5" /> Back to console
           </Link>
-          <h1 className="font-serif text-3xl text-ink">Analytics & Fairness Report</h1>
+          <h1 className="font-display font-bold text-2xl sm:text-3xl tracking-[-0.02em] text-ink">Analytics & Fairness Report</h1>
           <p className="text-sm text-ink-muted">{summaryData?.exam?.title} (Sandbox attempts excluded)</p>
         </div>
         <button

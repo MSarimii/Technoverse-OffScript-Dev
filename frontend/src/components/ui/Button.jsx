@@ -3,11 +3,16 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 
 const VARIANTS = {
-  primary: 'relative overflow-hidden group bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-ink)] border-transparent shadow-sm hover:shadow-[0_6px_20px_rgba(25,103,77,0.26)]',
-  champagne: 'bg-champagne hover:bg-champagne-lit text-white border-transparent shadow-sm hover:shadow-md',
-  secondary: 'bg-surface hover:bg-subtle text-ink border-line shadow-sm',
+  primary:
+    'relative overflow-hidden group bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-ink)] border-transparent shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_2px_6px_rgba(11,15,14,0.12)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_6px_18px_rgba(11,15,14,0.18)]',
+  emerald:
+    'relative overflow-hidden group bg-[#059669] hover:bg-[#047857] text-white border-transparent shadow-sm hover:shadow-[0_6px_18px_rgba(5,150,105,0.25)]',
+  champagne:
+    'relative overflow-hidden group bg-[#059669] hover:bg-[#047857] text-white border-transparent shadow-sm hover:shadow-[0_6px_18px_rgba(5,150,105,0.25)]',
+  secondary:
+    'bg-surface hover:bg-subtle text-ink border-line hover:border-line-strong shadow-sm',
   ghost: 'bg-transparent hover:bg-subtle text-ink border-transparent',
-  danger: 'bg-status-danger hover:opacity-90 text-white border-transparent shadow-sm',
+  danger: 'bg-[#DC2626] hover:bg-[#B91C1C] text-white border-transparent shadow-sm',
 };
 
 const SIZES = {
@@ -24,13 +29,13 @@ export const Button = forwardRef(
         ref={ref}
         disabled={disabled || loading}
         aria-busy={loading || undefined}
-        whileHover={reduced || disabled || loading ? undefined : { y: -1.5 }}
-        whileTap={reduced || disabled || loading ? undefined : { scale: 0.96 }}
-        transition={{ type: 'spring', stiffness: 500, damping: 28 }}
-        className={`inline-flex items-center justify-center gap-2 font-medium rounded-[10px] border transition-colors duration-150 disabled:opacity-50 disabled:pointer-events-none ${VARIANTS[variant]} ${SIZES[size]} ${className}`}
+        whileHover={reduced || disabled || loading ? undefined : { y: -1 }}
+        whileTap={reduced || disabled || loading ? undefined : { scale: 0.98 }}
+        transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+        className={`inline-flex items-center justify-center gap-2 font-medium rounded-lg border transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none ${VARIANTS[variant] || VARIANTS.primary} ${SIZES[size]} ${className}`}
         {...props}
       >
-        {variant === 'primary' && !reduced && (
+        {(variant === 'primary' || variant === 'emerald' || variant === 'champagne') && !reduced && (
           <span
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/15 to-transparent"
@@ -53,10 +58,10 @@ export const IconButton = forwardRef(
         aria-label={label}
         title={label}
         disabled={disabled || loading}
-        whileHover={reduced || disabled || loading ? undefined : { y: -1.5 }}
-        whileTap={reduced || disabled || loading ? undefined : { scale: 0.96 }}
-        transition={{ type: 'spring', stiffness: 500, damping: 28 }}
-        className={`min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-[10px] border transition-colors duration-150 disabled:opacity-50 disabled:pointer-events-none ${VARIANTS[variant]} ${className}`}
+        whileHover={reduced || disabled || loading ? undefined : { y: -1 }}
+        whileTap={reduced || disabled || loading ? undefined : { scale: 0.98 }}
+        transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+        className={`min-h-[40px] min-w-[40px] inline-flex items-center justify-center rounded-lg border transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none ${VARIANTS[variant] || VARIANTS.secondary} ${className}`}
         {...props}
       >
         {loading ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : children}

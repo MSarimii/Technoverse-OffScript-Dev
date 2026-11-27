@@ -27,7 +27,7 @@ export const PageHeader = ({ title, subtitle, actions, breadcrumbs }) => (
     {breadcrumbs && <Breadcrumbs items={breadcrumbs} />}
     <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
       <div>
-        <h1 className="font-serif text-4xl sm:text-5xl text-ink tracking-[-0.01em] leading-[1.05]">
+        <h1 className="font-display font-bold text-3xl sm:text-4xl text-ink tracking-[-0.03em] leading-[1.1]">
           {title}
         </h1>
         {subtitle && <p className="text-sm text-ink-muted mt-1.5 max-w-[62ch]">{subtitle}</p>}

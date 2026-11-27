@@ -25,7 +25,7 @@ export const NotFoundPage = () => {
       >
         {FRAMES[idx]}
       </pre>
-      <h1 className="font-serif text-4xl text-ink mb-3">Page not found</h1>
+      <h1 className="font-display font-bold text-3xl sm:text-4xl tracking-[-0.03em] text-ink mb-3">Page not found</h1>
       <p className="text-sm text-ink-muted mb-6">
         The examination resource you requested does not exist or has moved.
       </p>

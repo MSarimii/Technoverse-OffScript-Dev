@@ -51,11 +51,11 @@ export const VerifyReportPage = () => {
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-14">
-      <div className="luxury-card rounded-[14px] p-7 sm:p-10">
-        <p className="eyebrow-rule font-mono text-[11px] uppercase tracking-[0.12em] text-champagne mb-3">
+      <div className="luxury-card rounded-2xl p-7 sm:p-10">
+        <p className="eyebrow-rule font-mono text-[11px] uppercase tracking-[0.12em] text-[#059669] mb-3">
           Public Transcript Registry
         </p>
-        <h1 className="font-serif text-4xl text-ink mb-2">Verify Examination Report</h1>
+        <h1 className="font-display font-bold text-3xl sm:text-4xl tracking-[-0.03em] text-ink mb-2">Verify Examination Report</h1>
         <p className="text-sm text-ink-muted mb-7 max-w-[55ch]">
           Confirm authenticity using the verification identifier printed on the official PDF transcript. Only minimal metadata is disclosed.
         </p>
@@ -107,7 +107,7 @@ export const VerifyReportPage = () => {
                         <Award className="w-6 h-6" strokeWidth={1.5} />
                       </motion.div>
                       <div>
-                        <div className="font-serif text-3xl text-champagne tracking-[0.08em] leading-none">VALID</div>
+                        <div className="font-display font-bold text-2xl text-[#059669] tracking-[0.06em] leading-none">VALID</div>
                         <div className="text-[11px] font-mono text-ink-muted mt-1">
                           Official Academic Credential · Verified Authentic
                         </div>

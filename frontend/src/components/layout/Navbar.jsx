@@ -78,19 +78,22 @@ export const Navbar = () => {
     <header className="sticky top-0 z-40 glass-nav">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link to="/" className="flex items-baseline gap-2.5 group rounded-lg relative pb-0.5">
-            <span className="font-serif text-2xl tracking-[-0.01em] text-ink leading-none">
+          <Link to="/" className="flex items-center gap-2.5 group rounded-lg">
+            <span className="font-display font-extrabold text-xl tracking-[-0.04em] text-ink leading-none">
               SEMS
             </span>
-            <span className="hidden sm:inline text-[11px] font-mono uppercase tracking-[0.12em] text-ink-muted">
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-[0.12em] text-ink-muted">
+              <span className="relative flex h-2 w-2" aria-hidden="true">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10B981] opacity-60" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#059669]" />
+              </span>
               Secure Examination Suite
             </span>
-            <span aria-hidden="true" className="absolute bottom-0 left-0 w-7 h-[2px] bg-champagne rounded-full" />
           </Link>
           {import.meta.env.DEV && USE_MOCK && (
             <span
               title="Dev Mock Mode Active"
-              className="w-2 h-2 rounded-full bg-champagne inline-block"
+              className="w-1.5 h-1.5 rounded-full bg-[#10B981] inline-block"
               aria-label="Dev mock mode active"
             />
           )}
@@ -102,10 +105,10 @@ export const Navbar = () => {
         </div>
 
         {/* Minimal Desktop Top Bar */}
-        <nav aria-label="Top utilities" className="hidden md:flex items-center gap-4">
+        <nav aria-label="Top utilities" className="hidden md:flex items-center gap-2.5">
           <Link
             to="/verify/VER-2026-SEMS-8841"
-            className="text-sm text-ink-muted hover:text-ink transition-colors"
+            className="px-3.5 py-1.5 rounded-full text-sm font-medium text-ink-muted hover:text-ink hover:bg-subtle transition-colors"
           >
             Verify a report
           </Link>

@@ -735,7 +735,7 @@ export const ExamWorkspacePage = () => {
               <p
                 dir="auto"
                 style={{ fontSize: `${Math.max(20, (prefs.fontSizePx || 16) + 6)}px` }}
-                className={`${lineSpacingClass} font-serif text-ink mb-6 max-w-[62ch] break-words`}
+                className={`${lineSpacingClass} font-sans font-medium text-ink mb-6 max-w-[62ch] break-words`}
               >
                 {currentQ.text}
               </p>
@@ -921,7 +921,7 @@ export const ExamWorkspacePage = () => {
           <div className="bg-surface border border-line rounded-xl max-w-md w-full p-6 space-y-4">
             <div className="flex items-center gap-2 text-amber-700">
               <AlertTriangle className="w-5 h-5" />
-              <h2 className="font-serif text-2xl text-ink">Review & Submit</h2>
+              <h2 className="font-display font-bold text-2xl tracking-[-0.02em] text-ink">Review & Submit</h2>
             </div>
             <p className="text-sm text-ink-muted">
               Review your question status below. Once submitted, responses cannot be changed.

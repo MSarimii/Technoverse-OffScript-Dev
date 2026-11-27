@@ -11,7 +11,7 @@ export const ForbiddenPage = () => {
         <ShieldAlert className="w-6 h-6" aria-hidden="true" />
       </div>
       <p className="font-mono text-xs text-ink-muted mb-2">403 · FORBIDDEN</p>
-      <h1 className="font-serif text-4xl text-ink mb-3">Access Denied</h1>
+      <h1 className="font-display font-bold text-3xl sm:text-4xl tracking-[-0.03em] text-ink mb-3">Access Denied</h1>
       <p className="text-sm text-ink-muted mb-6">
         Your account ({user?.role || 'guest'}) does not have permission to view this resource. Permissions are enforced on the server.
       </p>

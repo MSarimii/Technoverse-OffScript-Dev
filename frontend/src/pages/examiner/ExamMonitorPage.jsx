@@ -78,17 +78,17 @@ export const ExamMonitorPage = () => {
 
       {/* Live Counts */}
       <section className="grid grid-cols-3 gap-3">
-        <div className="bg-surface border border-line rounded-xl p-4">
-          <div className="text-xs font-mono text-ink-muted">Total Attempts</div>
-          <div className="font-serif text-3xl text-ink mt-1">{attempts.length}</div>
+        <div className="bg-surface border border-line rounded-2xl p-4">
+          <div className="text-xs font-mono text-ink-muted uppercase">Total Attempts</div>
+          <div className="font-display font-bold text-3xl text-ink tabular-nums mt-1">{attempts.length}</div>
         </div>
-        <div className="bg-surface border border-line rounded-xl p-4">
-          <div className="text-xs font-mono text-ink-muted">In Progress</div>
-          <div className="font-serif text-3xl text-cobalt mt-1">{inProgressCount}</div>
+        <div className="bg-surface border border-line rounded-2xl p-4">
+          <div className="text-xs font-mono text-ink-muted uppercase">In Progress</div>
+          <div className="font-display font-bold text-3xl text-[#059669] tabular-nums mt-1">{inProgressCount}</div>
         </div>
-        <div className="bg-surface border border-line rounded-xl p-4">
-          <div className="text-xs font-mono text-ink-muted">Submitted</div>
-          <div className="font-serif text-3xl text-status-answered mt-1">{submittedCount}</div>
+        <div className="bg-surface border border-line rounded-2xl p-4">
+          <div className="text-xs font-mono text-ink-muted uppercase">Submitted</div>
+          <div className="font-display font-bold text-3xl text-status-answered tabular-nums mt-1">{submittedCount}</div>
         </div>
       </section>
 

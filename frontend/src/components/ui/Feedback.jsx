@@ -3,14 +3,14 @@ import { AlertCircle, CheckCircle2, Clock, WifiOff, RefreshCw, Inbox } from 'luc
 
 const BADGE_STYLES = {
   neutral: 'bg-subtle text-ink border-line',
-  cobalt: 'bg-navy-50 text-cobalt border-navy-100',
-  success: 'bg-emerald-50 text-status-answered border-emerald-200',
-  warning: 'bg-amber-100 text-amber-950 border-amber-300',
-  danger: 'bg-red-50 text-status-danger border-red-200',
+  cobalt: 'bg-[#ECFDF5] text-[#065F46] border-[#A7F3D0]',
+  success: 'bg-[#ECFDF5] text-[#065F46] border-[#A7F3D0]',
+  warning: 'bg-amber-50 text-amber-900 border-amber-200',
+  danger: 'bg-[#FEF2F2] text-[#DC2626] border-[#FECACA]',
 };
 
 export const Badge = ({ tone = 'neutral', className = '', children }) => (
-  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono border ${BADGE_STYLES[tone]} ${className}`}>
+  <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono border ${BADGE_STYLES[tone]} ${className}`}>
     {children}
   </span>
 );

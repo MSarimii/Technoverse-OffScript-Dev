@@ -99,8 +99,8 @@ export const ExaminerDashboardPage = () => {
         }
       />
 
-      {/* Hairline-Separated KPI Strip with Serif Numerals & Sparklines */}
-      <section aria-label="Lifecycle summary" className="grid grid-cols-2 sm:grid-cols-4 border border-line divide-y sm:divide-y-0 sm:divide-x divide-line luxury-card card-top-emerald rounded-[14px] overflow-hidden">
+      {/* Architectural Bento KPI Strip */}
+      <section aria-label="Lifecycle summary" className="grid grid-cols-2 sm:grid-cols-4 border border-line divide-y sm:divide-y-0 sm:divide-x divide-line luxury-card rounded-2xl overflow-hidden">
         {[
           { key: 'draft', label: 'Drafts', val: counts.draft, pts: '0,14 12,10 24,12 36,6 48,8' },
           { key: 'published', label: 'Scheduled', val: counts.published, pts: '0,16 12,14 24,8 36,10 48,4' },
@@ -110,14 +110,14 @@ export const ExaminerDashboardPage = () => {
           <button
             key={tile.key}
             onClick={() => setFilter(tile.key)}
-            className="p-5 text-left hover:bg-subtle/50 transition-colors flex items-end justify-between gap-2"
+            className="p-5 text-left hover:bg-subtle/60 transition-colors flex items-end justify-between gap-2"
           >
             <div>
               <div className="text-[11px] font-mono uppercase tracking-[0.1em] text-ink-muted">{tile.label}</div>
-              <div className="font-serif text-4xl text-ink mt-1 tabular-nums">{tile.val}</div>
+              <div className="font-display font-bold text-3xl text-ink mt-1 tabular-nums tracking-[-0.02em]">{tile.val}</div>
             </div>
-            <svg width="48" height="18" viewBox="0 0 48 18" aria-hidden="true" className="text-champagne shrink-0">
-              <polyline fill="none" stroke="currentColor" strokeWidth="1.5" points={tile.pts} />
+            <svg width="48" height="18" viewBox="0 0 48 18" aria-hidden="true" className="text-[#059669] shrink-0">
+              <polyline fill="none" stroke="currentColor" strokeWidth="1.75" points={tile.pts} />
             </svg>
           </button>
         ))}
@@ -189,7 +189,7 @@ export const ExaminerDashboardPage = () => {
             const isMenuOpen = openMenuId === exam.id;
 
             return (
-              <article key={exam.id} className={`luxury-card rounded-[14px] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${st === 'ongoing' ? 'card-top-emerald' : 'card-top-brass'}`}>
+              <article key={exam.id} className="luxury-card luxury-card-hover rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-1.5">
                     <Badge tone={st === 'ongoing' ? 'cobalt' : st === 'completed' ? 'success' : 'neutral'}>

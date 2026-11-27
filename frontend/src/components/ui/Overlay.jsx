@@ -24,6 +24,7 @@ export const Tabs = ({ items, activeKey, onChange }) => (
 );
 
 export const Dialog = ({ open, onClose, title, children }) => {
+  const reduced = useReducedMotion();
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => e.key === 'Escape' && onClose?.();
@@ -31,19 +32,37 @@ export const Dialog = ({ open, onClose, title, children }) => {
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 
-  if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={title}>
-      <div className="bg-surface border border-line rounded-xl max-w-lg w-full p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          {title && <h2 className="font-serif text-2xl text-ink">{title}</h2>}
-          <button onClick={onClose} aria-label="Close dialog" className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-subtle">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={reduced ? { opacity: 1 } : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={reduced ? { opacity: 0 } : { opacity: 0 }}
+          transition={{ duration: 0.18 }}
+          className="fixed inset-0 z-50 bg-[#0B0F0E]/30 backdrop-blur-sm flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label={title}
+        >
+          <motion.div
+            initial={reduced ? { opacity: 1 } : { opacity: 0, scale: 0.95, y: 6 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: 6 }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            className="bg-surface border border-line rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl"
+          >
+            <div className="flex items-center justify-between">
+              {title && <h2 className="font-display font-semibold text-xl tracking-[-0.02em] text-ink">{title}</h2>}
+              <button onClick={onClose} aria-label="Close dialog" className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-lg hover:bg-subtle transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            {children}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 
@@ -93,7 +112,7 @@ export const Tooltip = ({ label, children }) => {
             animate={{ opacity: 1, y: 0 }}
             exit={reduced ? { opacity: 0 } : { opacity: 0, y: 4 }}
             transition={{ type: 'spring', stiffness: 460, damping: 28 }}
-            className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1 rounded-lg bg-[#134E3A] text-[#F7F5F0] border border-[#C5A059]/45 shadow-md text-[11px] font-mono whitespace-nowrap z-50"
+            className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1 rounded-lg bg-[#0B0F0E] text-white border border-[#181F1D] shadow-md text-[11px] font-mono whitespace-nowrap z-50"
           >
             {label}
           </motion.span>

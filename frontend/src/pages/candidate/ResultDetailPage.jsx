@@ -77,7 +77,7 @@ export const ResultDetailPage = () => {
             </text>
           </svg>
           <div>
-            <h1 className="font-serif text-3xl text-ink">{exam?.title}</h1>
+            <h1 className="font-display font-bold text-2xl sm:text-3xl tracking-[-0.02em] text-ink">{exam?.title}</h1>
             <p className="text-sm font-mono text-ink-muted mt-1">
               Total Score: <strong className="text-ink">{score}</strong> / {totalMarks}
             </p>
