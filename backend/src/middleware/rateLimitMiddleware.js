@@ -1,16 +1,35 @@
 import rateLimit from 'express-rate-limit';
 
+const rateLimitMessage = (message) => ({
+  success: false,
+  error: {
+    code: 'RATE_LIMITED',
+    message,
+    details: [],
+  },
+});
+
 /**
- * Rate limiter for sensitive authentication endpoints (login, register).
- * Max 10 requests per minute per IP to prevent credential brute-forcing.
+ * Rate limiter for authentication endpoints (5 requests/min/IP, skipped in test env).
  */
 export const authLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: 10,
+  windowMs: 60 * 1000,
+  max: 5,
   standardHeaders: true,
   legacyHeaders: false,
-  message: {
-    success: false,
-    message: 'Too many authentication attempts from this IP, please try again in a minute.',
-  },
+  skip: () => process.env.NODE_ENV === 'test',
+  message: rateLimitMessage(
+    'Too many authentication attempts from this IP, please try again in a minute.'
+  ),
+});
+
+/**
+ * General API rate limiter protecting all /api routes from request bursts.
+ */
+export const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: rateLimitMessage('Too many requests, please try again shortly.'),
 });

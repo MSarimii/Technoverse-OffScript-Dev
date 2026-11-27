@@ -1,6 +1,33 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
+const DEFAULT_PREFERENCES = {
+  theme: 'dark',
+  fontScale: 'md',
+  layout: 'standard',
+  showTimer: true,
+  highContrast: false,
+};
+
+const preferencesSchema = new mongoose.Schema(
+  {
+    theme: {
+      type: String,
+      enum: ['dark', 'light', 'system'],
+      default: DEFAULT_PREFERENCES.theme,
+    },
+    fontScale: { type: String, enum: ['sm', 'md', 'lg'], default: DEFAULT_PREFERENCES.fontScale },
+    layout: {
+      type: String,
+      enum: ['standard', 'compact', 'split'],
+      default: DEFAULT_PREFERENCES.layout,
+    },
+    showTimer: { type: Boolean, default: DEFAULT_PREFERENCES.showTimer },
+    highContrast: { type: Boolean, default: DEFAULT_PREFERENCES.highContrast },
+  },
+  { _id: false }
+);
+
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -8,7 +35,7 @@ const userSchema = new mongoose.Schema(
       required: [true, 'Please provide a name'],
       trim: true,
       minlength: [2, 'Name must be at least 2 characters'],
-      maxlength: [50, 'Name cannot exceed 50 characters'],
+      maxlength: [80, 'Name cannot exceed 80 characters'],
     },
     email: {
       type: String,
@@ -16,39 +43,79 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
-      match: [
-        /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
-        'Please provide a valid email address',
-      ],
     },
-    password: {
+    passwordHash: {
       type: String,
       required: [true, 'Please provide a password'],
-      minlength: [6, 'Password must be at least 6 characters'],
-      select: false, // Do not expose password hash in default queries
+      select: false,
     },
     role: {
       type: String,
-      enum: ['user', 'admin'],
-      default: 'user',
+      enum: ['admin', 'examiner', 'candidate'],
+      default: 'candidate',
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    tokenVersion: {
+      type: Number,
+      default: 0,
+    },
+    rollNo: {
+      type: String,
+      trim: true,
+    },
+    preferences: {
+      type: preferencesSchema,
+      default: () => ({ ...DEFAULT_PREFERENCES }),
     },
   },
   {
     timestamps: true,
+    toJSON: {
+      transform(_doc, ret) {
+        ret.id = String(ret._id);
+        delete ret.passwordHash;
+        delete ret.__v;
+        return ret;
+      },
+    },
   }
 );
 
-// Pre-save bcrypt hashing hook
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
-  const salt = await bcrypt.genSalt(12);
-  this.password = await bcrypt.hash(this.password, salt);
-  next();
+userSchema.index({ role: 1, isActive: 1 });
+userSchema.index({ rollNo: 1 }, { sparse: true });
+
+userSchema.pre('save', async function () {
+  if (!this.isModified('passwordHash')) return;
+  const salt = await bcrypt.genSalt(10);
+  this.passwordHash = await bcrypt.hash(this.passwordHash, salt);
 });
 
-// Instance method to verify password
-userSchema.methods.matchPassword = async function (enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
+userSchema.methods.matchPassword = async function (plain) {
+  return bcrypt.compare(plain, this.passwordHash);
+};
+
+/**
+ * Serializes a User document into a safe public/API DTO without passwordHash or tokenVersion.
+ */
+export const serializeUser = (user) => {
+  const dto = {
+    id: String(user._id ?? user.id),
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    isActive: Boolean(user.isActive),
+    preferences: user.preferences ? { ...DEFAULT_PREFERENCES, ...user.preferences.toObject?.() ?? user.preferences } : { ...DEFAULT_PREFERENCES },
+    createdAt: user.createdAt,
+  };
+
+  if (user.rollNo !== undefined && user.rollNo !== null && user.rollNo !== '') {
+    dto.rollNo = user.rollNo;
+  }
+
+  return dto;
 };
 
 export default mongoose.model('User', userSchema);

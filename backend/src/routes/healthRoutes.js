@@ -1,14 +1,33 @@
 import express from 'express';
+import mongoose from 'mongoose';
+import { sendSuccess } from '../utils/response.js';
+import { now } from '../utils/time.js';
 
-const router = express.Router();
-
-router.get('/', (req, res) => {
-  res.status(200).json({
-    success: true,
+/**
+ * Reports service liveness, database connection status, process uptime, and server clock.
+ */
+export const getHealth = (_req, res) => {
+  return sendSuccess(res, {
     status: 'healthy',
-    timestamp: new Date().toISOString(),
+    db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
     uptime: process.uptime(),
+    serverNow: now().toISOString(),
   });
-});
+};
 
-export default router;
+/**
+ * Returns authoritative server time in ISO-8601 format for client timer sync.
+ */
+export const getTime = (_req, res) => {
+  return sendSuccess(res, {
+    serverNow: now().toISOString(),
+  });
+};
+
+const healthRouter = express.Router();
+healthRouter.get('/', getHealth);
+
+export const timeRouter = express.Router();
+timeRouter.get('/', getTime);
+
+export default healthRouter;
