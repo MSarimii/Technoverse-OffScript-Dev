@@ -30,7 +30,10 @@ const ASCII_FRAMES = [
 export const LoginPage = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [serverError, setServerError] = useState('');
+  const isExpired = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('expired') === '1';
+  const [serverError, setServerError] = useState(
+    isExpired ? 'Your session expired. Please sign in again.' : ''
+  );
   const [frame, setFrame] = useState(0);
 
   const {

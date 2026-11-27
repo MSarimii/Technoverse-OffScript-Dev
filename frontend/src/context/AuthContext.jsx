@@ -35,6 +35,17 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
+    const onUnauth = () => {
+      logout();
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+        window.location.assign('/login?expired=1');
+      }
+    };
+    window.addEventListener('sems:unauthorized', onUnauth);
+    return () => window.removeEventListener('sems:unauthorized', onUnauth);
+  }, [logout]);
+
+  useEffect(() => {
     const initializeAuth = async () => {
       if (token) {
         try {

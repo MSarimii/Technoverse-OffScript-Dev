@@ -64,6 +64,9 @@ api.interceptors.response.use(
     if (status === 401) {
       memoryToken = null;
       sessionStorage.removeItem('sems_token');
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('sems:unauthorized'));
+      }
     }
 
     if (isGet && isTransient && (config.__retryCount || 0) < 2) {

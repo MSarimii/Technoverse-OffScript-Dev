@@ -78,6 +78,19 @@ export const ExamWorkspacePage = () => {
         const res = await attemptService.getAttempt(attemptId);
         if (!mounted) return;
         const loaded = res.data?.attempt;
+        // Defensive guard: never render answer keys/rubrics if a backend ever leaks them
+        if (loaded?.snapshot?.questions) {
+          loaded.snapshot.questions = loaded.snapshot.questions.map((q) => {
+            if ('rubric' in q || q.options?.some((o) => 'isCorrect' in o)) {
+              console.error('SECURITY_CONTRACT_VIOLATION: Backend leaked rubric or isCorrect to candidate payload.');
+            }
+            const { rubric: _r, ...safeQ } = q;
+            return {
+              ...safeQ,
+              options: (q.options || []).map(({ id, text }) => ({ id, text })),
+            };
+          });
+        }
         setAttempt(loaded);
         setServerTime(res.data?.serverTime);
         if (loaded.preferences) {
