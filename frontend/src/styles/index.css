@@ -17,6 +17,8 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+h1,
+h2,
 .font-display {
   font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
   font-weight: 700;

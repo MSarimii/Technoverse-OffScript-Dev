@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { attemptService } from '../../services/attemptService';
 import { PageHeader } from '../../components/layout/AppLayout';
-import { Button, Skeleton, EmptyState, Tooltip, CopyButton } from '../../components/ui';
+import { Button, Skeleton, EmptyState, Tooltip, CopyButton, BentoAreaChart } from '../../components/ui';
 import { ArrowRight, ShieldCheck, Printer, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -71,6 +71,36 @@ export const CandidateResultsPage = () => {
           </div>
         </div>
       </section>
+
+      {/* Performance Trajectory Chart */}
+      {!loading && results.length > 0 && (
+        <section
+          aria-label="Performance trajectory"
+          className="min-w-0 rounded-2xl bg-surface dark:bg-[#111615] border border-line p-5 space-y-3"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-[11px] font-mono uppercase tracking-widest text-ink-muted">Score Progression</p>
+              <h2 className="text-lg font-display font-bold text-ink tracking-[-0.03em]">
+                Performance Trajectory
+              </h2>
+            </div>
+            <span className="text-[11px] font-mono text-[#059669] dark:text-[#34D399]">
+              Avg {avgPct}% across {results.length} {results.length === 1 ? 'exam' : 'exams'}
+            </span>
+          </div>
+          <BentoAreaChart
+            data={results.map((r, i) => ({
+              label: r.examTitle ? (r.examTitle.length > 16 ? `${r.examTitle.slice(0, 14)}…` : r.examTitle) : `Exam ${i + 1}`,
+              scorePct: Math.min(100, Math.max(0, Math.round(((r.score || 0) / Math.max(1, r.totalMarks || 1)) * 100))),
+            }))}
+            dataKey="scorePct"
+            name="Score"
+            suffix="%"
+            height={180}
+          />
+        </section>
+      )}
 
       {loading ? (
         <div className="space-y-4">

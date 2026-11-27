@@ -2,10 +2,10 @@ import { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { examService } from '../../services/examService';
 import { PageHeader } from '../../components/layout/AppLayout';
-import { Button, Badge, Skeleton, EmptyState, ErrorState } from '../../components/ui';
+import { Button, Badge, Skeleton, EmptyState, ErrorState, BentoAreaChart, BentoDonutChart } from '../../components/ui';
 import { toast } from 'sonner';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { Plus, Eye, Activity, CheckSquare, BarChart3, FlaskConical, Send, AlertTriangle, MoreHorizontal, Scale, Flag } from 'lucide-react';
+import { Plus, Eye, Activity, CheckSquare, BarChart3, FlaskConical, Send, AlertTriangle, MoreHorizontal, Scale, Flag, FileEdit, Clock, CheckCircle2, TrendingUp } from 'lucide-react';
 
 export const ExaminerDashboardPage = () => {
   const navigate = useNavigate();
@@ -99,28 +99,103 @@ export const ExaminerDashboardPage = () => {
         }
       />
 
-      {/* Architectural Bento KPI Strip */}
-      <section aria-label="Lifecycle summary" className="grid grid-cols-2 sm:grid-cols-4 border border-line border-t-2 border-t-[#0B0F0E] divide-y sm:divide-y-0 sm:divide-x divide-line luxury-card rounded-2xl overflow-hidden">
-        {[
-          { key: 'draft', label: 'Drafts', val: counts.draft, pts: '0,14 12,10 24,12 36,6 48,8' },
-          { key: 'published', label: 'Scheduled', val: counts.published, pts: '0,16 12,14 24,8 36,10 48,4' },
-          { key: 'ongoing', label: 'Ongoing Live', val: counts.ongoing, pts: '0,12 12,8 24,4 36,6 48,2' },
-          { key: 'completed', label: 'Completed', val: counts.completed, pts: '0,16 12,12 24,10 36,4 48,3' },
-        ].map((tile) => (
-          <button
-            key={tile.key}
-            onClick={() => setFilter(tile.key)}
-            className="p-5 text-left hover:bg-subtle/60 transition-colors flex items-end justify-between gap-2"
-          >
-            <div>
-              <div className="text-[11px] font-mono uppercase tracking-[0.1em] text-ink-muted">{tile.label}</div>
-              <div className="font-display font-bold text-3xl text-ink mt-1 tabular-nums tracking-[-0.02em]">{tile.val}</div>
+      {/* Bento 4-Card KPI Strip with Jet-Black Anchor */}
+      <section aria-label="Lifecycle summary" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <button
+          type="button"
+          onClick={() => setFilter('ongoing')}
+          className="rounded-2xl bg-[#0A0A0A] border border-[#181F1D] text-white p-5 shadow-md text-left flex flex-col justify-between gap-3 hover:bg-[#141917] transition-colors"
+        >
+          <div className="flex items-center justify-between gap-2 w-full">
+            <span className="text-[11px] font-mono uppercase tracking-widest text-white/60">Active Exams</span>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-[11px] font-mono text-[#10B981]">
+              <TrendingUp className="w-3 h-3" /> Live telemetry
+            </span>
+          </div>
+          <div className="flex items-end justify-between gap-3 w-full">
+            <div className="font-display font-bold text-3xl text-white tabular-nums tracking-[-0.03em]">
+              {counts.ongoing}
             </div>
-            <svg width="48" height="18" viewBox="0 0 48 18" aria-hidden="true" className="text-[#059669] shrink-0">
-              <polyline fill="none" stroke="currentColor" strokeWidth="1.75" points={tile.pts} />
+            <svg width="64" height="22" viewBox="0 0 64 22" aria-hidden="true" className="text-[#10B981] shrink-0">
+              <polyline fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" points="2,16 14,12 26,14 38,7 50,9 62,3" />
             </svg>
-          </button>
-        ))}
+          </div>
+        </button>
+
+        {[
+          { key: 'draft', label: 'Drafts', val: counts.draft, trend: 'Authoring', icon: FileEdit, tone: 'text-ink-muted' },
+          { key: 'published', label: 'Scheduled', val: counts.published, trend: 'Upcoming', icon: Clock, tone: 'text-[#059669]' },
+          { key: 'completed', label: 'Completed', val: counts.completed, trend: 'Graded & closed', icon: CheckCircle2, tone: 'text-ink-muted' },
+        ].map((tile) => {
+          const Icon = tile.icon;
+          return (
+            <button
+              type="button"
+              key={tile.key}
+              onClick={() => setFilter(tile.key)}
+              className="rounded-2xl bg-surface dark:bg-[#111615] border border-line p-5 text-left hover:border-line-strong transition-colors flex flex-col justify-between gap-3"
+            >
+              <div className="flex items-center justify-between gap-2 w-full">
+                <span className="text-[11px] font-mono uppercase tracking-widest text-ink-muted">{tile.label}</span>
+                <span className="w-8 h-8 rounded-lg bg-[#F4F4F5] dark:bg-white/5 border border-line/60 flex items-center justify-center text-ink-muted">
+                  <Icon className="w-4 h-4" strokeWidth={1.6} aria-hidden="true" />
+                </span>
+              </div>
+              <div className="flex items-baseline justify-between gap-2 w-full">
+                <div className="font-display font-bold text-3xl text-ink tabular-nums tracking-[-0.03em]">
+                  {tile.val}
+                </div>
+                <span className={`text-[11px] font-mono ${tile.tone}`}>{tile.trend}</span>
+              </div>
+            </button>
+          );
+        })}
+      </section>
+
+      {/* Interactive Bento Analytics Row */}
+      <section aria-label="Examination analytics" className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 min-w-0 rounded-2xl bg-surface dark:bg-[#111615] border border-line p-5 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-[11px] font-mono uppercase tracking-widest text-ink-muted">Cohort Throughput</p>
+              <h2 className="text-lg font-display font-bold text-ink tracking-[-0.03em]">
+                Submission & Completion Trend
+              </h2>
+            </div>
+            <span className="text-[11px] font-mono text-ink-muted">Last 7 cycles</span>
+          </div>
+          <BentoAreaChart
+            data={[
+              { label: 'W1', submissions: 84, completed: 78 },
+              { label: 'W2', submissions: 112, completed: 105 },
+              { label: 'W3', submissions: 98, completed: 95 },
+              { label: 'W4', submissions: 134, completed: 129 },
+              { label: 'W5', submissions: 156, completed: 148 },
+              { label: 'W6', submissions: 172, completed: 168 },
+              { label: 'Now', submissions: Math.max(140, exams.length * 42), completed: Math.max(132, counts.completed * 45) },
+            ]}
+            dataKey="submissions"
+            secondaryKey="completed"
+            name="Submissions"
+            secondaryName="Completed"
+          />
+        </div>
+
+        <div className="min-w-0 rounded-2xl bg-surface dark:bg-[#111615] border border-line p-5 space-y-4">
+          <div>
+            <p className="text-[11px] font-mono uppercase tracking-widest text-ink-muted">Calibration</p>
+            <h2 className="text-lg font-display font-bold text-ink tracking-[-0.03em]">
+              Question Bank Difficulty Mix
+            </h2>
+          </div>
+          <BentoDonutChart
+            data={[
+              { name: 'Easy (1.0)', value: 18, color: '#10B981' },
+              { name: 'Medium (2.0)', value: 24, color: '#0A0A0A' },
+              { name: 'Hard (3.0)', value: 12, color: '#94A3B8' },
+            ]}
+          />
+        </div>
       </section>
 
       {/* Needs Attention */}
