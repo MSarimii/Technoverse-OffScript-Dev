@@ -10,7 +10,7 @@ SEMS is a decoupled MERN platform for secure high-stakes online assessments feat
 - **Backend**: Node.js (ESM), Express `^4.21`, MongoDB & Mongoose, Zod `.strict()` validation, JWT + `tokenVersion` revocation, `helmet`, `express-rate-limit`, `csv-parse`, `pdfkit`, `qrcode`
 - **Frontend**: Decoupled React application (`frontend/`, owned independently by Member 1)
 - **AI Module**: Isolated OpenRouter integration (`backend/src/services/aiService.js` & `aiRoutes.js`, owned by Member 3)
-- **Testing**: Vitest + Supertest (`9` backend integration & security audit suites)
+- **Testing**: Vitest + Supertest (`10` backend integration, standout & security audit suites)
 
 ---
 
@@ -81,8 +81,29 @@ Candidate heartbeats detect transient disconnect gaps exceeding the heartbeat in
 
 ---
 
+## Deployment (Render / Railway + Vercel)
+
+### Backend (`Render` or `Railway`)
+- **Root Directory**: `backend`
+- **Build Command**: `npm install`
+- **Start Command**: `npm start`
+- **Required Production Environment Variables**:
+  - `NODE_ENV=production`
+  - `MONGO_URI=<your-mongodb-atlas-uri>/sems_dev?retryWrites=true&w=majority`
+  - `JWT_SECRET=<cryptographically-random-64-char-hex-secret>`
+  - `VERIFY_HMAC_SECRET=<cryptographically-random-64-char-hex-secret>`
+  - `CLIENT_URL=https://<vercel-domain>,http://localhost:5173`
+  - `USE_MOCK_AI=true` *(or set `OPENROUTER_API_KEY` + `USE_MOCK_AI=false` for live AI)*
+  - Optional tuning: `JWT_EXPIRES_IN=8h`, `ALLOW_SELF_REGISTER=false`, `RECONNECT_GRACE_SECONDS=30`
+
+### Frontend (`Vercel`)
+- **Root Directory**: `frontend`
+- **Environment Variable**: `VITE_API_URL=https://<backend-domain>/api`
+
+---
+
 ## Further Documentation
 
 - Backend contract & routes: [`BACKEND.md`](BACKEND.md)
 - Security architecture: [`SECURITY.md`](SECURITY.md)
-- Innovation design details: [`INNOVATION_NOTES.md`](INNOVATION_NOTES.md)
+- Innovation design details: [`docs/member-2-backend-db/INNOVATION_NOTES.md`](docs/member-2-backend-db/INNOVATION_NOTES.md)
