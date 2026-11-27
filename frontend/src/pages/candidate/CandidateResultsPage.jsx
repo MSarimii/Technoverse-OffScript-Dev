@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { attemptService } from '../../services/attemptService';
-import { USE_MOCK } from '../../services/api';
 import { PageHeader } from '../../components/layout/AppLayout';
 import { Button, Skeleton, EmptyState, Tooltip } from '../../components/ui';
 import { ArrowRight, ShieldCheck, Copy, Printer, CheckCircle2 } from 'lucide-react';
@@ -11,6 +10,7 @@ export const CandidateResultsPage = () => {
   const navigate = useNavigate();
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [downloadingId, setDownloadingId] = useState(null);
 
   useEffect(() => {
     attemptService
@@ -168,9 +168,17 @@ export const CandidateResultsPage = () => {
                 <div className="flex flex-wrap items-center gap-2.5 shrink-0">
                   <Button
                     variant="secondary"
-                    onClick={() => {
-                      if (USE_MOCK) navigate(`/candidate/results/${r.attemptId}`);
-                      else window.open(attemptService.getAttemptReportUrl(r.attemptId), '_blank', 'noopener');
+                    loading={downloadingId === r.attemptId}
+                    onClick={async () => {
+                      setDownloadingId(r.attemptId);
+                      try {
+                        await attemptService.downloadAttemptPdf(r.attemptId);
+                        toast.success('Transcript PDF downloaded');
+                      } catch (err) {
+                        toast.error(err.message || 'Failed to download PDF');
+                      } finally {
+                        setDownloadingId(null);
+                      }
                     }}
                   >
                     <Printer className="w-4 h-4" strokeWidth={1.5} /> Download PDF

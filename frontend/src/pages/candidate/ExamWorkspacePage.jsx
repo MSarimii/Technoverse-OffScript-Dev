@@ -40,9 +40,12 @@ export const ExamWorkspacePage = () => {
   // Preferences (4.7)
   const DEFAULT_PREFS = {
     fontSizePx: 16,
+    fontScale: 'md',
     lineSpacing: 'normal',
     density: 'comfortable',
     palettePosition: 'right',
+    showTimer: true,
+    highContrast: false,
     theme: 'light',
     showOptionLetters: true,
   };
@@ -76,7 +79,10 @@ export const ExamWorkspacePage = () => {
             : await attemptService.startAttempt(examId);
           attemptId = startRes.data?.attempt?.id;
         }
-        const res = await attemptService.getAttempt(attemptId);
+        const [res, mePrefsRes] = await Promise.all([
+          attemptService.getAttempt(attemptId),
+          attemptService.getMyPreferences().catch(() => null),
+        ]);
         if (!mounted) return;
         const loaded = res.data?.attempt;
         // Defensive guard: never render answer keys/rubrics if a backend ever leaks them
@@ -94,12 +100,17 @@ export const ExamWorkspacePage = () => {
         }
         setAttempt(loaded);
         setServerTime(res.data?.serverTime);
-        if (loaded.preferences) {
-          setPrefs((prev) => ({
-            ...prev,
-            ...loaded.preferences,
-            theme: loaded.preferences.theme === 'paper' ? 'light' : loaded.preferences.theme || 'light',
-          }));
+        const mePrefs = mePrefsRes?.data?.preferences || {};
+        const mergedPrefs = { ...DEFAULT_PREFS, ...mePrefs, ...(loaded.preferences || {}) };
+        const scalePx = mergedPrefs.fontScale === 'sm' ? 14 : mergedPrefs.fontScale === 'lg' ? 18 : mergedPrefs.fontSizePx || 16;
+        setPrefs({
+          ...mergedPrefs,
+          fontSizePx: scalePx,
+          palettePosition: mergedPrefs.layout || mergedPrefs.palettePosition || 'right',
+          theme: mergedPrefs.theme === 'paper' ? 'light' : mergedPrefs.theme || 'light',
+        });
+        if (mergedPrefs.highContrast) {
+          document.documentElement.setAttribute('data-theme', 'high-contrast');
         }
         setScratchpad(loaded.scratchpad || '');
       } catch (err) {
@@ -177,7 +188,7 @@ export const ExamWorkspacePage = () => {
     onExpire: () => handleFinalSubmit(true),
   });
 
-  // Heartbeat (10s) + Announcements poll (5s)
+  // Heartbeat (20s) + Announcements poll
   useEffect(() => {
     if (!attempt?.id) return;
     const hb = setInterval(async () => {
@@ -192,14 +203,33 @@ export const ExamWorkspacePage = () => {
         const rttMs = Math.round(performance.now() - t0);
         failedHeartbeatsRef.current = 0;
         setIsReachable(true);
-        syncServerTime(res.data?.serverTime, rttMs);
+        const syncedServerTime =
+          res.data?.serverTime ||
+          (typeof res.data?.remainingMs === 'number' && attempt?.deadlineAt
+            ? new Date(Date.parse(attempt.deadlineAt) - res.data.remainingMs).toISOString()
+            : null);
+        if (syncedServerTime) syncServerTime(syncedServerTime, rttMs);
+        if (Array.isArray(res.data?.announcements) && res.data.announcements.length > 0) {
+          setAnnouncements((prev) => {
+            const existingIds = new Set(prev.map((p) => p.id));
+            const fresh = res.data.announcements.filter((x) => !existingIds.has(x.id));
+            if (fresh.length > 0) {
+              setUnreadAnnouncements((c) => c + fresh.length);
+              fresh.forEach((item) => toast.info(`Examiner Announcement: ${item.message}`, { duration: 8000 }));
+            }
+            return [...fresh, ...prev];
+          });
+        }
+        if (queuedCount > 0) {
+          flushQueue();
+        }
       } catch {
         failedHeartbeatsRef.current += 1;
         if (failedHeartbeatsRef.current >= 2) {
           setIsReachable(false);
         }
       }
-    }, 10000);
+    }, 20000);
 
     const pollAnn = async () => {
       if (!navigator.onLine) return;
@@ -474,7 +504,9 @@ export const ExamWorkspacePage = () => {
               }`}
             >
               {effectiveOffline
-                ? `Answers kept on this device (${queuedCount})`
+                ? queuedCount > 0
+                  ? `Offline (buffered locally · ${queuedCount})`
+                  : 'Offline (buffered locally)'
                 : syncStatus === 'saved'
                 ? 'Saved'
                 : syncStatus === 'saving'
@@ -543,7 +575,7 @@ export const ExamWorkspacePage = () => {
                 transform="rotate(-90 11 11)"
               />
             </svg>
-            {formatted}
+            {prefs.showTimer !== false ? formatted : 'Timer hidden'}
           </div>
           <span className="sr-only" aria-live="polite">
             {announcement}

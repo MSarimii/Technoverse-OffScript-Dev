@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { attemptService } from '../../services/attemptService';
-import { USE_MOCK } from '../../services/api';
 import { Button, Dialog, Select, Textarea } from '../../components/ui';
 import { toast } from 'sonner';
 import { Printer, ShieldCheck, ArrowLeft, ExternalLink, Copy, Flag } from 'lucide-react';
@@ -15,6 +14,7 @@ export const ResultDetailPage = () => {
   const [explanation, setExplanation] = useState('');
   const [submittedDisputes, setSubmittedDisputes] = useState({});
   const [submittingDispute, setSubmittingDispute] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   useEffect(() => {
     attemptService
@@ -41,12 +41,16 @@ export const ResultDetailPage = () => {
   const circumference = 2 * Math.PI * radius;
   const dashOffset = circumference - (pct / 100) * circumference;
 
-  const handleDownloadPdf = () => {
-    if (USE_MOCK) {
-      window.print();
-      return;
+  const handleDownloadPdf = async () => {
+    setDownloadingPdf(true);
+    try {
+      await attemptService.downloadAttemptPdf(attemptId);
+      toast.success('Transcript PDF downloaded');
+    } catch (err) {
+      toast.error(err.message || 'Failed to download PDF');
+    } finally {
+      setDownloadingPdf(false);
     }
-    window.open(attemptService.getAttemptReportUrl(attemptId), '_blank', 'noopener');
   };
 
   return (

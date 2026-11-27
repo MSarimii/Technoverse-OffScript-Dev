@@ -59,6 +59,32 @@ export const attemptService = {
     USE_MOCK ? mockApi.verifyReport(verificationId) : api.get(`/verify/${verificationId}`),
   getAttemptReportUrl: (attemptId) =>
     `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/attempts/${attemptId}/report.pdf`,
+  downloadAttemptPdf: async (attemptId) => {
+    if (USE_MOCK) {
+      const blob = new Blob([`SEMS Verified Transcript\nAttempt ID: ${attemptId}\nStatus: Verified`], {
+        type: 'application/pdf',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `SEMS-Transcript-${attemptId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      return;
+    }
+    const res = await api.get(`/attempts/${attemptId}/report.pdf`, { responseType: 'blob' });
+    const blob = new Blob([res], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `SEMS-Transcript-${attemptId}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  },
   createDispute: (attemptId, payload) =>
     USE_MOCK ? mockApi.createDispute(attemptId, payload) : api.post(`/attempts/${attemptId}/disputes`, payload),
 };

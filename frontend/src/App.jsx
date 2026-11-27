@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { AuthProvider } from './context/AuthContext';
@@ -47,6 +47,11 @@ const RouteFallback = () => (
     Loading view...
   </div>
 );
+
+const AttemptRedirect = () => {
+  const { attemptId } = useParams();
+  return <Navigate to={`/candidate/attempts/${attemptId}`} replace />;
+};
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -227,6 +232,7 @@ function AnimatedRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route path="/candidate/attempt/:attemptId" element={<AttemptRedirect />} />
         <Route
           path="/candidate/results"
           element={

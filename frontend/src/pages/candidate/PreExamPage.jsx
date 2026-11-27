@@ -53,7 +53,9 @@ export const PreExamPage = () => {
     try {
       const res = await attemptService.startAttempt(examId);
       const attempt = res.data?.attempt;
-      navigate(`/candidate/exam/${examId}`, { state: { attemptId: attempt.id } });
+      navigate(`/candidate/attempts/${attempt.id}`, {
+        state: { remainingMs: res.data?.remainingMs ?? attempt?.remainingMs },
+      });
     } catch (err) {
       toast.error(err.message || 'Unable to enter examination');
       setStarting(false);
