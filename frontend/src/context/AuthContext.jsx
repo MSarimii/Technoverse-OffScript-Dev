@@ -1,12 +1,32 @@
-import { createContext, useState, useEffect } from 'react';
+import { createContext, useState, useEffect, useCallback } from 'react';
 import { authService } from '../services/authService';
 
 export const AuthContext = createContext(null);
 
+export function getRoleHome(role) {
+  switch (role) {
+    case 'admin':
+      return '/admin/users';
+    case 'examiner':
+      return '/examiner';
+    case 'candidate':
+      return '/candidate';
+    default:
+      return '/';
+  }
+}
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(() => localStorage.getItem('technoverse_token'));
+  const [token, setToken] = useState(() => localStorage.getItem('sems_token'));
   const [loading, setLoading] = useState(true);
+
+  const logout = useCallback(() => {
+    localStorage.removeItem('sems_token');
+    localStorage.removeItem('sems_mock_uid');
+    setToken(null);
+    setUser(null);
+  }, []);
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -14,54 +34,37 @@ export const AuthProvider = ({ children }) => {
         try {
           const res = await authService.getMe();
           setUser(res.data?.user || res.user);
-        } catch (err) {
-          console.warn('Auth token expired or invalid:', err.message);
+        } catch {
           logout();
         }
       }
       setLoading(false);
     };
-
     initializeAuth();
-  }, [token]);
+  }, [token, logout]);
 
   const login = async (email, password) => {
     const res = await authService.login(email, password);
     const receivedToken = res.token;
     const userData = res.data?.user || res.user;
-
-    localStorage.setItem('technoverse_token', receivedToken);
+    localStorage.setItem('sems_token', receivedToken);
     setToken(receivedToken);
     setUser(userData);
-    return res;
+    return userData;
   };
 
-  const register = async (name, email, password) => {
-    const res = await authService.register(name, email, password);
-    const receivedToken = res.token;
-    const userData = res.data?.user || res.user;
-
-    localStorage.setItem('technoverse_token', receivedToken);
-    setToken(receivedToken);
-    setUser(userData);
-    return res;
-  };
-
-  const logout = () => {
-    localStorage.removeItem('technoverse_token');
-    setToken(null);
-    setUser(null);
-  };
-
-  const value = {
-    user,
-    token,
-    loading,
-    isAuthenticated: !!user,
-    login,
-    register,
-    logout,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        loading,
+        isAuthenticated: !!user,
+        login,
+        logout,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };

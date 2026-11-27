@@ -1,0 +1,66 @@
+:root {
+  --bg-canvas: #F6F3EC;
+  --bg-surface: #FFFFFF;
+  --bg-subtle: #EDE9DF;
+  --ink-primary: #0B1020;
+  --ink-secondary: #5B6275;
+  --border-line: #E3DFD4;
+
+  --accent-primary: #2F5BFF;
+  --status-answered: #1F9D66;
+  --status-review: #F5A524;
+  --status-unanswered: #5B6275;
+  --status-danger: #D64545;
+  --status-current: #7A5CFF;
+
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  --bg-canvas: #0B1020;
+  --bg-surface: #141A2E;
+  --bg-subtle: #1B233D;
+  --ink-primary: #E8EAF2;
+  --ink-secondary: #9CA3AF;
+  --border-line: #262D47;
+
+  --accent-primary: #2F5BFF;
+  --status-answered: #24B476;
+  --status-review: #F5A524;
+  --status-unanswered: #9CA3AF;
+  --status-danger: #E85D5D;
+  --status-current: #8F75FF;
+
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-theme='system'] {
+    --bg-canvas: #0B1020;
+    --bg-surface: #141A2E;
+    --bg-subtle: #1B233D;
+    --ink-primary: #E8EAF2;
+    --ink-secondary: #9CA3AF;
+    --border-line: #262D47;
+    --status-answered: #24B476;
+    --status-danger: #E85D5D;
+    --status-current: #8F75FF;
+    color-scheme: dark;
+  }
+}
+
+[data-theme='high-contrast'] {
+  --bg-canvas: #000000;
+  --bg-surface: #0A0A0A;
+  --bg-subtle: #1A1A1A;
+  --ink-primary: #FFFFFF;
+  --ink-secondary: #E5E7EB;
+  --border-line: #FFFFFF;
+  --accent-primary: #FACC15;
+  --status-answered: #22C55E;
+  --status-review: #FACC15;
+  --status-unanswered: #D1D5DB;
+  --status-danger: #EF4444;
+  --status-current: #FACC15;
+  color-scheme: dark;
+}
