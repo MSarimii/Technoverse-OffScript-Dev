@@ -137,7 +137,7 @@ export const HomePage = () => {
                 onMouseLeave={() => setCtaOffset({ x: 0, y: 0 })}
                 style={{ transform: `translate3d(${ctaOffset.x}px, ${ctaOffset.y}px, 0)` }}
                 to={isAuthenticated ? getRoleHome(user.role) : '/login'}
-                className="min-h-[48px] inline-flex items-center gap-2 bg-champagne hover:bg-champagne-lit text-[#070A14] font-semibold px-6 py-3 rounded-full transition-transform duration-150 active:scale-[0.97]"
+                className="min-h-[48px] inline-flex items-center gap-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-ink)] font-semibold px-6 py-3 rounded-full shadow-sm transition-transform duration-150 active:scale-[0.97]"
               >
                 {isAuthenticated ? `Open ${user.role} workspace` : 'Sign in'}
                 <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
@@ -357,7 +357,7 @@ export const HomePage = () => {
           </div>
           <Link
             to={isAuthenticated ? getRoleHome(user.role) : '/login'}
-            className="min-h-[48px] shrink-0 inline-flex items-center gap-2 bg-champagne hover:bg-champagne-lit text-[#070A14] font-semibold px-6 py-3 rounded-full active:scale-[0.97]"
+            className="min-h-[48px] shrink-0 inline-flex items-center gap-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-ink)] font-semibold px-6 py-3 rounded-full shadow-sm active:scale-[0.97]"
           >
             {isAuthenticated ? 'Enter workspace' : 'Sign in'}
             <ArrowRight className="w-4 h-4" strokeWidth={1.5} />

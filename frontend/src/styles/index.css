@@ -26,38 +26,45 @@ body {
   line-height: 1.06;
 }
 
-/* Visible 2px champagne focus ring */
+.luxury-card {
+  background-color: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--card-shadow);
+}
+
+/* Visible 2px focus ring */
 *:focus-visible {
-  outline: 2px solid var(--champagne);
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 
 .glass-nav {
-  background: rgba(12, 17, 34, 0.72);
+  background: rgba(248, 247, 243, 0.85);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--line);
 }
 
-[data-theme='light'] .glass-nav {
-  background: rgba(246, 242, 234, 0.85);
+[data-theme='dark'] .glass-nav {
+  background: rgba(12, 17, 34, 0.78);
 }
 
-@media (prefers-color-scheme: light) {
+@media (prefers-color-scheme: dark) {
   [data-theme='system'] .glass-nav {
-    background: rgba(246, 242, 234, 0.85);
+    background: rgba(12, 17, 34, 0.78);
   }
 }
 
 .glass-tile {
-  background: rgba(12, 17, 34, 0.65);
+  background: rgba(255, 255, 255, 0.82);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border: 1px solid var(--line);
+  box-shadow: var(--card-shadow);
 }
 
-[data-theme='light'] .glass-tile {
-  background: rgba(255, 255, 255, 0.78);
+[data-theme='dark'] .glass-tile {
+  background: rgba(12, 17, 34, 0.72);
 }
 
 @supports not (backdrop-filter: blur(1px)) {
@@ -83,7 +90,7 @@ body {
   inset: 0;
   pointer-events: none;
   z-index: 45;
-  opacity: 0.035;
+  opacity: 0.025;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
@@ -93,7 +100,6 @@ body {
   }
 }
 
-/* Champagne eyebrow rule */
 .eyebrow-rule::before {
   content: '';
   display: inline-block;
@@ -109,7 +115,7 @@ body {
 }
 
 @keyframes rowFlash {
-  0% { background-color: rgba(203, 169, 107, 0.14); }
+  0% { background-color: rgba(166, 131, 75, 0.14); }
   100% { background-color: transparent; }
 }
 

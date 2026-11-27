@@ -1,4 +1,47 @@
 :root,
+[data-theme='light'] {
+  --bg: #F8F7F3;
+  --surface: #FFFFFF;
+  --surface-2: #EFECE4;
+  --ink: #121714;
+  --muted: #5B635E;
+  --tertiary: #7B827E;
+  --line: rgba(18, 23, 20, 0.08);
+  --line-strong: rgba(18, 23, 20, 0.18);
+  --focus: #143D2F;
+
+  --champagne: #A6834B;
+  --champagne-lit: #BA975E;
+  --champagne-deep: #856634;
+
+  --accent: #143D2F;
+  --accent-hover: #1D5441;
+  --accent-ink: #FFFFFF;
+  --card-shadow: 0 1px 2px rgba(18, 23, 20, 0.04), 0 8px 24px rgba(18, 23, 20, 0.04);
+
+  --success: #1B7A50;
+  --warning: #B45309;
+  --danger: #C93B3B;
+  --current: #143D2F;
+  --info: #2E8BC0;
+
+  /* Tailwind variable aliases */
+  --bg-canvas: var(--bg);
+  --bg-surface: var(--surface);
+  --bg-subtle: var(--surface-2);
+  --ink-primary: var(--ink);
+  --ink-secondary: var(--muted);
+  --border-line: var(--line);
+  --accent-primary: var(--accent);
+  --status-answered: var(--success);
+  --status-review: var(--warning);
+  --status-unanswered: var(--muted);
+  --status-danger: var(--danger);
+  --status-current: var(--current);
+
+  color-scheme: light;
+}
+
 [data-theme='dark'] {
   --bg: #070A14;
   --surface: #0C1122;
@@ -15,8 +58,9 @@
   --champagne-deep: #8E7440;
 
   --accent: #F4EFE6;
+  --accent-hover: #E5DEC9;
   --accent-ink: #070A14;
-  --app-accent: #6C8BFF;
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 8px 24px rgba(0, 0, 0, 0.22);
 
   --success: #24B476;
   --warning: #F5A524;
@@ -24,7 +68,6 @@
   --current: #CBA96B;
   --info: #4AA3D8;
 
-  /* Tailwind variable aliases */
   --bg-canvas: var(--bg);
   --bg-surface: var(--surface);
   --bg-subtle: var(--surface-2);
@@ -41,70 +84,28 @@
   color-scheme: dark;
 }
 
-[data-theme='light'] {
-  --bg: #F6F2EA;
-  --surface: #FFFFFF;
-  --surface-2: #FBF9F4;
-  --ink: #0B1020;
-  --muted: #52586A;
-  --tertiary: #7C7A74;
-  --line: rgba(11, 16, 32, 0.12);
-  --line-strong: rgba(11, 16, 32, 0.24);
-  --focus: #8E7440;
-
-  --champagne: #8E7440;
-  --champagne-lit: #A68A52;
-  --champagne-deep: #6E582E;
-
-  --accent: #0B1020;
-  --accent-ink: #F6F2EA;
-  --app-accent: #2F5BFF;
-
-  --success: #1F9D66;
-  --warning: #B45309;
-  --danger: #D64545;
-  --current: #7A5CFF;
-  --info: #2E8BC0;
-
-  --bg-canvas: var(--bg);
-  --bg-surface: var(--surface);
-  --bg-subtle: var(--surface-2);
-  --ink-primary: var(--ink);
-  --ink-secondary: var(--muted);
-  --border-line: var(--line);
-  --accent-primary: var(--champagne);
-  --status-answered: var(--success);
-  --status-review: var(--warning);
-  --status-unanswered: var(--muted);
-  --status-danger: var(--danger);
-  --status-current: var(--current);
-
-  color-scheme: light;
-}
-
-@media (prefers-color-scheme: light) {
+@media (prefers-color-scheme: dark) {
   [data-theme='system'] {
-    --bg: #F6F2EA;
-    --surface: #FFFFFF;
-    --surface-2: #FBF9F4;
-    --ink: #0B1020;
-    --muted: #52586A;
-    --line: rgba(11, 16, 32, 0.12);
-    --line-strong: rgba(11, 16, 32, 0.24);
-    --focus: #8E7440;
-    --champagne: #8E7440;
-    --champagne-lit: #A68A52;
-    --champagne-deep: #6E582E;
-    --accent: #0B1020;
-    --accent-ink: #F6F2EA;
+    --bg: #070A14;
+    --surface: #0C1122;
+    --surface-2: #121933;
+    --ink: #F4EFE6;
+    --muted: #B9B3A6;
+    --line: rgba(244, 239, 230, 0.12);
+    --line-strong: rgba(244, 239, 230, 0.24);
+    --focus: #CBA96B;
+    --champagne: #CBA96B;
+    --accent: #F4EFE6;
+    --accent-hover: #E5DEC9;
+    --accent-ink: #070A14;
+    --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 8px 24px rgba(0, 0, 0, 0.22);
     --bg-canvas: var(--bg);
     --bg-surface: var(--surface);
     --bg-subtle: var(--surface-2);
     --ink-primary: var(--ink);
     --ink-secondary: var(--muted);
     --border-line: var(--line);
-    --accent-primary: var(--champagne);
-    color-scheme: light;
+    color-scheme: dark;
   }
 }
 
@@ -115,7 +116,8 @@
   --ink-primary: #FFFFFF;
   --ink-secondary: #E5E7EB;
   --border-line: #FFFFFF;
-  --accent-primary: #FACC15;
+  --accent: #FACC15;
+  --accent-ink: #000000;
   --champagne: #FACC15;
   --status-answered: #22C55E;
   --status-review: #FACC15;

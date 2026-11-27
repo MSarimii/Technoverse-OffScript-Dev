@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { questionService } from '../../services/questionService';
 import { PageHeader } from '../../components/layout/AppLayout';
-import { Button, Input, Textarea, Select, Badge, Dialog, Skeleton, EmptyState, ErrorState } from '../../components/ui';
+import { Button, Input, Textarea, Select, Badge, Dialog, Skeleton, EmptyState, ErrorState, Tooltip } from '../../components/ui';
 import { toast } from 'sonner';
 import { validateImportFile, parseCsvSafe } from '../../lib/csv';
 import gsap from 'gsap';
@@ -47,6 +47,7 @@ export const QuestionBankPage = () => {
   const [formError, setFormError] = useState('');
 
   const [showImport, setShowImport] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [importText, setImportText] = useState(
     '[\n  { "type": "mcq_single", "topic": "Networks", "difficulty": 2, "text": "Which protocol provides reliable ordered byte-stream delivery?", "marks": 2 }\n]'
   );
@@ -366,40 +367,66 @@ export const QuestionBankPage = () => {
                   />
                   <div>
                     <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-ink-muted mb-1">
-                      <Badge tone="cobalt">{q.type}</Badge>
+                      <Badge tone="cobalt">
+                        {q.type === 'mcq_single' ? 'Single Choice' : q.type === 'mcq_multi' ? 'Multi-Select' : 'Written'}
+                      </Badge>
                       <span>{q.topic}</span>
-                      <span>Diff {q.difficulty}/3</span>
+                      <Badge tone={q.difficulty === 1 ? 'success' : q.difficulty === 2 ? 'warning' : 'danger'}>
+                        {q.difficulty === 1 ? 'Easy' : q.difficulty === 2 ? 'Medium' : 'Hard'}
+                      </Badge>
                       <span>{q.marks} marks</span>
                     </div>
                     <p className="text-sm font-medium text-ink">{q.text}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <button
-                    onClick={() => openEdit(q)}
-                    aria-label="Edit question"
-                    className="p-2 text-ink-muted hover:text-cobalt rounded-lg"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDuplicate(q)}
-                    aria-label="Duplicate question"
-                    className="p-2 text-ink-muted hover:text-cobalt rounded-lg"
-                  >
-                    <Copy className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={async () => {
-                      await questionService.deleteQuestion(q.id);
-                      setQuestions((prev) => prev.filter((item) => item.id !== q.id));
-                      toast.success('Question deleted');
-                    }}
-                    aria-label="Delete question"
-                    className="p-2 text-ink-muted hover:text-status-danger rounded-lg"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                <div className="flex items-center gap-1 shrink-0 relative">
+                  <Tooltip label="Edit question">
+                    <button
+                      onClick={() => openEdit(q)}
+                      aria-label="Edit question"
+                      className="p-2 text-ink-muted hover:text-ink rounded-lg transition-transform active:scale-95"
+                    >
+                      <Edit3 className="w-4 h-4" strokeWidth={1.5} />
+                    </button>
+                  </Tooltip>
+                  <Tooltip label="Duplicate question">
+                    <button
+                      onClick={() => handleDuplicate(q)}
+                      aria-label="Duplicate question"
+                      className="p-2 text-ink-muted hover:text-ink rounded-lg transition-transform active:scale-95"
+                    >
+                      <Copy className="w-4 h-4" strokeWidth={1.5} />
+                    </button>
+                  </Tooltip>
+                  <Tooltip label="Delete question">
+                    <button
+                      onClick={() => setConfirmDeleteId(confirmDeleteId === q.id ? null : q.id)}
+                      aria-label="Delete question"
+                      className="p-2 text-ink-muted hover:text-status-danger rounded-lg transition-transform active:scale-95"
+                    >
+                      <Trash2 className="w-4 h-4" strokeWidth={1.5} />
+                    </button>
+                  </Tooltip>
+                  {confirmDeleteId === q.id && (
+                    <div className="absolute right-0 top-10 z-30 w-52 p-3 rounded-[12px] luxury-card space-y-2">
+                      <p className="text-xs text-ink font-medium">Delete this question?</p>
+                      <div className="flex justify-end gap-1.5">
+                        <Button size="sm" variant="secondary" onClick={() => setConfirmDeleteId(null)}>Cancel</Button>
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          onClick={async () => {
+                            await questionService.deleteQuestion(q.id);
+                            setQuestions((prev) => prev.filter((item) => item.id !== q.id));
+                            setConfirmDeleteId(null);
+                            toast.success('Question deleted');
+                          }}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

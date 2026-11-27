@@ -20,14 +20,14 @@ npm run build   # Builds production bundle to frontend/dist/
 
 ---
 
-## 2. Design System & Tokens ("Quiet Luxury / Editorial Institution")
+## 2. Design System & Tokens ("Oxford Parchment & Emerald" Light Luxury Default)
 
 - **Self-Hosted Fonts (`@fontsource`)**: `Instrument Serif` (display, `-0.01em` tracking, `1.06` line-height), `Inter Tight` (UI/body, `400/500/600`), `JetBrains Mono` (`tabular-nums` timers, IDs, scores).
-- **Dark Theme (Default Brand Layer)**: `--bg: #070A14`, `--surface: #0C1122`, `--surface-2: #121933`, `--ink: #F4EFE6`, `--muted: #B9B3A6`, `--champagne: #CBA96B`, `--line: rgba(244,239,230,0.12)`, `--focus: #CBA96B`
-- **Light Theme (`data-theme="light"`)**: `--bg: #F6F2EA`, `--surface: #FFFFFF`, `--surface-2: #FBF9F4`, `--ink: #0B1020`, `--muted: #52586A`, `--champagne: #8E7440`, `--line: rgba(11,16,32,0.12)`, `--focus: #8E7440`
+- **Light Theme (Default)**: `--bg: #F8F7F3` (warm alabaster), `--surface: #FFFFFF`, `--surface-2: #EFECE4`, `--ink: #121714`, `--muted: #5B635E`, `--accent: #143D2F` (emerald, hover `#1D5441`, text `#FFFFFF`), `--champagne: #A6834B` (burnished brass), `--line: rgba(18,23,20,0.08)`, `--focus: #143D2F`.
+- **Dark Theme (`data-theme="dark"`)**: `--bg: #070A14`, `--surface: #0C1122`, `--surface-2: #121933`, `--ink: #F4EFE6`, `--muted: #B9B3A6`, `--champagne: #CBA96B`, `--line: rgba(244,239,230,0.12)`, `--focus: #CBA96B`.
 - **WCAG AA Contrast Verification**:
-  - Dark `#F4EFE6` on `#070A14` (~17.1:1), `#B9B3A6` on `#0C1122` (~8.4:1), `#CBA96B` on `#070A14` (~8.9:1), `#070A14` on `#CBA96B` (~8.9:1).
-  - Light `#0B1020` on `#F6F2EA` (~16.8:1), `#52586A` on `#FFFFFF` (~6.4:1), `#8E7440` on `#FFFFFF` (~4.6:1).
+  - Light `#121714` on `#F8F7F3` (~16.6:1), `#5B635E` on `#FFFFFF` (~6.1:1), `#FFFFFF` on `#143D2F` (~12.4:1).
+  - Dark `#F4EFE6` on `#070A14` (~17.1:1), `#B9B3A6` on `#0C1122` (~8.4:1), `#070A14` on `#F4EFE6` (~17.1:1).
 - **Intentionally Calm Zone**: Exam Workspace (`/candidate/exam/*`) disables film-grain overlay, glassmorphism, and decorative motion; only opacity/transform micro-feedback and `aria-live` updates remain.
 - **Landing Structure**: Glass navbar (`DEV MOCK` badge hidden in production), asymmetric 2-column hero with Live Product Stage (HTML/CSS/SVG), credibility strip, 3-chapter lazy-loaded `ScrollTrigger` + `Lenis` story, editorial role rows, and closing CTA band.
 

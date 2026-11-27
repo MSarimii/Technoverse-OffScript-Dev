@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 const ThemeContext = createContext(null);
 
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(() => localStorage.getItem('sems_theme') || 'dark');
+  const [theme, setTheme] = useState(() => localStorage.getItem('sems_theme') || 'light');
 
   useEffect(() => {
     localStorage.setItem('sems_theme', theme);
@@ -11,7 +11,7 @@ export function ThemeProvider({ children }) {
   }, [theme]);
 
   const cycleTheme = () => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : prev === 'light' ? 'system' : 'dark'));
+    setTheme((prev) => (prev === 'light' ? 'dark' : prev === 'dark' ? 'system' : 'light'));
   };
 
   return (
