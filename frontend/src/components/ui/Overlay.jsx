@@ -46,10 +46,10 @@ export const Dialog = ({ open, onClose, title, children }) => {
           aria-label={title}
         >
           <motion.div
-            initial={reduced ? { opacity: 1 } : { opacity: 0, scale: 0.95, y: 6 }}
+            initial={reduced ? { opacity: 1 } : { opacity: 0, scale: 0.96, y: 6 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: 6 }}
-            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: 6 }}
+            transition={{ type: 'spring', stiffness: 420, damping: 30 }}
             className="bg-surface border border-line rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl"
           >
             <div className="flex items-center justify-between">
@@ -67,24 +67,45 @@ export const Dialog = ({ open, onClose, title, children }) => {
 };
 
 export const Drawer = ({ open, onClose, title, children }) => {
-  if (!open) return null;
+  const reduced = useReducedMotion();
   return (
-    <aside aria-label={title} className="fixed inset-x-3 bottom-3 z-40 lg:static lg:inset-auto lg:w-72 shrink-0 bg-surface border border-line rounded-xl p-4 flex flex-col shadow-lg lg:shadow-none">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-xs font-mono uppercase tracking-wider text-ink-muted">{title}</h2>
-        <button onClick={onClose} className="text-xs text-ink-muted hover:text-ink">Close</button>
-      </div>
-      {children}
-    </aside>
+    <AnimatePresence>
+      {open && (
+        <motion.aside
+          aria-label={title}
+          initial={reduced ? { opacity: 1 } : { opacity: 0, scale: 0.96, y: 8 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: 8 }}
+          transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+          className="fixed inset-x-3 bottom-3 z-40 lg:static lg:inset-auto lg:w-72 shrink-0 bg-surface border border-line rounded-xl p-4 flex flex-col shadow-lg lg:shadow-none"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-xs font-mono uppercase tracking-wider text-ink-muted">{title}</h2>
+            <button onClick={onClose} className="text-xs text-ink-muted hover:text-ink">Close</button>
+          </div>
+          {children}
+        </motion.aside>
+      )}
+    </AnimatePresence>
   );
 };
 
 export const Popover = ({ open, children, className = '' }) => {
-  if (!open) return null;
+  const reduced = useReducedMotion();
   return (
-    <div className={`bg-surface border border-line rounded-xl shadow-lg p-4 ${className}`}>
-      {children}
-    </div>
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={reduced ? { opacity: 1 } : { opacity: 0, scale: 0.96, y: -4 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: -4 }}
+          transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+          className={`bg-surface border border-line rounded-xl shadow-lg p-4 ${className}`}
+        >
+          {children}
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 

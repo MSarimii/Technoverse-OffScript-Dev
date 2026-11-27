@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { getRoleHome } from '../context/AuthContext';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion, useReducedMotion, useInView, animate } from 'framer-motion';
 import {
   ArrowRight,
   CheckCircle2,
@@ -72,6 +72,94 @@ const PulseDot = () => (
   </span>
 );
 
+const MetricCounter = ({ target, decimals = 0, prefix = '', suffix = '', reduced }) => {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, amount: 0.4 });
+  const [display, setDisplay] = useState(reduced ? target : 0);
+
+  useEffect(() => {
+    if (reduced || target === 0) {
+      setDisplay(target);
+      return;
+    }
+    if (!inView) return;
+    const ctrl = animate(0, target, {
+      duration: 1.1,
+      ease: [0.22, 1, 0.36, 1],
+      onUpdate: (v) => setDisplay(v),
+    });
+    return () => ctrl.stop();
+  }, [inView, target, reduced]);
+
+  const formatted = decimals > 0 ? Number(display).toFixed(decimals) : Math.round(display);
+  return (
+    <span ref={ref}>
+      {prefix}
+      {formatted}
+      {suffix}
+    </span>
+  );
+};
+
+const RoleCard = ({ item, reduced }) => {
+  const Icon = item.icon;
+  const [spot, setSpot] = useState({ x: 0, y: 0, active: false });
+
+  const handleMove = (e) => {
+    if (reduced || !window.matchMedia('(pointer: fine)').matches) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    setSpot({ x: e.clientX - rect.left, y: e.clientY - rect.top, active: true });
+  };
+
+  return (
+    <motion.div
+      whileHover={reduced ? undefined : { y: -2 }}
+      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+      className="relative rounded-2xl"
+    >
+      <Link
+        to={item.to}
+        onMouseMove={handleMove}
+        onMouseLeave={() => setSpot((s) => ({ ...s, active: false }))}
+        className="group relative overflow-hidden luxury-card luxury-card-hover rounded-2xl p-7 flex flex-col justify-between min-h-[205px]"
+      >
+        {!reduced && spot.active && (
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 rounded-2xl transition-opacity duration-200"
+            style={{
+              padding: '1.5px',
+              background: `radial-gradient(240px circle at ${spot.x}px ${spot.y}px, rgba(5, 150, 105, 0.45), transparent 65%)`,
+              WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+              WebkitMaskComposite: 'xor',
+              maskComposite: 'exclude',
+            }}
+          />
+        )}
+        <div className="relative z-10">
+          <div className="flex items-start justify-between gap-4 mb-5">
+            <span className="w-11 h-11 rounded-xl bg-[#ECFDF5] border border-[#A7F3D0] text-[#059669] flex items-center justify-center shrink-0">
+              <Icon className="w-5 h-5" strokeWidth={1.75} />
+            </span>
+            <span className="font-mono text-sm font-semibold text-[#059669] tabular-nums">{item.idx}</span>
+          </div>
+          <h3 className="font-display font-semibold text-xl sm:text-2xl tracking-[-0.02em] text-[#0B0F0E] mb-2">
+            {item.role}
+          </h3>
+          <p className="text-sm text-[#4B5563] leading-relaxed">{item.desc}</p>
+        </div>
+
+        <div className="relative z-10 pt-4 mt-5 border-t border-[#E4E8E6] flex items-center justify-end">
+          <span className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-[0.08em] text-[#059669] font-semibold">
+            Enter Portal
+            <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" strokeWidth={1.75} />
+          </span>
+        </div>
+      </Link>
+    </motion.div>
+  );
+};
+
 export const HomePage = () => {
   const { isAuthenticated, user, logout } = useAuth();
   const reduced = useReducedMotion();
@@ -79,6 +167,7 @@ export const HomePage = () => {
   const stageRef = useRef(null);
   const ctaRef = useRef(null);
   const [loopIdx, setLoopIdx] = useState(0);
+  const [clockSec, setClockSec] = useState(42 * 60 + 18);
   const [parallax, setParallax] = useState({ x: 0, y: 0 });
   const [ctaOffset, setCtaOffset] = useState({ x: 0, y: 0 });
 
@@ -89,19 +178,30 @@ export const HomePage = () => {
         setLoopIdx((i) => (i + 1) % SAVE_LOOP.length);
       }
     }, 2400);
-    return () => clearInterval(id);
+    const secId = setInterval(() => {
+      if (!document.hidden) {
+        setClockSec((s) => (s > 60 ? s - 1 : 42 * 60 + 18));
+      }
+    }, 1000);
+    return () => {
+      clearInterval(id);
+      clearInterval(secId);
+    };
   }, [reduced]);
+
+  const clockFormatted = `${String(Math.floor(clockSec / 60)).padStart(2, '0')}:${String(clockSec % 60).padStart(2, '0')}`;
+  const clockDashOffset = 138.2 * (1 - clockSec / (50 * 60));
 
   useGSAP(
     () => {
       const mm = gsap.matchMedia();
       let lenis;
       mm.add('(prefers-reduced-motion: no-preference)', () => {
-        const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+        const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
         tl.fromTo(
           '.hero-line',
-          { y: 16, opacity: 0.1 },
-          { y: 0, opacity: 1, duration: 0.55, stagger: 0.06, clearProps: 'transform,opacity' }
+          { yPercent: 100, opacity: 1 },
+          { yPercent: 0, opacity: 1, duration: 0.65, stagger: 0.07, clearProps: 'transform' }
         )
           .fromTo(
             '.hero-fade',
@@ -368,14 +468,14 @@ export const HomePage = () => {
             className="grid grid-cols-2 lg:grid-cols-4 border-b border-[#E4E8E6] divide-y lg:divide-y-0 sm:divide-x divide-[#E4E8E6]"
           >
             {[
-              { val: '12+ Years', label: 'Serving Academic & Licensing Institutions' },
-              { val: '4.8M+', label: 'High-Stakes Attempts Delivered' },
-              { val: '99.99%', label: 'Verified Uptime Across Global Windows' },
-              { val: '0 sec', label: 'Tolerated Client-Clock Drift' },
+              { target: 12, decimals: 0, suffix: '+ Years', label: 'Serving Academic & Licensing Institutions' },
+              { target: 4.8, decimals: 1, suffix: 'M+', label: 'High-Stakes Attempts Delivered' },
+              { target: 99.99, decimals: 2, suffix: '%', label: 'Verified Uptime Across Global Windows' },
+              { target: 0, decimals: 0, suffix: ' sec', label: 'Tolerated Client-Clock Drift' },
             ].map((m) => (
-              <div key={m.val} className="py-6 px-4 first:pl-0 last:pr-0">
+              <div key={m.label} className="py-6 px-4 first:pl-0 last:pr-0">
                 <div className="font-display font-extrabold text-2xl sm:text-3xl tracking-[-0.03em] text-[#0B0F0E] tabular-nums">
-                  {m.val}
+                  <MetricCounter target={m.target} decimals={m.decimals} suffix={m.suffix} reduced={reduced} />
                 </div>
                 <div className="text-[11px] font-mono text-[#6B7280] mt-1">{m.label}</div>
               </div>
@@ -408,8 +508,16 @@ export const HomePage = () => {
             <article className="scroll-chapter grid grid-cols-1 lg:grid-cols-12 gap-8 items-center pb-12 border-b border-[#E4E8E6]">
               <div className="lg:col-span-5 space-y-3">
                 <span className="font-display font-extrabold text-4xl tracking-[-0.03em] text-[#059669] block">01</span>
-                <h3 className="font-display font-bold text-2xl sm:text-3xl tracking-[-0.02em] leading-[1.15] text-[#0B0F0E]">
-                  The server keeps the clock.
+                <h3 className="font-display font-bold text-2xl sm:text-3xl tracking-[-0.02em] leading-[1.15] text-[#0B0F0E] overflow-hidden">
+                  <motion.span
+                    className="block"
+                    initial={reduced ? false : { y: '100%' }}
+                    whileInView={{ y: '0%' }}
+                    viewport={{ once: true, amount: 0.4 }}
+                    transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    The server keeps the clock.
+                  </motion.span>
                 </h3>
                 <p className="text-sm sm:text-base text-[#4B5563] max-w-[54ch] leading-relaxed">
                   Every countdown is anchored to the server&apos;s UTC deadline via minimum-RTT offset sampling. Changing the local device clock never adds a single second.
@@ -440,7 +548,7 @@ export const HomePage = () => {
                       <div className="inline-flex items-center gap-1 text-[11px] font-mono uppercase text-[#10B981] mb-1">
                         <Lock className="w-3 h-3" /> Authoritative UTC Server Clock
                       </div>
-                      <div className="font-mono text-2xl text-white font-semibold tabular-nums">42:18</div>
+                      <div className="font-mono text-2xl text-white font-semibold tabular-nums">{clockFormatted}</div>
                       <div className="text-[11px] font-mono text-white/70 mt-1">Deadline: 11:42:00 UTC</div>
                     </div>
                     <svg width="56" height="56" viewBox="0 0 56 56" aria-hidden="true" className="shrink-0">
@@ -454,7 +562,7 @@ export const HomePage = () => {
                         strokeWidth="4"
                         strokeLinecap="round"
                         strokeDasharray="138.2"
-                        strokeDashoffset={28 + loopIdx * 6}
+                        strokeDashoffset={clockDashOffset}
                         transform="rotate(-90 28 28)"
                         style={{ transition: 'stroke-dashoffset 600ms ease-out' }}
                       />
@@ -468,8 +576,16 @@ export const HomePage = () => {
             <article className="scroll-chapter grid grid-cols-1 lg:grid-cols-12 gap-8 items-center pb-12 border-b border-[#E4E8E6]">
               <div className="lg:col-span-5 space-y-3">
                 <span className="font-display font-extrabold text-4xl tracking-[-0.03em] text-[#059669] block">02</span>
-                <h3 className="font-display font-bold text-2xl sm:text-3xl tracking-[-0.02em] leading-[1.15] text-[#0B0F0E]">
-                  Answers survive outages.
+                <h3 className="font-display font-bold text-2xl sm:text-3xl tracking-[-0.02em] leading-[1.15] text-[#0B0F0E] overflow-hidden">
+                  <motion.span
+                    className="block"
+                    initial={reduced ? false : { y: '100%' }}
+                    whileInView={{ y: '0%' }}
+                    viewport={{ once: true, amount: 0.4 }}
+                    transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    Answers survive outages.
+                  </motion.span>
                 </h3>
                 <p className="text-sm sm:text-base text-[#4B5563] max-w-[54ch] leading-relaxed">
                   Responses write to IndexedDB first with monotonic sequence numbers. On reconnect, queued answers flush in order within a bounded late-sync window.
@@ -502,12 +618,20 @@ export const HomePage = () => {
                   </div>
 
                   <div className="flex flex-col items-center justify-center py-2">
-                    <div className="w-full flex items-center gap-2">
+                    <div className="relative w-full flex items-center gap-2 overflow-hidden">
                       <span className="h-[2px] flex-1 border-t-2 border-dashed border-[#059669]/40" />
-                      <span className="px-2.5 py-1 rounded-full bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46] font-mono text-[10px] font-semibold uppercase">
+                      <span className="relative z-10 px-2.5 py-1 rounded-full bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46] font-mono text-[10px] font-semibold uppercase">
                         Flush
                       </span>
                       <span className="h-[2px] flex-1 border-t-2 border-dashed border-[#059669]/40" />
+                      {!reduced && (
+                        <motion.span
+                          aria-hidden="true"
+                          className="absolute left-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-[#10B981] shadow-[0_0_8px_#10B981]"
+                          animate={{ x: ['0%', '1400%'], opacity: [0, 1, 1, 0] }}
+                          transition={{ duration: 1.8, repeat: Infinity, ease: 'linear' }}
+                        />
+                      )}
                     </div>
                     <span className="text-[10px] font-mono text-[#6B7280] mt-1.5">Verified late-sync</span>
                   </div>
@@ -529,8 +653,16 @@ export const HomePage = () => {
             <article className="scroll-chapter grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
               <div className="lg:col-span-5 space-y-3">
                 <span className="font-display font-extrabold text-4xl tracking-[-0.03em] text-[#059669] block">03</span>
-                <h3 className="font-display font-bold text-2xl sm:text-3xl tracking-[-0.02em] leading-[1.15] text-[#0B0F0E]">
-                  Every paper is fair.
+                <h3 className="font-display font-bold text-2xl sm:text-3xl tracking-[-0.02em] leading-[1.15] text-[#0B0F0E] overflow-hidden">
+                  <motion.span
+                    className="block"
+                    initial={reduced ? false : { y: '100%' }}
+                    whileInView={{ y: '0%' }}
+                    viewport={{ once: true, amount: 0.4 }}
+                    transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    Every paper is fair.
+                  </motion.span>
                 </h3>
                 <p className="text-sm sm:text-base text-[#4B5563] max-w-[54ch] leading-relaxed">
                   Blueprint randomization draws distinct questions per candidate while locking topic and difficulty distribution across every generated paper.
@@ -674,41 +806,9 @@ export const HomePage = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {ROLE_CARDS.map((item) => {
-              const Icon = item.icon;
-              return (
-                <motion.div
-                  key={item.role}
-                  whileHover={reduced ? undefined : { y: -2 }}
-                  transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  <Link
-                    to={item.to}
-                    className="group luxury-card luxury-card-hover rounded-2xl p-7 flex flex-col justify-between min-h-[205px]"
-                  >
-                    <div>
-                      <div className="flex items-start justify-between gap-4 mb-5">
-                        <span className="w-11 h-11 rounded-xl bg-[#ECFDF5] border border-[#A7F3D0] text-[#059669] flex items-center justify-center shrink-0">
-                          <Icon className="w-5 h-5" strokeWidth={1.75} />
-                        </span>
-                        <span className="font-mono text-sm font-semibold text-[#059669] tabular-nums">{item.idx}</span>
-                      </div>
-                      <h3 className="font-display font-semibold text-xl sm:text-2xl tracking-[-0.02em] text-[#0B0F0E] mb-2">
-                        {item.role}
-                      </h3>
-                      <p className="text-sm text-[#4B5563] leading-relaxed">{item.desc}</p>
-                    </div>
-
-                    <div className="pt-4 mt-5 border-t border-[#E4E8E6] flex items-center justify-end">
-                      <span className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-[0.08em] text-[#059669] font-semibold">
-                        Enter Portal
-                        <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" strokeWidth={1.75} />
-                      </span>
-                    </div>
-                  </Link>
-                </motion.div>
-              );
-            })}
+            {ROLE_CARDS.map((item) => (
+              <RoleCard key={item.role} item={item} reduced={reduced} />
+            ))}
           </div>
         </section>
 

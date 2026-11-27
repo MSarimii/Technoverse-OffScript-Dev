@@ -353,8 +353,10 @@ export const QuestionBankPage = () => {
         <>
           <div ref={listRef} className="space-y-3">
             {paged.map((q) => (
-              <div
+              <motion.div
                 key={q.id}
+                layout={!reduced}
+                transition={{ layout: { type: 'spring', stiffness: 420, damping: 34 } }}
                 data-flip-id={q.id}
                 className="bg-surface border border-line rounded-xl p-4 flex items-start justify-between gap-4"
               >
@@ -442,7 +444,7 @@ export const QuestionBankPage = () => {
                     )}
                   </AnimatePresence>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
 

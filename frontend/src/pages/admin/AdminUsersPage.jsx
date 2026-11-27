@@ -236,7 +236,12 @@ export const AdminUsersPage = () => {
                   {paged.map((u) => {
                     const isSelf = u.id === currentUser?.id;
                     return (
-                      <tr key={u.id} className="hover:bg-canvas/70 transition-colors">
+                      <motion.tr
+                        key={u.id}
+                        layout={!reduced}
+                        transition={{ layout: { type: 'spring', stiffness: 420, damping: 34 } }}
+                        className="hover:bg-canvas/70 transition-colors"
+                      >
                         <td className="px-4 py-3 font-medium text-ink">
                           <div className="flex items-center gap-3">
                             <span
@@ -326,7 +331,7 @@ export const AdminUsersPage = () => {
                             </button>
                           )}
                         </td>
-                      </tr>
+                      </motion.tr>
                     );
                   })}
                 </tbody>
