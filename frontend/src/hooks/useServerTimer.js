@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ServerClock } from '../lib/serverClock';
+import { ServerClock } from '../lib/serverClock.js';
 
 export function formatRemaining(ms) {
   const totalSec = Math.max(0, Math.floor(ms / 1000));

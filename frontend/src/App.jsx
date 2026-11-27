@@ -18,6 +18,7 @@ const LoginPage = lazy(() => import('./pages/LoginPage').then((m) => ({ default:
 const VerifyReportPage = lazy(() => import('./pages/VerifyReportPage').then((m) => ({ default: m.VerifyReportPage })));
 const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage').then((m) => ({ default: m.AdminUsersPage })));
 const CandidateExamsPage = lazy(() => import('./pages/candidate/CandidateExamsPage').then((m) => ({ default: m.CandidateExamsPage })));
+const PreExamPage = lazy(() => import('./pages/candidate/PreExamPage').then((m) => ({ default: m.PreExamPage })));
 const ExamWorkspacePage = lazy(() => import('./pages/candidate/ExamWorkspacePage').then((m) => ({ default: m.ExamWorkspacePage })));
 const CandidateResultsPage = lazy(() => import('./pages/candidate/CandidateResultsPage').then((m) => ({ default: m.CandidateResultsPage })));
 const ResultDetailPage = lazy(() => import('./pages/candidate/ResultDetailPage').then((m) => ({ default: m.ResultDetailPage })));
@@ -158,6 +159,26 @@ function AnimatedRoutes() {
             <ProtectedRoute allowedRoles={['candidate']}>
               <AppLayout>
                 <CandidateExamsPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/candidate/exams"
+          element={
+            <ProtectedRoute allowedRoles={['candidate']}>
+              <AppLayout>
+                <CandidateExamsPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/candidate/exams/:examId"
+          element={
+            <ProtectedRoute allowedRoles={['candidate']}>
+              <AppLayout>
+                <PreExamPage />
               </AppLayout>
             </ProtectedRoute>
           }

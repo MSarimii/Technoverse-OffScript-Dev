@@ -365,7 +365,7 @@ export const ExamWorkspacePage = () => {
       </div>
 
       <div
-        className={`grid gap-2 mb-4 ${
+        className={`grid gap-2 mb-4 max-h-72 overflow-y-auto pr-1 ${
           prefs.palettePosition === 'bottom' ? 'grid-cols-5 sm:grid-cols-10' : 'grid-cols-5'
         }`}
       >
@@ -688,7 +688,7 @@ export const ExamWorkspacePage = () => {
                 </div>
               </div>
 
-              <p style={fontSizeStyle} className={`${lineSpacingClass} text-ink font-medium mb-6 max-w-[72ch]`}>
+              <p dir="auto" style={fontSizeStyle} className={`${lineSpacingClass} text-ink font-medium mb-6 max-w-[72ch] break-words`}>
                 {currentQ.text}
               </p>
 

@@ -1,171 +1,159 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { attemptService } from '../../services/attemptService';
-import { toast } from 'sonner';
-import { Clock, Play, RotateCcw, CheckCircle, Calendar } from 'lucide-react';
+import { PageHeader } from '../../components/layout/AppLayout';
+import { Button, Badge, Tabs, Skeleton, EmptyState, ErrorState } from '../../components/ui';
+import { Clock, Play, RotateCcw, CheckCircle, Calendar, Lock } from 'lucide-react';
+
+function formatCountdown(ms) {
+  if (ms <= 0) return 'Opening now';
+  const totalSec = Math.floor(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  return h > 0 ? `Opens in ${h}h ${m}m` : `Opens in ${m}m ${s}s`;
+}
 
 export const CandidateExamsPage = () => {
   const navigate = useNavigate();
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState('available'); // available | upcoming | completed
-  const [selectedExam, setSelectedExam] = useState(null);
-  const [starting, setStarting] = useState(false);
+  const [error, setError] = useState('');
+  const [tab, setTab] = useState('available');
+  const [nowMs, setNowMs] = useState(Date.now());
 
-  useEffect(() => {
-    attemptService
-      .getCandidateExams()
-      .then((res) => setExams(res.data?.exams || []))
-      .catch((err) => toast.error(err.message || 'Failed to load exams'))
-      .finally(() => setLoading(false));
-  }, []);
-
-  const available = exams.filter((e) => e.derivedStatus === 'ongoing' && e.attemptStatus !== 'submitted' && e.attemptStatus !== 'graded');
-  const upcoming = exams.filter((e) => e.derivedStatus === 'published');
-  const completed = exams.filter((e) => e.derivedStatus === 'completed' || e.attemptStatus === 'submitted' || e.attemptStatus === 'graded');
-
-  const visible = tab === 'available' ? available : tab === 'upcoming' ? upcoming : completed;
-
-  const handleEnterExam = async (exam) => {
-    setStarting(true);
+  const load = async () => {
+    setLoading(true);
+    setError('');
     try {
-      const res = await attemptService.startAttempt(exam.id);
-      const attempt = res.data?.attempt;
-      navigate(`/candidate/exam/${exam.id}`, { state: { attemptId: attempt.id } });
+      const res = await attemptService.getCandidateExams();
+      setExams(res.data?.exams || []);
     } catch (err) {
-      toast.error(err.message || 'Unable to enter examination');
+      setError(err.message || 'Failed to load exams');
     } finally {
-      setStarting(false);
+      setLoading(false);
     }
   };
 
-  return (
-    <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-6">
-        <h1 className="font-serif text-3xl text-ink">My Examinations</h1>
-        <p className="text-sm text-ink-muted">View scheduled windows, instructions, and active attempts.</p>
-      </div>
+  useEffect(() => {
+    load();
+    const id = setInterval(() => setNowMs(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
 
-      <div className="flex gap-2 border-b border-line mb-6">
-        {[
-          { key: 'available', label: `Available (${available.length})` },
+  const available = exams.filter(
+    (e) => e.derivedStatus === 'ongoing' && e.attemptStatus !== 'submitted' && e.attemptStatus !== 'graded'
+  );
+  const upcoming = exams.filter((e) => e.derivedStatus === 'published');
+  const completed = exams.filter(
+    (e) => e.derivedStatus === 'completed' || e.attemptStatus === 'submitted' || e.attemptStatus === 'graded'
+  );
+
+  const visible = tab === 'available' ? available : tab === 'upcoming' ? upcoming : completed;
+
+  return (
+    <main className="space-y-6">
+      <PageHeader
+        title="My Examinations"
+        subtitle="View scheduled windows, instructions, and active attempts."
+        breadcrumbs={[{ label: 'Candidate' }, { label: 'Examinations' }]}
+      />
+
+      <Tabs
+        items={[
+          { key: 'available', label: `Available Now (${available.length})` },
           { key: 'upcoming', label: `Upcoming (${upcoming.length})` },
           { key: 'completed', label: `Completed (${completed.length})` },
-        ].map((item) => (
-          <button
-            key={item.key}
-            onClick={() => setTab(item.key)}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-              tab === item.key
-                ? 'border-navy-900 text-navy-900'
-                : 'border-transparent text-ink-muted hover:text-ink'
-            }`}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
+        ]}
+        activeKey={tab}
+        onChange={setTab}
+      />
 
       {loading ? (
-        <div className="py-12 text-center font-mono text-sm text-ink-muted">Loading examinations...</div>
-      ) : visible.length === 0 ? (
-        <div className="bg-surface border border-line rounded-lg p-10 text-center text-sm text-ink-muted">
-          No {tab} examinations at this time.
+        <div className="space-y-3">
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
         </div>
+      ) : error ? (
+        <ErrorState message={error} onRetry={load} />
+      ) : visible.length === 0 ? (
+        <EmptyState title={`No ${tab} examinations`} description="Check other tabs or contact your examiner if an exam is missing." />
       ) : (
         <div className="space-y-4">
-          {visible.map((exam) => (
-            <article
-              key={exam.id}
-              className="bg-surface border border-line rounded-lg p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-            >
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono uppercase px-2 py-0.5 rounded bg-navy-50 text-navy-900">
-                    {exam.derivedStatus}
-                  </span>
-                  {exam.attemptStatus === 'in_progress' && (
-                    <span className="text-xs font-mono px-2 py-0.5 rounded bg-amber-100 text-amber-900">
-                      In Progress
+          {visible.map((exam) => {
+            const opensInMs = Date.parse(exam.startAt) - nowMs;
+            const accessReason =
+              exam.attemptStatus === 'submitted' || exam.attemptStatus === 'graded'
+                ? 'Already submitted'
+                : exam.derivedStatus === 'published'
+                ? formatCountdown(opensInMs)
+                : exam.derivedStatus === 'completed'
+                ? 'Closed'
+                : 'Open for entry';
+
+            return (
+              <article
+                key={exam.id}
+                className="bg-surface border border-line rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+              >
+                <div className="space-y-1.5 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge tone={exam.derivedStatus === 'ongoing' ? 'cobalt' : 'neutral'}>
+                      {exam.derivedStatus}
+                    </Badge>
+                    {exam.attemptStatus === 'in_progress' && <Badge tone="warning">In Progress</Badge>}
+                    <span className="text-xs font-mono text-ink-muted">{accessReason}</span>
+                  </div>
+                  <h2 className="text-lg font-semibold text-ink break-words">{exam.title}</h2>
+                  {exam.instructions && (
+                    <p className="text-xs text-ink-muted line-clamp-2 max-w-[70ch]">{exam.instructions}</p>
+                  )}
+                  <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-ink-muted">
+                    <span className="inline-flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5" /> {exam.durationMin} min
+                    </span>
+                    <span>{exam.totalMarks} marks</span>
+                    <span className="inline-flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5" />
+                      {tab === 'upcoming' ? `Opens ${new Date(exam.startAt).toLocaleString()}` : `Closes ${new Date(exam.endAt).toLocaleString()}`}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  {tab === 'available' && (
+                    <Link
+                      to={`/candidate/exams/${exam.id}`}
+                      className="min-h-[44px] inline-flex items-center gap-2 bg-cobalt hover:bg-navy-800 text-white text-sm font-semibold px-4 py-2.5 rounded-lg active:scale-[0.97]"
+                    >
+                      {exam.attemptStatus === 'in_progress' ? (
+                        <>
+                          <RotateCcw className="w-4 h-4" /> Resume Exam
+                        </>
+                      ) : (
+                        <>
+                          <Play className="w-4 h-4" /> Enter Pre-Exam
+                        </>
+                      )}
+                    </Link>
+                  )}
+                  {tab === 'upcoming' && (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-mono text-ink-muted px-3 py-2 rounded-lg bg-canvas border border-line">
+                      <Lock className="w-3.5 h-3.5" /> {formatCountdown(opensInMs)}
                     </span>
                   )}
+                  {tab === 'completed' && exam.resultsPublished && exam.attemptId && (
+                    <Button variant="primary" onClick={() => navigate(`/candidate/results/${exam.attemptId}`)}>
+                      <CheckCircle className="w-4 h-4" /> View Result
+                    </Button>
+                  )}
+                  {tab === 'completed' && !exam.resultsPublished && (
+                    <span className="text-xs font-mono text-ink-muted">Results pending publication</span>
+                  )}
                 </div>
-                <h2 className="text-lg font-semibold text-ink">{exam.title}</h2>
-                <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-ink-muted">
-                  <span className="inline-flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5" /> {exam.durationMin} min
-                  </span>
-                  <span>{exam.totalMarks} marks</span>
-                  <span className="inline-flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5" />
-                    Closes {new Date(exam.endAt).toLocaleString()}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 shrink-0">
-                {tab === 'available' && (
-                  <button
-                    onClick={() => setSelectedExam(exam)}
-                    className="inline-flex items-center gap-2 bg-navy-900 hover:bg-navy-800 text-white text-sm font-semibold px-4 py-2.5 rounded-md active:scale-[0.98]"
-                  >
-                    {exam.attemptStatus === 'in_progress' ? (
-                      <>
-                        <RotateCcw className="w-4 h-4" /> Resume Exam
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-4 h-4" /> Start Exam
-                      </>
-                    )}
-                  </button>
-                )}
-                {tab === 'completed' && exam.resultsPublished && exam.attemptId && (
-                  <button
-                    onClick={() => navigate(`/candidate/results/${exam.attemptId}`)}
-                    className="inline-flex items-center gap-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-semibold px-4 py-2 rounded-md"
-                  >
-                    <CheckCircle className="w-4 h-4" /> View Result
-                  </button>
-                )}
-                {tab === 'completed' && !exam.resultsPublished && (
-                  <span className="text-xs font-mono text-ink-muted">Results pending publication</span>
-                )}
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
-
-      {selectedExam && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
-          <div className="bg-surface border border-line rounded-lg max-w-lg w-full p-6 space-y-4">
-            <h2 className="font-serif text-2xl text-ink">{selectedExam.title}</h2>
-            <div className="p-3.5 rounded-md bg-canvas border border-line text-sm text-ink leading-relaxed">
-              {selectedExam.instructions || 'Follow all academic integrity guidelines.'}
-            </div>
-            <ul className="text-xs font-mono text-ink-muted space-y-1">
-              <li>Duration: {selectedExam.durationMin} minutes (server-authoritative timer)</li>
-              <li>Total Marks: {selectedExam.totalMarks}</li>
-              <li>Answers autosave continuously; offline answers sync upon reconnection.</li>
-              <li>Integrity notice: Tab switches, blur, and paste events are logged for examiner review and are not treated as proof of misconduct.</li>
-            </ul>
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                onClick={() => setSelectedExam(null)}
-                className="px-4 py-2 text-sm border border-line rounded-md bg-canvas"
-              >
-                Cancel
-              </button>
-              <button
-                disabled={starting}
-                onClick={() => handleEnterExam(selectedExam)}
-                className="px-5 py-2 text-sm font-semibold bg-navy-900 text-white rounded-md active:scale-[0.98]"
-              >
-                {starting ? 'Preparing paper...' : 'Confirm & Enter'}
-              </button>
-            </div>
-          </div>
+              </article>
+            );
+          })}
         </div>
       )}
     </main>
