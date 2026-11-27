@@ -46,6 +46,15 @@ body {
   background: rgba(20, 26, 46, 0.78);
 }
 
+@media (prefers-color-scheme: dark) {
+  [data-theme='system'] .glass-nav {
+    background: rgba(11, 16, 32, 0.88);
+  }
+  [data-theme='system'] .glass-tile {
+    background: rgba(20, 26, 46, 0.78);
+  }
+}
+
 @supports not (backdrop-filter: blur(1px)) {
   .glass-nav,
   .glass-tile {

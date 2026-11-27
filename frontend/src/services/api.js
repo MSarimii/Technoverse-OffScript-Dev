@@ -62,9 +62,24 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// Retry/backoff ONLY for idempotent GET requests on transient 5xx/network errors
 api.interceptors.response.use(
   (response) => response.data,
-  (error) => Promise.reject(normalizeApiError(error))
+  async (error) => {
+    const config = error.config;
+    const isGet = config?.method?.toLowerCase() === 'get';
+    const status = error.response?.status || 0;
+    const isTransient = !error.response || status >= 500;
+
+    if (isGet && isTransient && (config.__retryCount || 0) < 2) {
+      config.__retryCount = (config.__retryCount || 0) + 1;
+      const delayMs = 300 * Math.pow(2, config.__retryCount - 1);
+      await new Promise((r) => setTimeout(r, delayMs));
+      return api(config);
+    }
+
+    return Promise.reject(normalizeApiError(error));
+  }
 );
 
 export default api;

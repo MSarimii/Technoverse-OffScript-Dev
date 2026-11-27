@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { Navbar } from './components/layout/Navbar';
 import { HomePage } from './pages/HomePage';
@@ -171,17 +172,19 @@ function AnimatedRoutes() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Router>
-          <div className="min-h-screen bg-canvas flex flex-col text-ink">
-            <Toaster richColors position="top-right" />
-            <Navbar />
-            <div className="flex-1">
-              <AnimatedRoutes />
+      <ThemeProvider>
+        <AuthProvider>
+          <Router>
+            <div className="min-h-screen bg-canvas flex flex-col text-ink">
+              <Toaster richColors position="top-right" />
+              <Navbar />
+              <div className="flex-1">
+                <AnimatedRoutes />
+              </div>
             </div>
-          </div>
-        </Router>
-      </AuthProvider>
+          </Router>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
