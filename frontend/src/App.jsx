@@ -30,6 +30,7 @@ const ExamMonitorPage = lazy(() => import('./pages/examiner/ExamMonitorPage').th
 const ExamGradingPage = lazy(() => import('./pages/examiner/ExamGradingPage').then((m) => ({ default: m.ExamGradingPage })));
 const ExamAnalyticsPage = lazy(() => import('./pages/examiner/ExamAnalyticsPage').then((m) => ({ default: m.ExamAnalyticsPage })));
 const ExamFairnessPage = lazy(() => import('./pages/examiner/ExamFairnessPage').then((m) => ({ default: m.ExamFairnessPage })));
+const ExamDisputesPage = lazy(() => import('./pages/examiner/ExamDisputesPage').then((m) => ({ default: m.ExamDisputesPage })));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
 
 const queryClient = new QueryClient({
@@ -164,6 +165,16 @@ function AnimatedRoutes() {
             <ProtectedRoute allowedRoles={['examiner']}>
               <AppLayout>
                 <ExamFairnessPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/examiner/exams/:id/disputes"
+          element={
+            <ProtectedRoute allowedRoles={['examiner']}>
+              <AppLayout>
+                <ExamDisputesPage />
               </AppLayout>
             </ProtectedRoute>
           }

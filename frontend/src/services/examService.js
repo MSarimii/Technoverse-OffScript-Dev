@@ -26,4 +26,7 @@ export const examService = {
   getFairness: (examId) => (USE_MOCK ? mockApi.getFairness(examId) : api.get(`/exams/${examId}/fairness`)),
   suggestGradeAI: (payload) => (USE_MOCK ? mockApi.suggestGradeAI(payload) : api.post('/ai/suggest-grade', payload)),
   getExamReportUrl: (examId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/reports/exam/${examId}.pdf`,
+  getDisputes: (examId) => (USE_MOCK ? mockApi.getExamDisputes(examId) : api.get(`/exams/${examId}/disputes`)),
+  resolveDispute: (disputeId, payload) =>
+    USE_MOCK ? mockApi.resolveDispute(disputeId, payload) : api.patch(`/disputes/${disputeId}/resolve`, payload),
 };

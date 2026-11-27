@@ -453,4 +453,20 @@ export const INITIAL_MOCK_DB = {
       createdAt: new Date(now - 1800 * 1000).toISOString(),
     },
   ],
+  disputes: [
+    {
+      id: 'disp-1',
+      examId: 'ex-completed-1',
+      attemptId: 'att-comp-1',
+      candidateId: 'u-cand-1',
+      candidateName: 'Zainab Khan',
+      questionId: 'q-8',
+      category: 'grading_error',
+      explanation: 'My answer explicitly compared OCC abort/retry overhead against 2PL lock contention.',
+      status: 'submitted',
+      reason: '',
+      createdAt: new Date(now - 3600 * 1000).toISOString(),
+      gradeVersions: [{ version: 1, marks: 4.5, at: new Date(now - 46 * hour).toISOString(), reason: 'Initial grading' }],
+    },
+  ],
 };

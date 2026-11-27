@@ -28,4 +28,6 @@ export const attemptService = {
     USE_MOCK ? mockApi.verifyReport(verificationId) : api.get(`/verify/${verificationId}`),
   getAttemptReportUrl: (attemptId) =>
     `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/reports/attempt/${attemptId}.pdf`,
+  createDispute: (attemptId, payload) =>
+    USE_MOCK ? mockApi.createDispute(attemptId, payload) : api.post(`/attempts/${attemptId}/disputes`, payload),
 };

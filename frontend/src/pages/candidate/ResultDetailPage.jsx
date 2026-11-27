@@ -2,13 +2,19 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { attemptService } from '../../services/attemptService';
 import { USE_MOCK } from '../../services/api';
+import { Button, Dialog, Select, Textarea } from '../../components/ui';
 import { toast } from 'sonner';
-import { Printer, ShieldCheck, ArrowLeft, ExternalLink, Copy } from 'lucide-react';
+import { Printer, ShieldCheck, ArrowLeft, ExternalLink, Copy, Flag } from 'lucide-react';
 
 export const ResultDetailPage = () => {
   const { attemptId } = useParams();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [disputeQ, setDisputeQ] = useState(null);
+  const [category, setCategory] = useState('grading_error');
+  const [explanation, setExplanation] = useState('');
+  const [submittedDisputes, setSubmittedDisputes] = useState({});
+  const [submittingDispute, setSubmittingDispute] = useState(false);
 
   useEffect(() => {
     attemptService
@@ -140,10 +146,69 @@ export const ResultDetailPage = () => {
                     : q.options?.find((o) => o.id === ansVal)?.text || ansVal || '(Unanswered)'}
                 </span>
               </div>
+              <div className="mt-3 flex items-center justify-between">
+                {submittedDisputes[q.id] ? (
+                  <span className="text-xs font-mono text-cobalt">
+                    Concern status: {submittedDisputes[q.id].status}
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => setDisputeQ(q)}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-muted hover:text-cobalt"
+                  >
+                    <Flag className="w-3.5 h-3.5" /> Raise a concern
+                  </button>
+                )}
+              </div>
             </div>
           );
         })}
       </div>
+
+      <Dialog open={Boolean(disputeQ)} onClose={() => setDisputeQ(null)} title="Raise a Concern">
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (!explanation.trim() || submittingDispute) return;
+            setSubmittingDispute(true);
+            try {
+              const res = await attemptService.createDispute(attemptId, {
+                questionId: disputeQ.id,
+                category,
+                explanation: explanation.trim(),
+              });
+              setSubmittedDisputes((prev) => ({ ...prev, [disputeQ.id]: res.data.dispute }));
+              setDisputeQ(null);
+              setExplanation('');
+              toast.success('Concern submitted for examiner review');
+            } catch (err) {
+              toast.error(err.message);
+            } finally {
+              setSubmittingDispute(false);
+            }
+          }}
+          className="space-y-4"
+        >
+          <Select label="Category" value={category} onChange={(e) => setCategory(e.target.value)}>
+            <option value="grading_error">Grading Error</option>
+            <option value="ambiguous_question">Ambiguous Question</option>
+            <option value="technical_incident">Technical Incident</option>
+          </Select>
+          <Textarea
+            label="Explanation (max 1,000 chars)"
+            required
+            maxLength={1000}
+            rows={4}
+            value={explanation}
+            onChange={(e) => setExplanation(e.target.value)}
+            placeholder="Describe the grading or technical concern clearly..."
+          />
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="secondary" onClick={() => setDisputeQ(null)}>Cancel</Button>
+            <Button type="submit" loading={submittingDispute}>Submit Concern</Button>
+          </div>
+        </form>
+      </Dialog>
     </main>
   );
 };

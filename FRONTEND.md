@@ -60,4 +60,12 @@ npm run build   # Builds production bundle to frontend/dist/
 
 ## 6. Contract Requests
 
-*(No pending contract changes; frontend aligns with `BACKEND.md` and `Master Prompt Pack Part B`.)*
+### 5.4 Trust & Dispute Resolution (Proposed for Backend)
+1. `POST /api/attempts/:attemptId/disputes` (Candidate, own published attempt only)
+   - Body: `{ "questionId": "q-8", "category": "grading_error|ambiguous_question|technical_incident", "explanation": "..." }`
+   - Response (201): `{ "success": true, "data": { "dispute": { "id": "...", "status": "submitted", ... } } }`
+2. `GET /api/exams/:examId/disputes` (Examiner, own exam only)
+   - Response (200): `{ "success": true, "data": { "disputes": [...] } }`
+3. `PATCH /api/disputes/:disputeId/resolve` (Examiner, own exam only)
+   - Body: `{ "status": "resolved|rejected", "reason": "Required resolution note", "newMarks": 5 }`
+   - Behavior: If `newMarks` is supplied, appends a new entry to `attempt.gradeVersions[]` (`{ version, score, reason, at, by }`) without overwriting the original grade.

@@ -214,6 +214,12 @@ export const ExaminerDashboardPage = () => {
                   >
                     Fairness
                   </Link>
+                  <Link
+                    to={`/examiner/exams/${exam.id}/disputes`}
+                    className="min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-line rounded-lg bg-canvas hover:bg-subtle"
+                  >
+                    Disputes
+                  </Link>
                 </div>
               </div>
             </article>

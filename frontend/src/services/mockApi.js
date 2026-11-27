@@ -737,4 +737,84 @@ export const mockApi = {
       },
     };
   },
+
+  // 5.4 Disputes
+  async createDispute(attemptId, payload) {
+    await delay(120);
+    const db = loadDb();
+    const user = getCurrentUser(db);
+    const attempt = db.attempts.find((a) => a.id === attemptId);
+    if (!attempt) throw { code: 'NOT_FOUND', message: 'Attempt not found', statusCode: 404 };
+    const dispute = {
+      id: `disp-${Date.now()}`,
+      examId: attempt.examId,
+      attemptId,
+      candidateId: user?.id,
+      candidateName: user?.name || 'Candidate',
+      questionId: payload.questionId,
+      category: payload.category,
+      explanation: payload.explanation,
+      status: 'submitted',
+      reason: '',
+      createdAt: new Date().toISOString(),
+      gradeVersions: [
+        {
+          version: 1,
+          marks: attempt.scores?.perQuestion?.[payload.questionId] ?? 0,
+          at: attempt.submittedAt || new Date().toISOString(),
+          reason: 'Original grade',
+        },
+      ],
+    };
+    db.disputes = db.disputes || [];
+    db.disputes.unshift(dispute);
+    saveDb(db);
+    return { success: true, data: { dispute } };
+  },
+
+  async getExamDisputes(examId) {
+    await delay(100);
+    const db = loadDb();
+    const disputes = (db.disputes || [])
+      .filter((d) => d.examId === examId)
+      .map((d) => {
+        const attempt = db.attempts.find((a) => a.id === d.attemptId);
+        const question = (attempt?.snapshot?.questions || []).find((q) => q.id === d.questionId);
+        const bankQ = db.questions.find((q) => q.id === d.questionId);
+        return {
+          ...d,
+          questionText: question?.text || bankQ?.text || 'Question',
+          maxMarks: question?.marks || bankQ?.marks || 5,
+          rubric: bankQ?.rubric || '',
+          candidateAnswer: attempt?.answers?.[d.questionId]?.value || '(No response)',
+          connectivityLedger: attempt?.connectivityLedger || [],
+        };
+      });
+    return { success: true, data: { disputes } };
+  },
+
+  async resolveDispute(disputeId, { status, reason, newMarks }) {
+    await delay(120);
+    const db = loadDb();
+    const dispute = (db.disputes || []).find((d) => d.id === disputeId);
+    if (!dispute) throw { code: 'NOT_FOUND', message: 'Dispute not found', statusCode: 404 };
+    dispute.status = status;
+    dispute.reason = reason;
+    if (status === 'resolved' && newMarks !== undefined && newMarks !== '') {
+      const nextVersion = (dispute.gradeVersions?.length || 1) + 1;
+      dispute.gradeVersions = [
+        ...(dispute.gradeVersions || []),
+        { version: nextVersion, marks: Number(newMarks), at: new Date().toISOString(), reason },
+      ];
+      const attempt = db.attempts.find((a) => a.id === dispute.attemptId);
+      if (attempt) {
+        attempt.scores.perQuestion[dispute.questionId] = Number(newMarks);
+        attempt.scores.total = Number(
+          Object.values(attempt.scores.perQuestion).reduce((s, v) => s + Number(v || 0), 0).toFixed(2)
+        );
+      }
+    }
+    saveDb(db);
+    return { success: true, data: { dispute } };
+  },
 };
