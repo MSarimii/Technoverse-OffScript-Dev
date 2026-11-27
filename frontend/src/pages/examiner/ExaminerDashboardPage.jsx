@@ -6,7 +6,7 @@ import { PageHeader } from '../../components/layout/AppLayout';
 import { Button, Badge, Skeleton, EmptyState, ErrorState, BentoAreaChart, BentoDonutChart } from '../../components/ui';
 import { toast } from 'sonner';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { Plus, Eye, Activity, CheckSquare, BarChart3, FlaskConical, Send, AlertTriangle, MoreHorizontal, Scale, Flag, FileEdit, Clock, CheckCircle2 } from 'lucide-react';
+import { Plus, Eye, Activity, CheckSquare, BarChart3, FlaskConical, Send, AlertTriangle, MoreHorizontal, Scale, Flag, FileEdit, Clock, CheckCircle2, ChevronRight } from 'lucide-react';
 
 export const ExaminerDashboardPage = () => {
   const navigate = useNavigate();
@@ -180,17 +180,17 @@ export const ExaminerDashboardPage = () => {
 
       {/* Needs Attention */}
       {needsAttention.length > 0 && (
-        <section className="luxury-card rounded-[14px] p-5 space-y-2.5">
+        <section className="rounded-2xl bg-[var(--surface)] border border-[var(--line)] text-[var(--ink)] shadow-sm p-5 space-y-2.5">
           <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-[0.08em] text-status-review">
             <AlertTriangle className="w-4 h-4" strokeWidth={1.5} /> Needs Attention ({needsAttention.length})
           </div>
-          <div className="divide-y divide-line">
+          <div className="divide-y divide-[var(--line)]">
             {needsAttention.map((ex) => (
               <div key={ex.id} className="py-2.5 flex flex-wrap items-center justify-between gap-2 text-sm">
-                <Link to={`/examiner/exams/${ex.id}`} className="font-medium text-ink hover:text-champagne">
+                <Link to={`/examiner/exams/${ex.id}`} className="font-medium text-[var(--ink)] hover:text-[#059669] transition-colors">
                   {ex.title}
                 </Link>
-                <span className="text-xs font-mono text-ink-muted">
+                <span className="text-xs font-mono text-[var(--muted)]">
                   {ex.derivedStatus === 'ongoing'
                     ? 'Live now — Monitor active attempts'
                     : ex.derivedStatus === 'completed'
@@ -203,102 +203,128 @@ export const ExaminerDashboardPage = () => {
         </section>
       )}
 
-      {/* Recessed Pill Filter Track with Sliding Indicator */}
-      <div className="inline-flex flex-wrap gap-1 p-1 rounded-full bg-subtle border border-line">
-        {['all', 'draft', 'published', 'ongoing', 'completed'].map((st) => {
-          const active = filter === st;
-          return (
-            <button
-              key={st}
-              onClick={() => setFilter(st)}
-              className={`relative px-4 py-1.5 rounded-full text-xs font-mono uppercase transition-colors ${
-                active ? 'text-ink font-semibold' : 'text-ink-muted hover:text-ink'
-              }`}
-            >
-              {active && (
-                <motion.span
-                  layoutId={reduced ? undefined : 'exam-filter-pill'}
-                  transition={{ type: 'spring', stiffness: 450, damping: 32 }}
-                  className="absolute inset-0 bg-surface rounded-full shadow-sm border border-line -z-0"
-                />
-              )}
-              <span className="relative z-10">{st}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {loading ? (
-        <div className="space-y-3">
-          <Skeleton className="h-24 w-full" />
-          <Skeleton className="h-24 w-full" />
+      {/* Unified Directory Table */}
+      <div className="rounded-2xl bg-[var(--surface)] border border-[var(--line)] text-[var(--ink)] shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-[var(--line)] flex flex-wrap items-center justify-between gap-3">
+          {/* Recessed Pill Filter Track with Sliding Indicator */}
+          <div className="inline-flex flex-wrap gap-1 p-1 rounded-lg bg-zinc-100 dark:bg-white/[0.04] border border-[var(--line)]">
+            {['all', 'draft', 'published', 'ongoing', 'completed'].map((st) => {
+              const active = filter === st;
+              return (
+                <button
+                  key={st}
+                  onClick={() => setFilter(st)}
+                  className={`relative px-3.5 py-1.5 rounded-md text-xs font-mono uppercase transition-colors ${
+                    active ? 'text-[var(--ink)] font-semibold' : 'text-[var(--muted)] hover:text-[var(--ink)]'
+                  }`}
+                >
+                  {active && (
+                    <motion.span
+                      layoutId={reduced ? undefined : 'exam-filter-pill'}
+                      transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+                      className="absolute inset-0 bg-[var(--surface)] rounded-md shadow-sm border border-[var(--line)] -z-0"
+                    />
+                  )}
+                  <span className="relative z-10">{st}</span>
+                </button>
+              );
+            })}
+          </div>
+          <span className="inline-flex items-center px-2.5 h-7 rounded-full bg-zinc-100 dark:bg-white/[0.06] border border-[var(--line)] text-[11px] font-mono tabular-nums text-[var(--muted)]">
+            {visible.length} {visible.length === 1 ? 'exam' : 'exams'}
+          </span>
         </div>
-      ) : error ? (
-        <ErrorState message={error} onRetry={load} />
-      ) : visible.length === 0 ? (
-        <EmptyState title="No examinations match this filter" description="Create a new examination or switch filters." />
-      ) : (
-        <div className="space-y-4">
-          {visible.map((exam) => {
-            const st = exam.derivedStatus;
-            const isMenuOpen = openMenuId === exam.id;
 
-            return (
-              <article key={exam.id} className={`luxury-card luxury-card-hover rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t-2 ${st === 'ongoing' ? 'border-t-[#059669]' : 'border-t-[#0B0F0E]'}`}>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <Badge tone={st === 'ongoing' ? 'cobalt' : st === 'completed' ? 'success' : 'neutral'} dot={st === 'draft' ? 'slate' : undefined}>
-                      {st}
-                    </Badge>
-                    {exam.resultsPublished && <Badge tone="success">Results Published</Badge>}
-                  </div>
-                  <Link to={`/examiner/exams/${exam.id}`} className="text-lg font-semibold text-ink hover:text-champagne transition-colors block">
-                    {exam.title}
-                  </Link>
-                  <p className="text-xs font-mono text-ink-muted mt-1 tabular-nums">
-                    {exam.durationMin} min · {exam.totalMarks} marks · {exam.questionRefs?.length || 0} questions ·{' '}
-                    {exam.enrolledCandidateIds?.length || 0} enrolled
-                  </p>
-                </div>
+        {loading ? (
+          <div className="space-y-3 p-5">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+          </div>
+        ) : error ? (
+          <div className="p-5">
+            <ErrorState message={error} onRetry={load} />
+          </div>
+        ) : visible.length === 0 ? (
+          <div className="p-6">
+            <EmptyState title="No examinations match this filter" description="Create a new examination or switch filters." />
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-zinc-50 dark:bg-white/[0.03] border-b border-[var(--line)] text-[var(--muted)] text-[11px] uppercase font-mono tracking-wider">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Examination</th>
+                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--line)]">
+                {visible.map((exam) => {
+                  const st = exam.derivedStatus;
+                  const isMenuOpen = openMenuId === exam.id;
+                  const statusLabel =
+                    st === 'ongoing' ? 'Live' : st === 'published' ? 'Scheduled' : st === 'completed' ? 'Completed' : 'Draft';
 
-                {/* Clean 3-Control Action Group: 1 Primary + 1 Secondary + 1 More Actions Popover */}
-                <div className="flex items-center gap-2 shrink-0 relative">
-                  {st === 'ongoing' && (
-                    <Button size="sm" onClick={() => navigate(`/examiner/exams/${exam.id}/monitor`)}>
-                      <Activity className="w-3.5 h-3.5" strokeWidth={1.5} /> Monitor Live
-                    </Button>
-                  )}
-                  {st === 'draft' && (
-                    <Button size="sm" onClick={() => handlePublish(exam.id)}>
-                      <Send className="w-3.5 h-3.5" strokeWidth={1.5} /> Publish
-                    </Button>
-                  )}
-                  {st === 'completed' && (
-                    <Button size="sm" onClick={() => navigate(`/examiner/exams/${exam.id}/grading`)}>
-                      <CheckSquare className="w-3.5 h-3.5" strokeWidth={1.5} /> Grade Submissions
-                    </Button>
-                  )}
-                  {st === 'published' && (
-                    <Button size="sm" onClick={() => navigate(`/examiner/exams/${exam.id}`)}>
-                      Configure
-                    </Button>
-                  )}
-
-                  <Button size="sm" variant="secondary" onClick={() => navigate(`/examiner/exams/${exam.id}`)}>
-                    <Eye className="w-3.5 h-3.5" strokeWidth={1.5} /> Details
-                  </Button>
-
-                  <div ref={isMenuOpen ? menuRef : undefined} className="relative">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      aria-label={`More actions for ${exam.title}`}
-                      aria-expanded={isMenuOpen}
-                      aria-haspopup="menu"
-                      onClick={() => setOpenMenuId(isMenuOpen ? null : exam.id)}
+                  return (
+                    <tr
+                      key={exam.id}
+                      className="group hover:bg-zinc-50/90 dark:hover:bg-white/[0.03] transition-colors"
                     >
-                      <MoreHorizontal className="w-4 h-4" strokeWidth={1.5} />
-                    </Button>
+                      <td className="px-4 py-3.5">
+                        <Link
+                          to={`/examiner/exams/${exam.id}`}
+                          className="text-sm font-semibold text-[var(--ink)] hover:text-[#059669] transition-colors inline-flex items-center gap-1.5"
+                        >
+                          <span>{exam.title}</span>
+                          <ChevronRight className="w-3.5 h-3.5 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-[var(--muted)]" />
+                        </Link>
+                        <p className="text-[11px] font-mono text-[var(--muted)] mt-0.5 tabular-nums">
+                          {exam.courseCode || 'SEMS'} · {exam.durationMin}m · {exam.questionRefs?.length || 0} questions ·{' '}
+                          {exam.enrolledCandidateIds?.length || 0} enrolled
+                        </p>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <Badge tone={st === 'ongoing' ? 'cobalt' : st === 'completed' ? 'success' : 'neutral'} dot={st === 'draft' ? 'slate' : undefined}>
+                            {statusLabel}
+                          </Badge>
+                          {exam.resultsPublished && <Badge tone="success">Published</Badge>}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5 text-right">
+                        <div className="inline-flex items-center gap-1.5 justify-end relative">
+                          {st === 'ongoing' && (
+                            <Button size="sm" onClick={() => navigate(`/examiner/exams/${exam.id}/monitor`)}>
+                              <Activity className="w-3.5 h-3.5" strokeWidth={1.5} /> Monitor Live
+                            </Button>
+                          )}
+                          {st === 'draft' && (
+                            <Button size="sm" onClick={() => handlePublish(exam.id)}>
+                              <Send className="w-3.5 h-3.5" strokeWidth={1.5} /> Publish
+                            </Button>
+                          )}
+                          {st === 'completed' && (
+                            <Button size="sm" onClick={() => navigate(`/examiner/exams/${exam.id}/grading`)}>
+                              <CheckSquare className="w-3.5 h-3.5" strokeWidth={1.5} /> Grade
+                            </Button>
+                          )}
+                          {st === 'published' && (
+                            <Button size="sm" variant="secondary" onClick={() => navigate(`/examiner/exams/${exam.id}`)}>
+                              Configure
+                            </Button>
+                          )}
+
+                          <div ref={isMenuOpen ? menuRef : undefined} className="relative">
+                            <button
+                              type="button"
+                              aria-label={`More actions for ${exam.title}`}
+                              aria-expanded={isMenuOpen}
+                              aria-haspopup="menu"
+                              onClick={() => setOpenMenuId(isMenuOpen ? null : exam.id)}
+                              className="h-8 w-8 rounded-lg border border-[var(--line)] bg-[var(--surface)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-zinc-100 dark:hover:bg-white/5 inline-flex items-center justify-center transition-colors"
+                            >
+                              <MoreHorizontal className="w-4 h-4" strokeWidth={1.5} />
+                            </button>
 
                     <AnimatePresence>
                       {isMenuOpen && (
@@ -361,11 +387,15 @@ export const ExaminerDashboardPage = () => {
                     </AnimatePresence>
                   </div>
                 </div>
-              </article>
-            );
-          })}
-        </div>
-      )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </main>
   );
 };

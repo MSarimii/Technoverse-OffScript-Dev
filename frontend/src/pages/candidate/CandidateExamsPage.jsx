@@ -98,6 +98,36 @@ export const CandidateExamsPage = () => {
         }
       />
 
+      {/* Unified 3-Card KPI Strip */}
+      <section aria-label="Examination overview" className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {[
+          { key: 'available', label: 'Available Now', val: available.length, caption: 'Open for entry', icon: Play },
+          { key: 'upcoming', label: 'Upcoming', val: upcoming.length, caption: 'Scheduled windows', icon: Calendar },
+          { key: 'completed', label: 'Completed', val: completed.length, caption: 'Submitted & graded', icon: CheckCircle },
+        ].map((kpi) => {
+          const Icon = kpi.icon;
+          return (
+            <button
+              type="button"
+              key={kpi.key}
+              onClick={() => setTab(kpi.key)}
+              className="rounded-2xl bg-[var(--surface)] border border-[var(--line)] text-[var(--ink)] shadow-sm p-5 text-left hover:border-line-strong transition-colors flex flex-col justify-between gap-2.5"
+            >
+              <div className="flex items-center justify-between gap-2 w-full">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--muted)]">
+                  {kpi.label}
+                </span>
+                <Icon className="w-4 h-4 text-[var(--muted)] shrink-0" strokeWidth={1.6} aria-hidden="true" />
+              </div>
+              <div className="font-display font-bold text-3xl text-[var(--ink)] tabular-nums tracking-[-0.03em]">
+                {kpi.val}
+              </div>
+              <span className="text-xs text-[var(--muted)]">{kpi.caption}</span>
+            </button>
+          );
+        })}
+      </section>
+
       <Tabs
         items={[
           { key: 'available', label: `Available Now (${available.length})` },
@@ -122,83 +152,87 @@ export const CandidateExamsPage = () => {
           description="Check other tabs or contact your examiner if an exam is missing."
         />
       ) : (
-        <div className="space-y-4">
-          {visible.map((exam) => {
-            const opensInMs = Date.parse(exam.startAt) - nowMs;
-            const accessReason =
-              exam.attemptStatus === 'submitted' || exam.attemptStatus === 'graded'
-                ? 'Already submitted'
-                : exam.derivedStatus === 'published'
-                ? formatCountdown(opensInMs)
-                : exam.derivedStatus === 'completed'
-                ? 'Closed'
-                : 'Open for entry';
+        <div className="rounded-2xl bg-[var(--surface)] border border-[var(--line)] text-[var(--ink)] shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-zinc-50 dark:bg-white/[0.03] border-b border-[var(--line)] text-[var(--muted)] text-[11px] uppercase font-mono tracking-wider">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Examination</th>
+                  <th className="px-4 py-3 font-medium">Window</th>
+                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--line)]">
+                {visible.map((exam) => {
+                  const opensInMs = Date.parse(exam.startAt) - nowMs;
+                  const accessReason =
+                    exam.attemptStatus === 'submitted' || exam.attemptStatus === 'graded'
+                      ? 'Already submitted'
+                      : exam.derivedStatus === 'published'
+                      ? formatCountdown(opensInMs)
+                      : exam.derivedStatus === 'completed'
+                      ? 'Closed'
+                      : 'Open for entry';
 
-            return (
-              <article
-                key={exam.id}
-                className={`luxury-card luxury-card-hover rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t-2 ${
-                  exam.derivedStatus === 'ongoing' ? 'border-t-[#059669]' : 'border-t-[#0B0F0E]'
-                }`}
-              >
-                <div className="space-y-1.5 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge tone={exam.derivedStatus === 'ongoing' ? 'cobalt' : 'neutral'}>
-                      {exam.accessStatus || exam.derivedStatus}
-                    </Badge>
-                    {exam.attemptStatus === 'in_progress' && <Badge tone="warning">In Progress</Badge>}
-                    <span className="text-xs font-mono text-ink-muted">{accessReason}</span>
-                  </div>
-                  <h2 className="text-lg font-semibold text-ink break-words">{exam.title}</h2>
-                  {exam.instructions && (
-                    <p className="text-xs text-ink-muted line-clamp-2 max-w-[70ch]">{exam.instructions}</p>
-                  )}
-                  <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-ink-muted">
-                    <span className="inline-flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5" /> {exam.durationMin} min
-                    </span>
-                    <span>{exam.totalMarks} marks</span>
-                    <span className="inline-flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5" />
-                      {tab === 'upcoming' ? `Opens ${new Date(exam.startAt).toLocaleString()}` : `Closes ${new Date(exam.endAt).toLocaleString()}`}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                  {tab === 'available' && (
-                    <Link
-                      to={`/candidate/exams/${exam.id}`}
-                      className="min-h-[44px] inline-flex items-center gap-2 bg-[#0B0F0E] hover:bg-[#181F1D] text-white text-sm font-semibold px-4 py-2.5 rounded-lg shadow-sm active:scale-[0.98] transition-all"
-                    >
-                      {exam.attemptStatus === 'in_progress' ? (
-                        <>
-                          <RotateCcw className="w-4 h-4" /> Resume Exam
-                        </>
-                      ) : (
-                        <>
-                          <Play className="w-4 h-4" /> Enter Pre-Exam
-                        </>
-                      )}
-                    </Link>
-                  )}
-                  {tab === 'upcoming' && (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-mono text-ink-muted px-3 py-2 rounded-lg bg-canvas border border-line">
-                      <Lock className="w-3.5 h-3.5" /> {formatCountdown(opensInMs)}
-                    </span>
-                  )}
-                  {tab === 'completed' && exam.resultsPublished && exam.attemptId && (
-                    <Button variant="primary" onClick={() => navigate(`/candidate/results/${exam.attemptId}`)}>
-                      <CheckCircle className="w-4 h-4" /> View Result
-                    </Button>
-                  )}
-                  {tab === 'completed' && !exam.resultsPublished && (
-                    <span className="text-xs font-mono text-ink-muted">Results pending publication</span>
-                  )}
-                </div>
-              </article>
-            );
-          })}
+                  return (
+                    <tr key={exam.id} className="group hover:bg-zinc-50/90 dark:hover:bg-white/[0.03] transition-colors">
+                      <td className="px-4 py-3.5 max-w-md">
+                        <div className="font-semibold text-sm text-[var(--ink)]">{exam.title}</div>
+                        <div className="text-[11px] font-mono text-[var(--muted)] mt-0.5 tabular-nums">
+                          {exam.durationMin}m · {exam.totalMarks} marks · {accessReason}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5 font-mono text-xs text-[var(--muted)] tabular-nums">
+                        {tab === 'upcoming'
+                          ? `Opens ${new Date(exam.startAt).toLocaleString()}`
+                          : `Closes ${new Date(exam.endAt).toLocaleString()}`}
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <Badge tone={exam.derivedStatus === 'ongoing' ? 'cobalt' : 'neutral'}>
+                            {exam.accessStatus || exam.derivedStatus}
+                          </Badge>
+                          {exam.attemptStatus === 'in_progress' && <Badge tone="warning">In Progress</Badge>}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5 text-right">
+                        {tab === 'available' && (
+                          <Link
+                            to={`/candidate/exams/${exam.id}`}
+                            className="min-h-[36px] inline-flex items-center gap-1.5 bg-[#0A0A0A] text-white dark:bg-[#F4F4F5] dark:text-[#0A0A0A] hover:opacity-90 text-xs font-semibold px-3.5 py-2 rounded-lg shadow-sm active:scale-[0.98] transition-all"
+                          >
+                            {exam.attemptStatus === 'in_progress' ? (
+                              <>
+                                <RotateCcw className="w-3.5 h-3.5" /> Resume Exam
+                              </>
+                            ) : (
+                              <>
+                                <Play className="w-3.5 h-3.5" /> Enter Pre-Exam
+                              </>
+                            )}
+                          </Link>
+                        )}
+                        {tab === 'upcoming' && (
+                          <span className="inline-flex items-center gap-1.5 text-xs font-mono text-[var(--muted)] px-2.5 py-1.5 rounded-lg bg-canvas border border-[var(--line)] tabular-nums">
+                            <Lock className="w-3.5 h-3.5" /> {formatCountdown(opensInMs)}
+                          </span>
+                        )}
+                        {tab === 'completed' && exam.resultsPublished && exam.attemptId && (
+                          <Button size="sm" variant="primary" onClick={() => navigate(`/candidate/results/${exam.attemptId}`)}>
+                            <CheckCircle className="w-3.5 h-3.5" /> View Result
+                          </Button>
+                        )}
+                        {tab === 'completed' && !exam.resultsPublished && (
+                          <span className="text-xs font-mono text-[var(--muted)]">Results pending</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

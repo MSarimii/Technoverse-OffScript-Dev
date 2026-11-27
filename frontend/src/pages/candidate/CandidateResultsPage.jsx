@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { attemptService } from '../../services/attemptService';
 import { PageHeader } from '../../components/layout/AppLayout';
 import { Button, Skeleton, EmptyState, Tooltip, CopyButton, BentoAreaChart } from '../../components/ui';
-import { ArrowRight, ShieldCheck, Printer, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Printer, Award, FileCheck2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const CandidateResultsPage = () => {
@@ -36,40 +36,32 @@ export const CandidateResultsPage = () => {
         breadcrumbs={[{ label: 'Candidate', to: '/candidate' }, { label: 'Results' }]}
       />
 
-      {/* High-Contrast Deep Obsidian Telemetry Header */}
-      <section
-        aria-label="Transcript summary"
-        className="rounded-2xl bg-[#0B0F0E] border border-[#181F1D] text-white overflow-hidden shadow-lg"
-      >
-        <div className="px-6 py-4 border-b border-[#181F1D] flex flex-wrap items-center justify-between gap-3">
-          <div className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-[0.1em] text-[#10B981]">
-            <CheckCircle2 className="w-4 h-4 text-[#10B981]" />
-            Verified Integrity Status · Ledger Synced
-          </div>
-          <span className="text-[11px] font-mono text-white/60 uppercase tracking-[0.08em]">
-            Tabulation: Authoritative UTC
-          </span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#181F1D]">
-          <div className="p-6">
-            <div className="text-[11px] font-mono uppercase tracking-[0.1em] text-white/60">Cumulative Average</div>
-            <div className="font-display font-bold text-4xl text-white mt-1.5 tabular-nums tracking-[-0.03em]">
-              {avgPct}%
+      {/* Unified 3-Card KPI Strip */}
+      <section aria-label="Transcript summary" className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {[
+          { label: 'Cumulative Average', val: `${avgPct}%`, caption: 'Weighted across transcripts', icon: Award },
+          { label: 'Published Transcripts', val: results.length, caption: 'Graded & finalized', icon: FileCheck2 },
+          { label: 'Verified Credentials', val: verifiedCount, caption: 'Cryptographically signed', icon: ShieldCheck },
+        ].map((kpi) => {
+          const Icon = kpi.icon;
+          return (
+            <div
+              key={kpi.label}
+              className="rounded-2xl bg-[var(--surface)] border border-[var(--line)] text-[var(--ink)] shadow-sm p-5 flex flex-col justify-between gap-2.5"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--muted)]">
+                  {kpi.label}
+                </span>
+                <Icon className="w-4 h-4 text-[var(--muted)] shrink-0" strokeWidth={1.6} aria-hidden="true" />
+              </div>
+              <div className="font-display font-bold text-3xl text-[var(--ink)] tabular-nums tracking-[-0.03em]">
+                {kpi.val}
+              </div>
+              <span className="text-xs text-[var(--muted)]">{kpi.caption}</span>
             </div>
-          </div>
-          <div className="p-6">
-            <div className="text-[11px] font-mono uppercase tracking-[0.1em] text-white/60">Published Transcripts</div>
-            <div className="font-display font-bold text-4xl text-white mt-1.5 tabular-nums tracking-[-0.03em]">
-              {results.length}
-            </div>
-          </div>
-          <div className="p-6">
-            <div className="text-[11px] font-mono uppercase tracking-[0.1em] text-white/60">Verified Credentials</div>
-            <div className="font-display font-bold text-4xl text-[#10B981] mt-1.5 tabular-nums tracking-[-0.03em]">
-              {verifiedCount}
-            </div>
-          </div>
-        </div>
+          );
+        })}
       </section>
 
       {/* Performance Trajectory Chart */}
@@ -113,108 +105,80 @@ export const CandidateResultsPage = () => {
           description="Your examination transcripts will appear here once graded and published by your examiner."
         />
       ) : (
-        <div className="space-y-4">
-          {results.map((r) => {
-            const pct = Math.min(100, Math.max(0, Math.round(((r.score || 0) / Math.max(1, r.totalMarks || 1)) * 100)));
-            const radius = 32;
-            const circumference = 2 * Math.PI * radius;
-            const dashOffset = circumference - (pct / 100) * circumference;
-
-            return (
-              <article
-                key={r.attemptId}
-                className="luxury-card luxury-card-hover rounded-2xl p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6"
-              >
-                <div className="flex items-center gap-5 min-w-0 flex-1">
-                  {/* Surgical Emerald Score Ring */}
-                  <div className="shrink-0 flex flex-col items-center">
-                    <svg width="80" height="80" viewBox="0 0 80 80" aria-label={`Score ${pct}%`}>
-                      <circle cx="40" cy="40" r={radius} fill="none" stroke="var(--line)" strokeWidth="6" />
-                      <circle
-                        cx="40"
-                        cy="40"
-                        r={radius}
-                        fill="none"
-                        stroke="#059669"
-                        strokeWidth="6"
-                        strokeLinecap="round"
-                        strokeDasharray={circumference}
-                        strokeDashoffset={dashOffset}
-                        transform="rotate(-90 40 40)"
-                        style={{ transition: 'stroke-dashoffset 700ms ease-out' }}
-                      />
-                      <text x="40" y="45" textAnchor="middle" className="fill-ink font-mono text-sm font-semibold tabular-nums">
-                        {pct}%
-                      </text>
-                    </svg>
-                    <span className="text-[11px] font-mono text-ink-muted tabular-nums mt-1">
-                      {r.score} / {r.totalMarks}
-                    </span>
-                  </div>
-
-                  {/* Center Telemetry Metadata */}
-                  <div className="min-w-0 flex-1 space-y-2">
-                    <p className="eyebrow-rule font-mono text-[11px] uppercase tracking-[0.1em] text-[#065F46]">
-                      CS-301 · Official Transcript
-                    </p>
-                    <h2 className="font-display font-semibold text-xl sm:text-2xl tracking-[-0.02em] text-ink leading-tight break-words">
-                      {r.examTitle}
-                    </h2>
-
-                    {/* Visual Score Bar */}
-                    <div className="max-w-sm space-y-1">
-                      <div className="h-1.5 rounded-full bg-subtle overflow-hidden">
-                        <div className="h-full bg-[#059669] rounded-full" style={{ width: `${pct}%` }} />
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-3 pt-1">
-                      {r.submittedAt && (
-                        <span className="text-xs font-mono text-ink-muted">
-                          Issued {new Date(r.submittedAt).toLocaleDateString()}
+        <div className="rounded-2xl bg-[var(--surface)] border border-[var(--line)] text-[var(--ink)] shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-zinc-50 dark:bg-white/[0.03] border-b border-[var(--line)] text-[var(--muted)] text-[11px] uppercase font-mono tracking-wider">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Examination &amp; Credential</th>
+                  <th className="px-4 py-3 font-medium">Issued</th>
+                  <th className="px-4 py-3 font-medium">Score</th>
+                  <th className="px-4 py-3 font-medium text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--line)]">
+                {results.map((r) => {
+                  const pct = Math.min(100, Math.max(0, Math.round(((r.score || 0) / Math.max(1, r.totalMarks || 1)) * 100)));
+                  return (
+                    <tr
+                      key={r.attemptId}
+                      className="group hover:bg-zinc-50/90 dark:hover:bg-white/[0.03] transition-colors"
+                    >
+                      <td className="px-4 py-3.5">
+                        <div className="font-semibold text-sm text-[var(--ink)]">{r.examTitle}</div>
+                        {r.verificationId && (
+                          <div className="mt-1">
+                            <Tooltip label="Copy verification ID">
+                              <CopyButton
+                                value={r.verificationId}
+                                className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-white/[0.05] border border-[var(--line)] hover:border-[#059669] text-[11px] font-mono text-[var(--muted)] hover:text-[var(--ink)]"
+                              >
+                                <ShieldCheck className="w-3 h-3 text-[#10B981]" strokeWidth={1.75} />
+                                <span>{r.verificationId}</span>
+                              </CopyButton>
+                            </Tooltip>
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3.5 font-mono text-xs text-[var(--muted)] tabular-nums">
+                        {r.submittedAt ? new Date(r.submittedAt).toLocaleDateString() : '—'}
+                      </td>
+                      <td className="px-4 py-3.5 font-mono tabular-nums">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#ECFDF5] dark:bg-emerald-500/10 border border-[#A7F3D0] dark:border-emerald-500/20 text-xs font-semibold text-[#065F46] dark:text-emerald-400">
+                          {pct}% <span className="font-normal opacity-75">({r.score}/{r.totalMarks})</span>
                         </span>
-                      )}
-                      {r.verificationId && (
-                        <Tooltip label="Copy verification ID">
-                          <CopyButton
-                            value={r.verificationId}
-                            className="px-3 py-1 rounded-full bg-[#ECFDF5] border border-[#A7F3D0] hover:border-[#059669] text-xs font-mono text-[#065F46]"
+                      </td>
+                      <td className="px-4 py-3.5 text-right">
+                        <div className="inline-flex items-center gap-2 justify-end">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            loading={downloadingId === r.attemptId}
+                            onClick={async () => {
+                              setDownloadingId(r.attemptId);
+                              try {
+                                await attemptService.downloadAttemptPdf(r.attemptId);
+                                toast.success('Transcript PDF downloaded');
+                              } catch (err) {
+                                toast.error(err.message || 'Failed to download PDF');
+                              } finally {
+                                setDownloadingId(null);
+                              }
+                            }}
                           >
-                            <ShieldCheck className="w-3.5 h-3.5 text-[#059669]" strokeWidth={1.75} />
-                            <span>{r.verificationId}</span>
-                          </CopyButton>
-                        </Tooltip>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right Actions */}
-                <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-                  <Button
-                    variant="secondary"
-                    loading={downloadingId === r.attemptId}
-                    onClick={async () => {
-                      setDownloadingId(r.attemptId);
-                      try {
-                        await attemptService.downloadAttemptPdf(r.attemptId);
-                        toast.success('Transcript PDF downloaded');
-                      } catch (err) {
-                        toast.error(err.message || 'Failed to download PDF');
-                      } finally {
-                        setDownloadingId(null);
-                      }
-                    }}
-                  >
-                    <Printer className="w-4 h-4" strokeWidth={1.5} /> Download PDF
-                  </Button>
-                  <Button onClick={() => navigate(`/candidate/results/${r.attemptId}`)}>
-                    View Transcript <ArrowRight className="w-4 h-4 text-[#10B981]" strokeWidth={1.75} />
-                  </Button>
-                </div>
-              </article>
-            );
-          })}
+                            <Printer className="w-3.5 h-3.5" strokeWidth={1.5} /> PDF
+                          </Button>
+                          <Button size="sm" onClick={() => navigate(`/candidate/results/${r.attemptId}`)}>
+                            View Transcript <ArrowRight className="w-3.5 h-3.5 text-[#10B981]" strokeWidth={1.75} />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </main>

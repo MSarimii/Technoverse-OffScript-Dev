@@ -338,126 +338,151 @@ export const QuestionBankPage = () => {
           </div>
         )}
 
-        <div className="p-4">
-
-      {loading ? (
-        <div className="space-y-3">
-          <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-20 w-full" />
-        </div>
-      ) : error ? (
-        <ErrorState message={error} onRetry={load} />
-      ) : filtered.length === 0 ? (
-        <EmptyState icon={BookOpen} title="No matching questions" description="Adjust filters or create a new question." />
-      ) : (
-        <>
-          <div ref={listRef} className="space-y-3">
-            {paged.map((q) => (
-              <motion.div
-                key={q.id}
-                layout={!reduced}
-                transition={{ layout: { type: 'spring', stiffness: 420, damping: 34 } }}
-                data-flip-id={q.id}
-                className="bg-surface border border-line rounded-xl p-4 flex items-start justify-between gap-4"
-              >
-                <div className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    aria-label={`Select question ${q.id}`}
-                    checked={selectedIds.includes(q.id)}
-                    onChange={(e) =>
-                      setSelectedIds((prev) =>
-                        e.target.checked ? [...prev, q.id] : prev.filter((x) => x !== q.id)
-                      )
-                    }
-                    className="mt-1 accent-[#2F5BFF]"
-                  />
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-ink-muted mb-1">
-                      <Badge tone="neutral">
-                        {q.type === 'mcq_single' ? 'Single Choice' : q.type === 'mcq_multi' ? 'Multi-Select' : 'Written'}
-                      </Badge>
-                      <span>{q.topic}</span>
-                      <Badge tone={q.difficulty === 1 ? 'success' : q.difficulty === 2 ? 'warning' : 'danger'}>
-                        {q.difficulty === 1 ? 'Easy' : q.difficulty === 2 ? 'Medium' : 'Hard'}
-                      </Badge>
-                      <span>{q.marks} marks</span>
-                    </div>
-                    <p className="text-sm font-medium text-ink">{q.text}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1 shrink-0 relative">
-                  <Tooltip label="Edit question">
-                    <button
-                      onClick={() => openEdit(q)}
-                      aria-label="Edit question"
-                      className="p-2 text-ink-muted hover:text-ink rounded-lg transition-transform active:scale-95"
+        {loading ? (
+          <div className="space-y-3 p-5">
+            <Skeleton className="h-14 w-full" />
+            <Skeleton className="h-14 w-full" />
+          </div>
+        ) : error ? (
+          <div className="p-5">
+            <ErrorState message={error} onRetry={load} />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="p-6">
+            <EmptyState icon={BookOpen} title="No matching questions" description="Adjust filters or create a new question." />
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-zinc-50 dark:bg-white/[0.03] border-b border-[var(--line)] text-[var(--muted)] text-[11px] uppercase font-mono tracking-wider">
+                  <tr>
+                    <th className="px-4 py-3 w-10">
+                      <span className="sr-only">Select</span>
+                    </th>
+                    <th className="px-4 py-3 font-medium">Question &amp; Topic</th>
+                    <th className="px-4 py-3 font-medium">Type</th>
+                    <th className="px-4 py-3 font-medium">Difficulty</th>
+                    <th className="px-4 py-3 font-medium">Marks</th>
+                    <th className="px-4 py-3 font-medium text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody ref={listRef} className="divide-y divide-[var(--line)]">
+                  {paged.map((q) => (
+                    <motion.tr
+                      key={q.id}
+                      layout={!reduced}
+                      transition={{ layout: { type: 'spring', stiffness: 420, damping: 34 } }}
+                      data-flip-id={q.id}
+                      className="group hover:bg-zinc-50/90 dark:hover:bg-white/[0.03] transition-colors"
                     >
-                      <Edit3 className="w-4 h-4" strokeWidth={1.5} />
-                    </button>
-                  </Tooltip>
-                  <Tooltip label="Duplicate question">
-                    <button
-                      onClick={() => handleDuplicate(q)}
-                      aria-label="Duplicate question"
-                      className="p-2 text-ink-muted hover:text-ink rounded-lg transition-transform active:scale-95"
-                    >
-                      <Copy className="w-4 h-4" strokeWidth={1.5} />
-                    </button>
-                  </Tooltip>
-                  <Tooltip label="Delete question">
-                    <button
-                      onClick={() => setConfirmDeleteId(confirmDeleteId === q.id ? null : q.id)}
-                      aria-label="Delete question"
-                      className="p-2 text-ink-muted hover:text-status-danger rounded-lg transition-transform active:scale-95"
-                    >
-                      <Trash2 className="w-4 h-4" strokeWidth={1.5} />
-                    </button>
-                  </Tooltip>
-                  <AnimatePresence>
-                    {confirmDeleteId === q.id && (
-                      <motion.div
-                        initial={reduced ? { opacity: 1 } : { opacity: 0, scale: 0.94, y: -4 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.94, y: -4 }}
-                        transition={{ type: 'spring', stiffness: 450, damping: 28 }}
-                        style={{ transformOrigin: 'top right' }}
-                        className="absolute right-0 top-10 z-30 w-56 p-3 rounded-[12px] luxury-card space-y-2"
-                      >
-                        <p className="text-xs text-ink font-medium">Are you sure?</p>
-                        <div className="flex justify-end gap-1.5">
-                          <Button size="sm" variant="secondary" onClick={() => setConfirmDeleteId(null)}>Cancel</Button>
-                          <Button
-                            size="sm"
-                            variant="danger"
-                            onClick={async () => {
-                              await questionService.deleteQuestion(q.id);
-                              setQuestions((prev) => prev.filter((item) => item.id !== q.id));
-                              setConfirmDeleteId(null);
-                              toast.success('Question deleted');
-                            }}
-                          >
-                            Delete
-                          </Button>
+                      <td className="px-4 py-3.5 align-top">
+                        <input
+                          type="checkbox"
+                          aria-label={`Select question ${q.id}`}
+                          checked={selectedIds.includes(q.id)}
+                          onChange={(e) =>
+                            setSelectedIds((prev) =>
+                              e.target.checked ? [...prev, q.id] : prev.filter((x) => x !== q.id)
+                            )
+                          }
+                          className="mt-1 accent-[#059669]"
+                        />
+                      </td>
+                      <td className="px-4 py-3.5 max-w-lg">
+                        <p className="text-sm font-semibold text-[var(--ink)] line-clamp-2">{q.text}</p>
+                        <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--muted)] mt-1 inline-block">
+                          {q.topic}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <Badge tone="neutral">
+                          {q.type === 'mcq_single' || q.type === 'mcq_multi' ? 'MCQ' : 'Subjective'}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <Badge tone={q.difficulty === 1 ? 'success' : 'neutral'} dot={q.difficulty === 3 ? 'slate' : undefined}>
+                          {q.difficulty === 1 ? 'Easy' : q.difficulty === 2 ? 'Medium' : 'Hard'}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3.5 font-mono text-xs tabular-nums text-[var(--muted)]">
+                        {q.marks}
+                      </td>
+                      <td className="px-4 py-3.5 text-right relative">
+                        <div className="inline-flex items-center gap-1 justify-end">
+                          <Tooltip label="Edit question">
+                            <button
+                              onClick={() => openEdit(q)}
+                              aria-label="Edit question"
+                              className="p-2 text-[var(--muted)] hover:text-[var(--ink)] rounded-lg hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors"
+                            >
+                              <Edit3 className="w-4 h-4" strokeWidth={1.5} />
+                            </button>
+                          </Tooltip>
+                          <Tooltip label="Duplicate question">
+                            <button
+                              onClick={() => handleDuplicate(q)}
+                              aria-label="Duplicate question"
+                              className="p-2 text-[var(--muted)] hover:text-[var(--ink)] rounded-lg hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors"
+                            >
+                              <Copy className="w-4 h-4" strokeWidth={1.5} />
+                            </button>
+                          </Tooltip>
+                          <Tooltip label="Delete question">
+                            <button
+                              onClick={() => setConfirmDeleteId(confirmDeleteId === q.id ? null : q.id)}
+                              aria-label="Delete question"
+                              className="p-2 text-[var(--muted)] hover:text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" strokeWidth={1.5} />
+                            </button>
+                          </Tooltip>
                         </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-
-          <div className="flex items-center justify-between text-xs font-mono text-ink-muted pt-2">
-            <span>Page {safePage} of {totalPages} ({filtered.length} questions)</span>
-            <div className="flex gap-2">
-              <Button size="sm" variant="secondary" disabled={safePage <= 1} onClick={() => setPage((p) => p - 1)}>Prev</Button>
-              <Button size="sm" variant="secondary" disabled={safePage >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</Button>
+                        <AnimatePresence>
+                          {confirmDeleteId === q.id && (
+                            <motion.div
+                              initial={reduced ? { opacity: 1 } : { opacity: 0, scale: 0.94, y: -4 }}
+                              animate={{ opacity: 1, scale: 1, y: 0 }}
+                              exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.94, y: -4 }}
+                              transition={{ type: 'spring', stiffness: 450, damping: 28 }}
+                              style={{ transformOrigin: 'top right' }}
+                              className="absolute right-4 top-12 z-30 w-56 p-3 rounded-xl luxury-card space-y-2 text-left"
+                            >
+                              <p className="text-xs text-[var(--ink)] font-medium">Are you sure?</p>
+                              <div className="flex justify-end gap-1.5">
+                                <Button size="sm" variant="secondary" onClick={() => setConfirmDeleteId(null)}>Cancel</Button>
+                                <Button
+                                  size="sm"
+                                  variant="danger"
+                                  onClick={async () => {
+                                    await questionService.deleteQuestion(q.id);
+                                    setQuestions((prev) => prev.filter((item) => item.id !== q.id));
+                                    setConfirmDeleteId(null);
+                                    toast.success('Question deleted');
+                                  }}
+                                >
+                                  Delete
+                                </Button>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </td>
+                    </motion.tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </div>
-        </>
-      )}
-        </div>
+
+            <div className="px-4 py-3 border-t border-[var(--line)] bg-zinc-50/50 dark:bg-white/[0.015] flex items-center justify-between text-xs font-mono text-[var(--muted)]">
+              <span className="tabular-nums">Page {safePage} of {totalPages} ({filtered.length} questions)</span>
+              <div className="flex gap-2">
+                <Button size="sm" variant="secondary" disabled={safePage <= 1} onClick={() => setPage((p) => p - 1)}>Prev</Button>
+                <Button size="sm" variant="secondary" disabled={safePage >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</Button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Create / Edit Question Dialog */}
