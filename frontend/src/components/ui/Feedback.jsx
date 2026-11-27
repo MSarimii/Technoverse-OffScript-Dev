@@ -100,10 +100,10 @@ export const CopyButton = ({ value, toastMessage, children, className = '' }) =>
   );
 };
 
-export const EmptyState = ({ title, description, action }) => (
+export const EmptyState = ({ icon: Icon = Inbox, title, description, action }) => (
   <div className="bg-surface border border-line rounded-xl p-10 text-center space-y-2">
-    <div className="w-10 h-10 rounded-lg bg-subtle text-ink-muted flex items-center justify-center mx-auto mb-2">
-      <Inbox className="w-5 h-5" aria-hidden="true" />
+    <div className="w-11 h-11 rounded-xl bg-[#F4F4F5] dark:bg-white/5 border border-line/60 text-ink-muted flex items-center justify-center mx-auto mb-3">
+      <Icon className="w-5 h-5" strokeWidth={1.6} aria-hidden="true" />
     </div>
     <h3 className="text-base font-semibold text-ink">{title}</h3>
     {description && <p className="text-sm text-ink-muted max-w-md mx-auto">{description}</p>}

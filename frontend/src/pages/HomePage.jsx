@@ -408,16 +408,16 @@ export const HomePage = () => {
                       </span>
                     ))}
                   </div>
-                  <span className="text-[11px] font-mono text-ink-muted">12 questions</span>
+                  <span className="text-[11px] font-mono text-ink-muted tabular-nums">12 questions</span>
                 </div>
               </div>
 
-              <div className="hidden sm:flex items-center gap-2 absolute -bottom-4 -left-3 bg-[var(--hero-pill-bg)] border border-line shadow-md rounded-full px-3.5 py-1.5 text-[11px] font-mono text-ink">
+              <div className="hidden sm:flex items-center gap-2 absolute -bottom-4 -left-3 bg-[var(--hero-pill-bg)] border border-line shadow-md rounded-full px-3.5 py-1.5 text-[11px] font-mono text-ink tabular-nums">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#059669] dark:text-[#34D399]" strokeWidth={2} />
                 Verified · VER-8841
               </div>
-              <div className="hidden sm:flex items-center gap-2 absolute -top-3.5 -right-2 bg-[var(--hero-pill-bg)] border border-line shadow-md rounded-full px-3.5 py-1.5 text-[11px] font-mono text-ink">
-                Difficulty Index <strong className="text-[#059669] dark:text-[#34D399]">2.10 / 2.10</strong>
+              <div className="hidden sm:flex items-center gap-2 absolute -top-3.5 -right-2 bg-[var(--hero-pill-bg)] border border-line shadow-md rounded-full px-3.5 py-1.5 text-[11px] font-mono text-ink tabular-nums">
+                Difficulty Index <strong className="text-[#059669] dark:text-[#34D399] tabular-nums">2.10 / 2.10</strong>
               </div>
             </div>
           </div>

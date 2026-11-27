@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { validateImportFile, parseCsvSafe } from '../../lib/csv';
 import gsap from 'gsap';
 import { Flip } from 'gsap/Flip';
-import { Plus, Upload, Trash2, Copy, Edit3, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Upload, Trash2, Copy, Edit3, ArrowUp, ArrowDown, BookOpen } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 
 gsap.registerPlugin(Flip);
@@ -348,7 +348,7 @@ export const QuestionBankPage = () => {
       ) : error ? (
         <ErrorState message={error} onRetry={load} />
       ) : filtered.length === 0 ? (
-        <EmptyState title="No matching questions" description="Adjust filters or create a new question." />
+        <EmptyState icon={BookOpen} title="No matching questions" description="Adjust filters or create a new question." />
       ) : (
         <>
           <div ref={listRef} className="space-y-3">

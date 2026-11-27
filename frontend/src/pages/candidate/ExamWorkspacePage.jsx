@@ -769,12 +769,12 @@ export const ExamWorkspacePage = () => {
             <div>
               <div className="flex flex-wrap items-center justify-between gap-2 pb-4 mb-5 border-b border-line">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs font-bold px-2.5 py-1 rounded bg-navy-50 text-cobalt">
+                  <span className="font-mono text-xs font-bold px-2.5 py-1 rounded bg-navy-50 text-cobalt tabular-nums">
                     Question {currentIndex + 1} of {questions.length}
                   </span>
                   <span className="text-xs font-mono text-ink-muted">{currentQ.topic}</span>
                 </div>
-                <div className="flex items-center gap-2 text-xs font-mono">
+                <div className="flex items-center gap-2 text-xs font-mono tabular-nums">
                   <span className="font-semibold text-ink">{currentQ.marks} marks</span>
                   {currentQ.negativeMarks > 0 && (
                     <span className="text-status-danger">(-{currentQ.negativeMarks} wrong)</span>

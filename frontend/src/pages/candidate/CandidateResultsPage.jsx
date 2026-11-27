@@ -113,7 +113,7 @@ export const CandidateResultsPage = () => {
                         transform="rotate(-90 40 40)"
                         style={{ transition: 'stroke-dashoffset 700ms ease-out' }}
                       />
-                      <text x="40" y="45" textAnchor="middle" className="fill-ink font-mono text-sm font-semibold">
+                      <text x="40" y="45" textAnchor="middle" className="fill-ink font-mono text-sm font-semibold tabular-nums">
                         {pct}%
                       </text>
                     </svg>

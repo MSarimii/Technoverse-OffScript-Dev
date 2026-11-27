@@ -1,5 +1,5 @@
-import { lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
+import { lazy, Suspense, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useParams, matchPath } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { AuthProvider } from './context/AuthContext';
@@ -289,9 +289,31 @@ function AnimatedRoutes() {
   );
 }
 
+const ROUTE_TITLES = [
+  { pattern: '/', title: 'SEMS — Secure Examination Suite' },
+  { pattern: '/login', title: 'Sign In · SEMS' },
+  { pattern: '/register', title: 'Create Account · SEMS' },
+  { pattern: '/admin/users', title: 'Users & Roles · SEMS' },
+  { pattern: '/examiner', title: 'Examiner Console · SEMS' },
+  { pattern: '/examiner/questions', title: 'Question Bank · SEMS' },
+  { pattern: '/examiner/challenges', title: 'Challenges & Integrity · SEMS' },
+  { pattern: '/candidate', title: 'My Exams · SEMS' },
+  { pattern: '/candidate/exams', title: 'My Exams · SEMS' },
+  { pattern: '/candidate/attempts/:attemptId', title: 'Live Attempt · SEMS' },
+  { pattern: '/candidate/exam/:examId', title: 'Live Attempt · SEMS' },
+  { pattern: '/candidate/results', title: 'Official Transcripts · SEMS' },
+  { pattern: '/candidate/results/:attemptId', title: 'Official Transcripts · SEMS' },
+  { pattern: '/verify/:id', title: 'Verify Credential · SEMS' },
+];
+
 function AppShell() {
   const location = useLocation();
   const isExamWorkspace = location.pathname.startsWith('/candidate/exam/');
+
+  useEffect(() => {
+    const matched = ROUTE_TITLES.find((r) => matchPath({ path: r.pattern, end: true }, location.pathname));
+    document.title = matched ? matched.title : 'SEMS — Secure Examination Suite';
+  }, [location.pathname]);
 
   return (
     <div className="min-h-screen bg-canvas flex flex-col text-ink">

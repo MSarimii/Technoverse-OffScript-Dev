@@ -110,7 +110,8 @@ export const ExaminerChallengesPage = () => {
       ) : tab === 'challenges' ? (
         disputes.length === 0 ? (
           <EmptyState
-            title="No answer challenges"
+            icon={Flag}
+            title="No pending answer challenges"
             description="Candidate challenges submitted from published transcripts will appear here."
           />
         ) : (
@@ -205,6 +206,7 @@ export const ExaminerChallengesPage = () => {
         )
       ) : flags.length === 0 ? (
         <EmptyState
+          icon={ShieldAlert}
           title="No integrity flags recorded"
           description="Telemetry indicators (tab switches, window blur, fullscreen exit, late-sync) appear here for review."
         />

@@ -116,7 +116,11 @@ export const CandidateExamsPage = () => {
       ) : error ? (
         <ErrorState message={error} onRetry={load} />
       ) : visible.length === 0 ? (
-        <EmptyState title={`No ${tab} examinations`} description="Check other tabs or contact your examiner if an exam is missing." />
+        <EmptyState
+          icon={tab === 'upcoming' ? Calendar : tab === 'completed' ? CheckCircle : Clock}
+          title={`No ${tab} examinations`}
+          description="Check other tabs or contact your examiner if an exam is missing."
+        />
       ) : (
         <div className="space-y-4">
           {visible.map((exam) => {

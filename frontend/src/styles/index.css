@@ -112,6 +112,48 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Thin, unobtrusive custom scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #D4D4D8 transparent;
+}
+
+[data-theme='dark'],
+[data-theme='dark'] * {
+  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-theme='system'],
+  [data-theme='system'] * {
+    scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #D4D4D8;
+  border-radius: 9999px;
+}
+
+[data-theme='dark'] ::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.16);
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-theme='system'] ::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.16);
+  }
+}
+
 @keyframes rowFlash {
   0% { background-color: rgba(5, 150, 105, 0.12); }
   100% { background-color: transparent; }

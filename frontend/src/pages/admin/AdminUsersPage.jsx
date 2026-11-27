@@ -6,7 +6,7 @@ import { getInitials } from '../../lib/initials';
 import { Button, Input, Select, Badge, Dialog, Skeleton, EmptyState, ErrorState, Tooltip } from '../../components/ui';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { toast } from 'sonner';
-import { UserPlus, Search, ShieldAlert } from 'lucide-react';
+import { UserPlus, Search, ShieldAlert, Users } from 'lucide-react';
 
 const PAGE_SIZE = 8;
 
@@ -216,6 +216,7 @@ export const AdminUsersPage = () => {
         ) : filtered.length === 0 ? (
           <div className="p-6">
             <EmptyState
+              icon={Users}
               title="No matching users"
               description="Adjust your search or role filters, or provision a new user."
             />
