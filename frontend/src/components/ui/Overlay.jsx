@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { X } from 'lucide-react';
 
 export const Tabs = ({ items, activeKey, onChange }) => (
@@ -70,14 +71,34 @@ export const Popover = ({ open, children, className = '' }) => {
 
 export const Tooltip = ({ label, children }) => {
   const [show, setShow] = useState(false);
+  const reduced = useReducedMotion();
+  const timerRef = useRef(null);
+
+  const open = () => {
+    timerRef.current = setTimeout(() => setShow(true), 120);
+  };
+  const close = () => {
+    clearTimeout(timerRef.current);
+    setShow(false);
+  };
+
   return (
-    <span className="relative inline-flex" onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
+    <span className="relative inline-flex" onMouseEnter={open} onMouseLeave={close} onFocus={open} onBlur={close}>
       {children}
-      {show && (
-        <span role="tooltip" className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 rounded bg-ink text-surface text-[11px] font-mono whitespace-nowrap z-50">
-          {label}
-        </span>
-      )}
+      <AnimatePresence>
+        {show && (
+          <motion.span
+            role="tooltip"
+            initial={reduced ? { opacity: 1 } : { opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={reduced ? { opacity: 0 } : { opacity: 0, y: 4 }}
+            transition={{ type: 'spring', stiffness: 460, damping: 28 }}
+            className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1 rounded-lg bg-[#0F2E23] text-[#F4EFE6] border border-[#C5A059]/40 shadow-md text-[11px] font-mono whitespace-nowrap z-50"
+          >
+            {label}
+          </motion.span>
+        )}
+      </AnimatePresence>
     </span>
   );
 };

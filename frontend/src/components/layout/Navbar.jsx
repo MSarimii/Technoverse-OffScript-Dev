@@ -78,13 +78,14 @@ export const Navbar = () => {
     <header className="sticky top-0 z-40 glass-nav">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link to="/" className="flex items-baseline gap-2.5 group rounded-lg">
+          <Link to="/" className="flex items-baseline gap-2.5 group rounded-lg relative pb-0.5">
             <span className="font-serif text-2xl tracking-[-0.01em] text-ink leading-none">
               SEMS
             </span>
             <span className="hidden sm:inline text-[11px] font-mono uppercase tracking-[0.12em] text-ink-muted">
               Secure Examination Suite
             </span>
+            <span aria-hidden="true" className="absolute bottom-0 left-0 w-7 h-[2px] bg-champagne rounded-full" />
           </Link>
           {import.meta.env.DEV && USE_MOCK && (
             <span

@@ -11,7 +11,7 @@ gsap.registerPlugin(useGSAP);
 const SAVE_LOOP = [
   { label: 'Saved', tone: 'text-status-answered', sub: 'All responses synced' },
   { label: 'Offline: 2 answers kept on this device', tone: 'text-status-review', sub: 'Queue seq #14–15' },
-  { label: 'Syncing...', tone: 'text-champagne', sub: 'Flushing queued answers' },
+  { label: 'Syncing...', tone: 'text-champagne-deep', sub: 'Flushing queued answers' },
   { label: 'Saved', tone: 'text-status-answered', sub: 'Late-sync accepted · Deadline unchanged' },
 ];
 
@@ -24,7 +24,6 @@ export const HomePage = () => {
   const [parallax, setParallax] = useState({ x: 0, y: 0 });
   const [ctaOffset, setCtaOffset] = useState({ x: 0, y: 0 });
 
-  // Live Product Stage save-chip loop (pauses when hidden or reduced motion)
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
     if (mq.matches) return;
@@ -36,36 +35,57 @@ export const HomePage = () => {
     return () => clearInterval(id);
   }, []);
 
-  // GSAP Entrance + Lazy ScrollTrigger & Lenis
+  // Safe fromTo entrance: elements never get stuck at opacity: 0
   useGSAP(
     () => {
       const mm = gsap.matchMedia();
       let lenis;
       mm.add('(prefers-reduced-motion: no-preference)', () => {
         const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
-        tl.from('.hero-line', { yPercent: 100, opacity: 0, duration: 0.85, stagger: 0.08 })
-          .from('.hero-fade', { y: 14, opacity: 0, duration: 0.55, stagger: 0.07 }, '-=0.45')
-          .from('.hero-stage', { y: 24, opacity: 0, rotate: 1.5, duration: 0.75 }, '-=0.55');
+        tl.fromTo(
+          '.hero-line',
+          { y: 18, opacity: 0.05 },
+          { y: 0, opacity: 1, duration: 0.65, stagger: 0.07, clearProps: 'transform,opacity' }
+        )
+          .fromTo(
+            '.hero-fade',
+            { y: 12, opacity: 0.1 },
+            { y: 0, opacity: 1, duration: 0.45, stagger: 0.06, clearProps: 'transform,opacity' },
+            '-=0.35'
+          )
+          .fromTo(
+            '.hero-stage',
+            { y: 16, opacity: 0.15, rotate: 1.2 },
+            { y: 0, opacity: 1, rotate: 0, duration: 0.6, clearProps: 'transform,opacity' },
+            '-=0.4'
+          );
 
-        // Lazy-load ScrollTrigger + Lenis for landing scroll chapters
         Promise.all([import('gsap/ScrollTrigger'), import('lenis')]).then(([{ ScrollTrigger }, { default: Lenis }]) => {
           gsap.registerPlugin(ScrollTrigger);
-          lenis = new Lenis({ duration: 1.1, smoothWheel: true });
+          lenis = new Lenis({ duration: 1.0, smoothWheel: true });
+          let rafId;
           const raf = (time) => {
             lenis.raf(time);
-            requestAnimationFrame(raf);
+            rafId = requestAnimationFrame(raf);
           };
-          requestAnimationFrame(raf);
+          rafId = requestAnimationFrame(raf);
 
           gsap.utils.toArray('.scroll-chapter').forEach((el) => {
-            gsap.from(el, {
-              y: 22,
-              opacity: 0,
-              duration: 0.6,
-              ease: 'power2.out',
-              scrollTrigger: { trigger: el, start: 'top 82%', once: true },
-            });
+            gsap.fromTo(
+              el,
+              { y: 16, opacity: 0.85 },
+              {
+                y: 0,
+                opacity: 1,
+                duration: 0.45,
+                ease: 'power2.out',
+                clearProps: 'transform,opacity',
+                scrollTrigger: { trigger: el, start: 'top 88%', once: true },
+              }
+            );
           });
+
+          return () => cancelAnimationFrame(rafId);
         });
       });
 
@@ -99,27 +119,26 @@ export const HomePage = () => {
 
   return (
     <div ref={rootRef} className="relative overflow-x-hidden">
-      {/* Subtle Champagne Ambient Glow */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -top-32 left-1/2 -translate-x-1/2 w-[780px] h-[460px] rounded-full blur-[120px]"
-        style={{ background: 'radial-gradient(circle, rgba(203,169,107,0.08) 0%, transparent 70%)' }}
+        className="pointer-events-none absolute -top-28 left-1/2 -translate-x-1/2 w-[720px] h-[380px] rounded-full blur-[110px]"
+        style={{ background: 'radial-gradient(circle, rgba(197,160,89,0.12) 0%, transparent 70%)' }}
       />
 
-      <main className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-20">
-        {/* 3.2 Asymmetric Two-Column Hero */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center min-h-[74vh]">
-          <div className="lg:col-span-7 space-y-6">
-            <p className="hero-fade eyebrow-rule font-mono text-xs uppercase tracking-[0.12em] text-champagne">
+      <main className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-16">
+        {/* Asymmetric Two-Column Hero (tight padding, immediate above-the-fold visibility) */}
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center py-8 sm:py-12">
+          <div className="lg:col-span-7 space-y-5">
+            <p className="hero-fade eyebrow-rule font-mono text-xs uppercase tracking-[0.12em] text-champagne-deep">
               TechnoVerse 5.0 · Examination Infrastructure
             </p>
-            <h1 className="font-display text-[clamp(44px,6.2vw,92px)] text-ink">
+            <h1 className="font-display text-[clamp(44px,6vw,88px)] text-ink">
               <span className="block overflow-hidden">
                 <span className="hero-line block">Exams that stay</span>
               </span>
               <span className="block overflow-hidden">
                 <span className="hero-line block">
-                  <em className="italic text-champagne">fair</em> when everything
+                  <em className="italic text-champagne-deep">fair</em> when everything
                 </span>
               </span>
               <span className="block overflow-hidden">
@@ -130,21 +149,21 @@ export const HomePage = () => {
               Server-timed attempts, answers that survive outages, and papers balanced for difficulty.
             </p>
 
-            <div className="hero-fade flex flex-wrap items-center gap-4 pt-2">
+            <div className="hero-fade flex flex-wrap items-center gap-4 pt-1">
               <Link
                 ref={ctaRef}
                 onMouseMove={handleCtaMove}
                 onMouseLeave={() => setCtaOffset({ x: 0, y: 0 })}
                 style={{ transform: `translate3d(${ctaOffset.x}px, ${ctaOffset.y}px, 0)` }}
                 to={isAuthenticated ? getRoleHome(user.role) : '/login'}
-                className="min-h-[48px] inline-flex items-center gap-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-ink)] font-semibold px-6 py-3 rounded-full shadow-sm transition-transform duration-150 active:scale-[0.97]"
+                className="min-h-[48px] inline-flex items-center gap-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-ink)] font-semibold px-6 py-3 rounded-full shadow-sm transition-transform duration-150 active:scale-[0.96]"
               >
                 {isAuthenticated ? `Open ${user.role} workspace` : 'Sign in'}
                 <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
               </Link>
               <Link
                 to="/verify/VER-2026-SEMS-8841"
-                className="min-h-[48px] inline-flex items-center gap-2 border border-line hover:border-[var(--line-strong)] text-ink px-6 py-3 rounded-full text-sm transition-colors"
+                className="min-h-[48px] inline-flex items-center gap-2 border border-line hover:border-[var(--line-strong)] bg-surface text-ink px-6 py-3 rounded-full text-sm transition-colors shadow-sm"
               >
                 Verify a report
               </Link>
@@ -162,11 +181,11 @@ export const HomePage = () => {
               style={{
                 transform: `translate3d(${parallax.x}px, ${parallax.y}px, 0) rotate(-0.8deg)`,
               }}
-              className="glass-tile rounded-[14px] p-5 sm:p-6 space-y-5 transition-transform duration-200 ease-out"
+              className="luxury-card rounded-[14px] p-5 sm:p-6 space-y-5 transition-transform duration-200 ease-out"
             >
               <div className="flex items-center justify-between gap-2 pb-3 border-b border-line">
                 <div className="min-w-0">
-                  <div className="text-[11px] font-mono uppercase tracking-[0.1em] text-champagne">
+                  <div className="text-[11px] font-mono uppercase tracking-[0.1em] text-champagne-deep">
                     Live Attempt · CS-402
                   </div>
                   <div className={`text-xs font-mono mt-0.5 ${currentLoop.tone}`}>
@@ -196,7 +215,7 @@ export const HomePage = () => {
                 <p className="font-serif text-xl text-ink leading-snug">
                   Explain how a bounded late-sync window preserves fairness during a network outage.
                 </p>
-                <div className="p-3 rounded-[10px] border border-line bg-canvas/70 text-xs text-ink-muted font-mono">
+                <div className="p-3 rounded-[10px] border border-line bg-canvas text-xs text-ink-muted font-mono">
                   {currentLoop.sub} · Deadline unchanged: 11:42 AM
                 </div>
               </div>
@@ -208,7 +227,7 @@ export const HomePage = () => {
                       key={n}
                       className={`w-7 h-7 rounded-[8px] flex items-center justify-center border ${
                         n === 4
-                          ? 'border-champagne text-champagne'
+                          ? 'border-champagne text-champagne-deep font-semibold'
                           : n < 4
                           ? 'bg-emerald-500/15 border-emerald-500/40 text-status-answered'
                           : 'border-line text-ink-muted'
@@ -222,72 +241,69 @@ export const HomePage = () => {
               </div>
             </div>
 
-            {/* Orbiting Detail Chips */}
-            <div className="hidden sm:flex items-center gap-2 absolute -bottom-5 -left-4 bg-surface border border-line rounded-full px-3.5 py-1.5 text-[11px] font-mono text-ink">
-              <ShieldCheck className="w-3.5 h-3.5 text-champagne" strokeWidth={1.5} />
+            <div className="hidden sm:flex items-center gap-2 absolute -bottom-5 -left-4 luxury-card rounded-full px-3.5 py-1.5 text-[11px] font-mono text-ink">
+              <ShieldCheck className="w-3.5 h-3.5 text-champagne-deep" strokeWidth={1.5} />
               Verified · VER-8841
             </div>
-            <div className="hidden sm:flex items-center gap-2 absolute -top-4 -right-3 bg-surface border border-line rounded-full px-3.5 py-1.5 text-[11px] font-mono text-ink">
-              Paper difficulty index <strong className="text-champagne">2.1 / 2.1</strong>
+            <div className="hidden sm:flex items-center gap-2 absolute -top-4 -right-3 luxury-card rounded-full px-3.5 py-1.5 text-[11px] font-mono text-ink">
+              Paper difficulty index <strong className="text-champagne-deep">2.1 / 2.1</strong>
             </div>
           </div>
         </section>
 
-        {/* 3.3 Credibility Strip */}
-        <section aria-label="System guarantees" className="mt-20 border-y border-line py-5 grid grid-cols-2 lg:grid-cols-4 gap-6 font-mono text-xs text-ink-muted">
-          <div className="flex items-center justify-between lg:justify-start lg:gap-3">
-            <span className="text-champagne">01</span>
+        {/* Credibility Strip */}
+        <section aria-label="System guarantees" className="mt-12 border-y border-line py-5 grid grid-cols-2 lg:grid-cols-4 gap-6 font-mono text-xs text-ink-muted">
+          <div className="flex items-center gap-3">
+            <span className="text-champagne-deep font-semibold">01</span>
             <span>Server-authoritative time</span>
           </div>
-          <div className="flex items-center justify-between lg:justify-start lg:gap-3">
-            <span className="text-champagne">02</span>
+          <div className="flex items-center gap-3">
+            <span className="text-champagne-deep font-semibold">02</span>
             <span>Idempotent submission</span>
           </div>
-          <div className="flex items-center justify-between lg:justify-start lg:gap-3">
-            <span className="text-champagne">03</span>
+          <div className="flex items-center gap-3">
+            <span className="text-champagne-deep font-semibold">03</span>
             <span>Role-enforced access</span>
           </div>
-          <div className="flex items-center justify-between lg:justify-start lg:gap-3">
-            <span className="text-champagne">04</span>
+          <div className="flex items-center gap-3">
+            <span className="text-champagne-deep font-semibold">04</span>
             <span>WCAG 2.1 AA</span>
           </div>
         </section>
 
-        {/* 3.4 Three-Chapter Scroll Story */}
-        <section aria-labelledby="story-heading" className="py-20 space-y-16">
+        {/* Three-Chapter Story */}
+        <section aria-labelledby="story-heading" className="py-16 space-y-12">
           <h2 id="story-heading" className="sr-only">How SEMS works</h2>
 
-          {/* Chapter 01 */}
-          <article className="scroll-chapter grid grid-cols-1 md:grid-cols-12 gap-8 items-center border-b border-line pb-14">
-            <div className="md:col-span-6 space-y-3">
-              <span className="font-serif text-5xl text-champagne block">01</span>
+          <article className="scroll-chapter grid grid-cols-1 md:grid-cols-12 gap-8 items-center border-b border-line pb-12">
+            <div className="md:col-span-6 space-y-2.5">
+              <span className="font-serif text-5xl text-champagne-deep block">01</span>
               <h3 className="font-serif text-3xl sm:text-4xl text-ink">The server keeps the clock.</h3>
               <p className="text-sm sm:text-base text-ink-muted max-w-[56ch]">
                 Every countdown is anchored to the server&apos;s UTC deadline via minimum-RTT offset sampling. Changing the device clock never adds a single second.
               </p>
             </div>
             <div className="md:col-span-6 grid grid-cols-2 gap-4 font-mono text-xs">
-              <div className="p-4 rounded-[14px] border border-line bg-surface">
+              <div className="p-4 rounded-[14px] luxury-card">
                 <div className="text-ink-muted mb-1">Your device</div>
                 <div className="text-lg text-status-danger line-through tabular-nums">+30:00 drift</div>
               </div>
-              <div className="p-4 rounded-[14px] border border-champagne/50 bg-surface">
-                <div className="text-champagne mb-1">Server authority</div>
+              <div className="p-4 rounded-[14px] luxury-card border-champagne/60">
+                <div className="text-champagne-deep mb-1">Server authority</div>
                 <div className="text-lg text-ink tabular-nums">42:18 steady</div>
               </div>
             </div>
           </article>
 
-          {/* Chapter 02 */}
-          <article className="scroll-chapter grid grid-cols-1 md:grid-cols-12 gap-8 items-center border-b border-line pb-14">
-            <div className="md:col-span-6 space-y-3">
-              <span className="font-serif text-5xl text-champagne block">02</span>
+          <article className="scroll-chapter grid grid-cols-1 md:grid-cols-12 gap-8 items-center border-b border-line pb-12">
+            <div className="md:col-span-6 space-y-2.5">
+              <span className="font-serif text-5xl text-champagne-deep block">02</span>
               <h3 className="font-serif text-3xl sm:text-4xl text-ink">Answers survive outages.</h3>
               <p className="text-sm sm:text-base text-ink-muted max-w-[56ch]">
                 Responses write to IndexedDB first with monotonic sequence numbers. On reconnect, queued answers flush in order within a bounded late-sync window.
               </p>
             </div>
-            <div className="md:col-span-6 p-5 rounded-[14px] border border-line bg-surface font-mono text-xs space-y-2.5">
+            <div className="md:col-span-6 p-5 rounded-[14px] luxury-card font-mono text-xs space-y-2.5">
               <div className="flex items-center justify-between text-status-review">
                 <span className="inline-flex items-center gap-1.5"><WifiOff className="w-3.5 h-3.5" strokeWidth={1.5} /> Outage detected</span>
                 <span>Q3, Q4, Q5 queued</span>
@@ -299,32 +315,31 @@ export const HomePage = () => {
             </div>
           </article>
 
-          {/* Chapter 03 */}
           <article className="scroll-chapter grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
-            <div className="md:col-span-6 space-y-3">
-              <span className="font-serif text-5xl text-champagne block">03</span>
+            <div className="md:col-span-6 space-y-2.5">
+              <span className="font-serif text-5xl text-champagne-deep block">03</span>
               <h3 className="font-serif text-3xl sm:text-4xl text-ink">Every paper is fair.</h3>
               <p className="text-sm sm:text-base text-ink-muted max-w-[56ch]">
                 Blueprint randomization draws distinct questions per candidate while locking topic and difficulty distribution across every generated paper.
               </p>
             </div>
-            <div className="md:col-span-6 p-5 rounded-[14px] border border-line bg-surface space-y-2.5 font-mono text-xs">
+            <div className="md:col-span-6 p-5 rounded-[14px] luxury-card space-y-2.5 font-mono text-xs">
               {['Paper A (Candidate 01)', 'Paper B (Candidate 02)', 'Paper C (Candidate 03)'].map((label) => (
                 <div key={label} className="flex items-center gap-3">
                   <span className="w-40 text-ink-muted truncate">{label}</span>
                   <div className="flex-1 h-2 bg-canvas rounded-full overflow-hidden">
                     <div className="h-full bg-champagne w-[72%]" />
                   </div>
-                  <span className="text-champagne">2.1</span>
+                  <span className="text-champagne-deep">2.1</span>
                 </div>
               ))}
             </div>
           </article>
         </section>
 
-        {/* 3.5 Editorial Role Entry Rows */}
-        <section aria-labelledby="roles-heading" className="py-14 border-t border-line">
-          <p id="roles-heading" className="eyebrow-rule font-mono text-xs uppercase tracking-[0.12em] text-champagne mb-6">
+        {/* Editorial Role Entry Rows */}
+        <section aria-labelledby="roles-heading" className="py-12 border-t border-line">
+          <p id="roles-heading" className="eyebrow-rule font-mono text-xs uppercase tracking-[0.12em] text-champagne-deep mb-5">
             Access by Role
           </p>
           <div className="divide-y divide-line border-y border-line">
@@ -337,27 +352,27 @@ export const HomePage = () => {
               <Link
                 key={item.role}
                 to={item.to}
-                className="group py-5 flex items-center justify-between gap-4 hover:px-2 transition-all duration-150"
+                className="group py-4 flex items-center justify-between gap-4 hover:px-2 transition-all duration-150"
               >
                 <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-6">
                   <span className="font-serif text-2xl sm:text-3xl text-ink w-48 shrink-0">{item.role}</span>
                   <span className="text-sm text-ink-muted">{item.desc}</span>
                 </div>
-                <ArrowRight className="w-5 h-5 text-champagne shrink-0 transition-transform duration-150 group-hover:translate-x-1.5" strokeWidth={1.5} />
+                <ArrowRight className="w-5 h-5 text-champagne-deep shrink-0 transition-transform duration-150 group-hover:translate-x-1.5" strokeWidth={1.5} />
               </Link>
             ))}
           </div>
         </section>
 
-        {/* 3.6 Closing CTA Band */}
-        <section className="my-12 rounded-[14px] border border-line bg-surface p-8 sm:p-12 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+        {/* Closing CTA Band */}
+        <section className="mt-10 rounded-[14px] luxury-card p-8 sm:p-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div>
-            <h2 className="font-serif text-3xl sm:text-4xl text-ink mb-2">Ready for the examination hall.</h2>
+            <h2 className="font-serif text-3xl sm:text-4xl text-ink mb-1.5">Ready for the examination hall.</h2>
             <p className="text-sm text-ink-muted">Sign in with your institutional credentials to enter your workspace.</p>
           </div>
           <Link
             to={isAuthenticated ? getRoleHome(user.role) : '/login'}
-            className="min-h-[48px] shrink-0 inline-flex items-center gap-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-ink)] font-semibold px-6 py-3 rounded-full shadow-sm active:scale-[0.97]"
+            className="min-h-[48px] shrink-0 inline-flex items-center gap-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-ink)] font-semibold px-6 py-3 rounded-full shadow-sm active:scale-[0.96]"
           >
             {isAuthenticated ? 'Enter workspace' : 'Sign in'}
             <ArrowRight className="w-4 h-4" strokeWidth={1.5} />

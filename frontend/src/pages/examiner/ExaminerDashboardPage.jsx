@@ -291,7 +291,7 @@ export const ExaminerDashboardPage = () => {
                                   setOpenMenuId(null);
                                   item.onClick();
                                 }}
-                                className="w-full flex items-start gap-2.5 px-3 py-2 rounded-[10px] hover:bg-subtle text-left transition-colors"
+                                className="w-full flex items-start gap-2.5 px-3 py-2 rounded-[10px] hover:bg-subtle hover:translate-x-[2px] text-left transition-all duration-150"
                               >
                                 <Icon className="w-4 h-4 text-champagne shrink-0 mt-0.5" strokeWidth={1.5} />
                                 <div>
