@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react';
 import { adminService } from '../../services/adminService';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../context/ThemeContext';
 import { PageHeader } from '../../components/layout/AppLayout';
 import { getInitials } from '../../lib/initials';
 import { Button, Input, Select, Badge, Dialog, Skeleton, EmptyState, ErrorState, Tooltip, BentoAreaChart, BentoDonutChart } from '../../components/ui';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { toast } from 'sonner';
-import { UserPlus, Search, ShieldAlert, Users, ShieldCheck, GraduationCap, BookOpen, TrendingUp } from 'lucide-react';
+import { UserPlus, Search, ShieldAlert, Users, ShieldCheck, GraduationCap, BookOpen } from 'lucide-react';
 
 const PAGE_SIZE = 8;
 
 export const AdminUsersPage = () => {
   const { user: currentUser } = useAuth();
+  const { resolvedTheme } = useTheme();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -138,48 +140,30 @@ export const AdminUsersPage = () => {
         }
       />
 
-      {/* Bento 4-Card KPI Strip with Jet-Black Anchor */}
+      {/* Minimalist 4-Card KPI Strip */}
       <section aria-label="Account summary" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-2xl bg-[#0A0A0A] border border-[#181F1D] text-white p-5 shadow-md flex flex-col justify-between gap-3">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-mono uppercase tracking-widest text-white/60">Total Accounts</span>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-[11px] font-mono text-[#10B981]">
-              <TrendingUp className="w-3 h-3" /> +12% this month
-            </span>
-          </div>
-          <div className="flex items-end justify-between gap-3">
-            <div className="font-display font-bold text-3xl text-white tabular-nums tracking-[-0.03em]">
-              {users.length}
-            </div>
-            <svg width="64" height="22" viewBox="0 0 64 22" aria-hidden="true" className="text-[#10B981] shrink-0">
-              <polyline fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" points="2,18 14,15 26,16 38,9 50,11 62,3" />
-            </svg>
-          </div>
-        </div>
-
         {[
-          { label: 'Administrators', val: adminCount, trend: 'Full governance', icon: ShieldCheck, tone: 'text-ink-muted' },
-          { label: 'Examiners', val: examinerCount, trend: 'Active faculty', icon: BookOpen, tone: 'text-[#059669]' },
-          { label: 'Candidates', val: candidateCount, trend: 'Enrolled cohort', icon: GraduationCap, tone: 'text-ink-muted' },
+          { label: 'Total Accounts', val: users.length, caption: '+12% this month', icon: Users },
+          { label: 'Administrators', val: adminCount, caption: 'Full governance', icon: ShieldCheck },
+          { label: 'Examiners', val: examinerCount, caption: 'Active faculty', icon: BookOpen },
+          { label: 'Candidates', val: candidateCount, caption: 'Enrolled cohort', icon: GraduationCap },
         ].map((kpi) => {
           const Icon = kpi.icon;
           return (
             <div
               key={kpi.label}
-              className="rounded-2xl bg-surface dark:bg-[#111615] border border-line p-5 flex flex-col justify-between gap-3"
+              className="rounded-2xl bg-white dark:bg-[#111615] border border-[#E4E4E7] dark:border-white/10 shadow-[0_1px_2px_rgba(0,0,0,0.03)] p-5 flex flex-col justify-between gap-2.5"
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="text-[11px] font-mono uppercase tracking-widest text-ink-muted">{kpi.label}</span>
-                <span className="w-8 h-8 rounded-lg bg-[#F4F4F5] dark:bg-white/5 border border-line/60 flex items-center justify-center text-ink-muted">
-                  <Icon className="w-4 h-4" strokeWidth={1.6} aria-hidden="true" />
+                <span className="text-[11px] font-mono uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
+                  {kpi.label}
                 </span>
+                <Icon className="w-4 h-4 text-zinc-400 shrink-0" strokeWidth={1.6} aria-hidden="true" />
               </div>
-              <div className="flex items-baseline justify-between gap-2">
-                <div className="font-display font-bold text-3xl text-ink tabular-nums tracking-[-0.03em]">
-                  {kpi.val}
-                </div>
-                <span className={`text-[11px] font-mono ${kpi.tone}`}>{kpi.trend}</span>
+              <div className="font-display font-bold text-3xl text-[#0A0A0A] dark:text-[#F4F4F5] tabular-nums tracking-[-0.03em]">
+                {kpi.val}
               </div>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">{kpi.caption}</span>
             </div>
           );
         })}
@@ -187,17 +171,12 @@ export const AdminUsersPage = () => {
 
       {/* Interactive Bento Analytics Row */}
       <section aria-label="Platform analytics" className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 min-w-0 rounded-2xl bg-surface dark:bg-[#111615] border border-line p-5 space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <p className="text-[11px] font-mono uppercase tracking-widest text-ink-muted">7-Day Telemetry</p>
-              <h2 className="text-lg font-display font-bold text-ink tracking-[-0.03em]">
-                Platform Activity & Provisioning
-              </h2>
-            </div>
-            <span className="text-[11px] font-mono px-2.5 py-1 rounded-full bg-[#ECFDF5] dark:bg-emerald-950/50 text-[#059669] dark:text-[#34D399] border border-[#A7F3D0] dark:border-emerald-500/30">
-              Live Sync
-            </span>
+        <div className="lg:col-span-2 min-w-0 rounded-2xl bg-white dark:bg-[#111615] border border-[#E4E4E7] dark:border-white/10 shadow-[0_1px_2px_rgba(0,0,0,0.03)] p-5 space-y-4">
+          <div>
+            <p className="text-[11px] font-mono uppercase tracking-widest text-zinc-500 dark:text-zinc-400">7-Day Telemetry</p>
+            <h2 className="text-lg font-display font-bold text-[#0A0A0A] dark:text-[#F4F4F5] tracking-[-0.03em]">
+              Platform Activity & Provisioning
+            </h2>
           </div>
           <BentoAreaChart
             data={[
@@ -216,16 +195,16 @@ export const AdminUsersPage = () => {
           />
         </div>
 
-        <div className="min-w-0 rounded-2xl bg-surface dark:bg-[#111615] border border-line p-5 space-y-4">
+        <div className="min-w-0 rounded-2xl bg-white dark:bg-[#111615] border border-[#E4E4E7] dark:border-white/10 shadow-[0_1px_2px_rgba(0,0,0,0.03)] p-5 space-y-4">
           <div>
-            <p className="text-[11px] font-mono uppercase tracking-widest text-ink-muted">Access Control</p>
-            <h2 className="text-lg font-display font-bold text-ink tracking-[-0.03em]">
+            <p className="text-[11px] font-mono uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Access Control</p>
+            <h2 className="text-lg font-display font-bold text-[#0A0A0A] dark:text-[#F4F4F5] tracking-[-0.03em]">
               Role & Access Split
             </h2>
           </div>
           <BentoDonutChart
             data={[
-              { name: 'Administrators', value: adminCount, color: '#0A0A0A' },
+              { name: 'Administrators', value: adminCount, color: resolvedTheme === 'dark' ? '#F4F4F5' : '#0A0A0A' },
               { name: 'Examiners', value: examinerCount, color: '#10B981' },
               { name: 'Candidates', value: candidateCount, color: '#94A3B8' },
             ]}

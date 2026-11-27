@@ -76,12 +76,12 @@ export const CandidateResultsPage = () => {
       {!loading && results.length > 0 && (
         <section
           aria-label="Performance trajectory"
-          className="min-w-0 rounded-2xl bg-surface dark:bg-[#111615] border border-line p-5 space-y-3"
+          className="min-w-0 rounded-2xl bg-white dark:bg-[#111615] border border-[#E4E4E7] dark:border-white/10 shadow-[0_1px_2px_rgba(0,0,0,0.03)] p-5 space-y-3"
         >
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <p className="text-[11px] font-mono uppercase tracking-widest text-ink-muted">Score Progression</p>
-              <h2 className="text-lg font-display font-bold text-ink tracking-[-0.03em]">
+              <p className="text-[11px] font-mono uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Score Progression</p>
+              <h2 className="text-lg font-display font-bold text-[#0A0A0A] dark:text-[#F4F4F5] tracking-[-0.03em]">
                 Performance Trajectory
               </h2>
             </div>

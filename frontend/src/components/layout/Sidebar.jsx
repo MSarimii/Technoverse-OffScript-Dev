@@ -205,14 +205,16 @@ export const Sidebar = () => {
                     to={to}
                     aria-label={collapsed ? label : undefined}
                     className={`group relative flex items-center gap-3 px-3 py-2.5 min-h-[44px] text-sm rounded-xl transition-colors ${
-                      active ? 'text-[#065F46] font-semibold' : 'text-ink-muted hover:text-ink hover:bg-subtle/60'
+                      active
+                        ? 'text-[#065F46] dark:text-emerald-400 font-semibold'
+                        : 'text-ink-muted hover:text-ink hover:bg-subtle/60'
                     } ${collapsed ? 'justify-center px-0' : ''}`}
                   >
                     {active && (
                       <motion.span
                         layoutId={reduced ? undefined : 'sidebar-active-pill'}
                         transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-                        className="absolute inset-0 bg-[#ECFDF5] border border-[#A7F3D0] rounded-xl -z-0"
+                        className="absolute inset-0 bg-[#ECFDF5] border border-[#A7F3D0] dark:bg-emerald-500/10 dark:border-emerald-500/20 rounded-xl -z-0"
                       />
                     )}
                     <motion.span
