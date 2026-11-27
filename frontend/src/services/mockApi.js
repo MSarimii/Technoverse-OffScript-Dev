@@ -817,4 +817,77 @@ export const mockApi = {
     saveDb(db);
     return { success: true, data: { dispute } };
   },
+
+  async getAllDisputes(examId) {
+    await delay(100);
+    const db = loadDb();
+    const disputes = (db.disputes || [])
+      .filter((d) => !examId || d.examId === examId)
+      .map((d) => {
+        const exam = db.exams.find((e) => e.id === d.examId);
+        const attempt = db.attempts.find((a) => a.id === d.attemptId);
+        const cand = db.users.find((u) => u.id === d.candidateId);
+        const q = (attempt?.snapshot?.questions || []).find((qq) => qq.id === d.questionId);
+        return {
+          ...d,
+          examTitle: exam?.title || d.examId,
+          candidateName: cand?.name || 'Candidate',
+          questionText: q?.text || d.questionId,
+          maxMarks: q?.marks ?? 0,
+          currentMarks: attempt?.scores?.perQuestion?.[d.questionId] ?? 0,
+          candidateAnswer: attempt?.answers?.[d.questionId]?.value ?? '(Unanswered)',
+        };
+      });
+    return { success: true, data: { disputes } };
+  },
+
+  async getIntegrityFlags(examId) {
+    await delay(100);
+    const db = loadDb();
+    const reviewedSet = new Set(db.reviewedFlags || []);
+    const flags = [];
+    (db.attempts || [])
+      .filter((a) => !a.isSandbox && (!examId || a.examId === examId))
+      .forEach((a) => {
+        const exam = db.exams.find((e) => e.id === a.examId);
+        const cand = db.users.find((u) => u.id === a.candidateId);
+        (a.events || []).forEach((ev, idx) => {
+          const fid = ev.id || `${a.id}-ev-${idx}`;
+          flags.push({
+            id: fid,
+            attemptId: a.id,
+            examId: a.examId,
+            examTitle: exam?.title || a.examId,
+            candidateName: cand?.name || 'Candidate',
+            type: ev.type || 'tab_hidden',
+            timestamp: ev.timestamp || ev.at || a.startedAt,
+            reviewed: reviewedSet.has(fid) || Boolean(ev.reviewed),
+          });
+        });
+        Object.entries(a.answers || {}).forEach(([qid, ans]) => {
+          if (ans?.lateSynced) {
+            const fid = `${a.id}-late-${qid}`;
+            flags.push({
+              id: fid,
+              attemptId: a.id,
+              examId: a.examId,
+              examTitle: exam?.title || a.examId,
+              candidateName: cand?.name || 'Candidate',
+              type: 'late_sync',
+              timestamp: ans.savedAt || a.submittedAt || a.startedAt,
+              reviewed: reviewedSet.has(fid),
+            });
+          }
+        });
+      });
+    return { success: true, data: { flags } };
+  },
+
+  async markFlagReviewed(flagId) {
+    await delay(80);
+    const db = loadDb();
+    db.reviewedFlags = Array.from(new Set([...(db.reviewedFlags || []), flagId]));
+    saveDb(db);
+    return { success: true, data: { flagId, reviewed: true } };
+  },
 };

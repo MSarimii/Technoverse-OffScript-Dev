@@ -27,6 +27,12 @@ export const examService = {
   suggestGradeAI: (payload) => (USE_MOCK ? mockApi.suggestGradeAI(payload) : api.post('/ai/suggest-grade', payload)),
   getExamReportUrl: (examId) => `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/reports/exam/${examId}.pdf`,
   getDisputes: (examId) => (USE_MOCK ? mockApi.getExamDisputes(examId) : api.get(`/exams/${examId}/disputes`)),
+  getAllDisputes: (examId) =>
+    USE_MOCK ? mockApi.getAllDisputes(examId) : api.get('/examiner/disputes', { params: examId ? { examId } : {} }),
   resolveDispute: (disputeId, payload) =>
     USE_MOCK ? mockApi.resolveDispute(disputeId, payload) : api.patch(`/disputes/${disputeId}/resolve`, payload),
+  getIntegrityFlags: (examId) =>
+    USE_MOCK ? mockApi.getIntegrityFlags(examId) : api.get('/examiner/integrity-flags', { params: examId ? { examId } : {} }),
+  markFlagReviewed: (flagId) =>
+    USE_MOCK ? mockApi.markFlagReviewed(flagId) : api.patch(`/integrity-flags/${flagId}/review`, {}),
 };

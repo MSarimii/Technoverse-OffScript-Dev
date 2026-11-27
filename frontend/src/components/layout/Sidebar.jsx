@@ -2,12 +2,14 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../context/ThemeContext';
+import { examService } from '../../services/examService';
 import { motion, AnimatePresence, useMotionValue, animate, useReducedMotion } from 'framer-motion';
 import {
   Users,
   ClipboardCheck,
   BookOpen,
   Award,
+  ShieldAlert,
   PanelLeftClose,
   LogOut,
   Sun,
@@ -31,7 +33,21 @@ export const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [hoveredTo, setHoveredTo] = useState(null);
   const [footerOpen, setFooterOpen] = useState(false);
+  const [pendingChallenges, setPendingChallenges] = useState(0);
   const footerRef = useRef(null);
+
+  useEffect(() => {
+    if (user?.role !== 'examiner') return;
+    examService
+      .getAllDisputes()
+      .then((res) => {
+        const count = (res.data?.disputes || []).filter(
+          (d) => d.status !== 'resolved' && d.status !== 'rejected'
+        ).length;
+        setPendingChallenges(count);
+      })
+      .catch(() => {});
+  }, [user?.role, location.pathname]);
   const draggingRef = useRef(false);
   const widthMV = useMotionValue(EXPANDED_W);
 
@@ -107,6 +123,12 @@ export const Sidebar = () => {
       ? [
           { to: '/examiner', label: 'Examinations', icon: ClipboardCheck },
           { to: '/examiner/questions', label: 'Question Bank', icon: BookOpen },
+          {
+            to: '/examiner/challenges',
+            label: 'Challenges & Integrity',
+            icon: ShieldAlert,
+            badge: pendingChallenges,
+          },
         ]
       : user?.role === 'candidate'
       ? [
@@ -169,7 +191,7 @@ export const Sidebar = () => {
           </div>
 
           <nav className="space-y-1" style={{ perspective: 500 }}>
-            {links.map(({ to, label, icon: Icon }, idx) => {
+            {links.map(({ to, label, icon: Icon, badge }, idx) => {
               const active = location.pathname === to;
               return (
                 <div
@@ -216,9 +238,14 @@ export const Sidebar = () => {
                           damping: 28,
                           delay: reduced ? 0 : idx * 0.035,
                         }}
-                        className="relative z-10 truncate"
+                        className="relative z-10 flex items-center justify-between gap-2 flex-1 min-w-0"
                       >
-                        {label}
+                        <span className="truncate">{label}</span>
+                        {typeof badge === 'number' && badge > 0 && (
+                          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-[#0B0F0E] text-white shrink-0">
+                            {badge}
+                          </span>
+                        )}
                       </motion.span>
                     )}
                   </Link>

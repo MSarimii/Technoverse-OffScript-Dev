@@ -115,6 +115,13 @@ export const ExamGradingPage = () => {
           <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
+              variant="secondary"
+              onClick={() => navigate(`/examiner/challenges?examId=${id}`)}
+            >
+              View Challenges &amp; Integrity →
+            </Button>
+            <Button
+              size="sm"
               variant={groupBy === 'candidate' ? 'primary' : 'secondary'}
               onClick={() => setGroupBy('candidate')}
             >

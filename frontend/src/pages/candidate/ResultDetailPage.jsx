@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { attemptService } from '../../services/attemptService';
-import { Button, Dialog, Select, Textarea } from '../../components/ui';
+import { examService } from '../../services/examService';
+import { Button, Badge, Dialog, Select, Textarea } from '../../components/ui';
 import { toast } from 'sonner';
 import { Printer, ShieldCheck, ArrowLeft, ExternalLink, Copy, Flag } from 'lucide-react';
 
@@ -10,6 +11,7 @@ export const ResultDetailPage = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [disputeQ, setDisputeQ] = useState(null);
+  const [viewingResponse, setViewingResponse] = useState(null);
   const [category, setCategory] = useState('grading_error');
   const [explanation, setExplanation] = useState('');
   const [submittedDisputes, setSubmittedDisputes] = useState({});
@@ -19,7 +21,20 @@ export const ResultDetailPage = () => {
   useEffect(() => {
     attemptService
       .getCandidateResultDetail(attemptId)
-      .then((res) => setData(res.data))
+      .then(async (res) => {
+        setData(res.data);
+        const examId = res.data?.exam?.id || res.data?.attempt?.examId;
+        if (examId) {
+          const dispRes = await examService.getDisputes(examId).catch(() => null);
+          const map = {};
+          (dispRes?.data?.disputes || [])
+            .filter((d) => d.attemptId === attemptId)
+            .forEach((d) => {
+              map[d.questionId] = d;
+            });
+          setSubmittedDisputes(map);
+        }
+      })
       .catch((err) => toast.error(err.message || 'Unable to load result detail'))
       .finally(() => setLoading(false));
   }, [attemptId]);
@@ -151,17 +166,28 @@ export const ResultDetailPage = () => {
                 </span>
               </div>
               <div className="mt-3 flex items-center justify-between">
-                {submittedDisputes[q.id] ? (
-                  <span className="text-xs font-mono text-cobalt">
-                    Concern status: {submittedDisputes[q.id].status}
-                  </span>
-                ) : (
-                  <button
-                    onClick={() => setDisputeQ(q)}
-                    className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-muted hover:text-cobalt"
-                  >
-                    <Flag className="w-3.5 h-3.5" /> Raise a concern
-                  </button>
+                {submittedDisputes[q.id] ? (() => {
+                  const disp = submittedDisputes[q.id];
+                  const isUpheld = disp.status === 'resolved';
+                  const isDismissed = disp.status === 'rejected';
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => setViewingResponse(disp)}
+                      className="inline-flex items-center hover:opacity-85 transition-opacity"
+                    >
+                      <Badge
+                        tone={isUpheld ? 'success' : isDismissed ? 'neutral' : 'warning'}
+                        dot={isDismissed ? 'slate' : undefined}
+                      >
+                        {isUpheld ? 'Upheld' : isDismissed ? 'Dismissed' : 'Challenge Pending'}
+                      </Badge>
+                    </button>
+                  );
+                })() : (
+                  <Button variant="secondary" size="sm" onClick={() => setDisputeQ(q)}>
+                    <Flag className="w-3.5 h-3.5" /> Challenge Answer
+                  </Button>
                 )}
               </div>
             </div>
@@ -169,7 +195,7 @@ export const ResultDetailPage = () => {
         })}
       </div>
 
-      <Dialog open={Boolean(disputeQ)} onClose={() => setDisputeQ(null)} title="Raise a Concern">
+      <Dialog open={Boolean(disputeQ)} onClose={() => setDisputeQ(null)} title="Challenge Answer">
         <form
           onSubmit={async (e) => {
             e.preventDefault();
@@ -184,7 +210,7 @@ export const ResultDetailPage = () => {
               setSubmittedDisputes((prev) => ({ ...prev, [disputeQ.id]: res.data.dispute }));
               setDisputeQ(null);
               setExplanation('');
-              toast.success('Concern submitted for examiner review');
+              toast.success('Challenge submitted for professor review');
             } catch (err) {
               toast.error(err.message);
             } finally {
@@ -193,25 +219,70 @@ export const ResultDetailPage = () => {
           }}
           className="space-y-4"
         >
-          <Select label="Category" value={category} onChange={(e) => setCategory(e.target.value)}>
-            <option value="grading_error">Grading Error</option>
+          <Select label="Reason" value={category} onChange={(e) => setCategory(e.target.value)}>
+            <option value="grading_error">Grading Discrepancy</option>
             <option value="ambiguous_question">Ambiguous Question</option>
-            <option value="technical_incident">Technical Incident</option>
+            <option value="technical_incident">Technical / Sync Issue</option>
           </Select>
           <Textarea
-            label="Explanation (max 1,000 chars)"
+            label="Justification (max 1,000 chars)"
             required
             maxLength={1000}
             rows={4}
             value={explanation}
             onChange={(e) => setExplanation(e.target.value)}
-            placeholder="Describe the grading or technical concern clearly..."
+            placeholder="Describe the grading discrepancy or technical issue clearly..."
           />
           <div className="flex justify-end gap-2">
             <Button type="button" variant="secondary" onClick={() => setDisputeQ(null)}>Cancel</Button>
-            <Button type="submit" loading={submittingDispute}>Submit Concern</Button>
+            <Button type="submit" loading={submittingDispute}>Submit Challenge</Button>
           </div>
         </form>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(viewingResponse)}
+        onClose={() => setViewingResponse(null)}
+        title="Challenge Status & Professor Response"
+      >
+        {viewingResponse && (
+          <div className="space-y-4 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-mono uppercase text-ink-muted">Status</span>
+              <Badge
+                tone={
+                  viewingResponse.status === 'resolved'
+                    ? 'success'
+                    : viewingResponse.status === 'rejected'
+                    ? 'neutral'
+                    : 'warning'
+                }
+                dot={viewingResponse.status === 'rejected' ? 'slate' : undefined}
+              >
+                {viewingResponse.status === 'resolved'
+                  ? 'Upheld'
+                  : viewingResponse.status === 'rejected'
+                  ? 'Dismissed'
+                  : 'Challenge Pending'}
+              </Badge>
+            </div>
+            <div className="p-3.5 rounded-xl bg-canvas border border-line">
+              <div className="text-[11px] font-mono uppercase text-ink-muted mb-1">Your Justification</div>
+              <p className="text-ink">{viewingResponse.explanation}</p>
+            </div>
+            <div className="p-3.5 rounded-xl bg-canvas border border-line">
+              <div className="text-[11px] font-mono uppercase text-ink-muted mb-1">Professor Response</div>
+              <p className="text-ink">
+                {viewingResponse.reason || 'Your challenge is queued for examiner review.'}
+              </p>
+            </div>
+            <div className="flex justify-end">
+              <Button variant="secondary" onClick={() => setViewingResponse(null)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        )}
       </Dialog>
     </main>
   );

@@ -69,6 +69,9 @@ export const ExamDetailPage = () => {
                 </Button>
               </>
             )}
+            <Button variant="secondary" onClick={() => navigate(`/examiner/challenges?examId=${id}`)}>
+              View Challenges &amp; Integrity →
+            </Button>
             <Button variant="secondary" onClick={() => navigate(`/candidate/exam/${id}?sandbox=1`)}>
               <FlaskConical className="w-4 h-4 text-status-review" /> Preview as Candidate
             </Button>
