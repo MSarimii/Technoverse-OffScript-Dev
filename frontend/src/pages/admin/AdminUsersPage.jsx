@@ -8,7 +8,7 @@ import { sanitizeCell } from '../../lib/csv';
 import { Button, Input, Select, Badge, Dialog, Skeleton, EmptyState, ErrorState, Tooltip, BentoAreaChart, BentoDonutChart } from '../../components/ui';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { toast } from 'sonner';
-import { UserPlus, Search, ShieldAlert, Users, ShieldCheck, GraduationCap, BookOpen, Download, Copy, Check } from 'lucide-react';
+import { UserPlus, Search, ShieldAlert, Users, ShieldCheck, GraduationCap, BookOpen, Download, Copy, Check, Shield, ArrowRight, X } from 'lucide-react';
 
 const PAGE_SIZE = 8;
 
@@ -29,9 +29,11 @@ export const AdminUsersPage = () => {
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'candidate' });
 
   const [pendingRoleChange, setPendingRoleChange] = useState(null); // { user, nextRole }
-  const [confirmDeactivateId, setConfirmDeactivateId] = useState(null);
+  const [inspectedUserId, setInspectedUserId] = useState(null);
   const [copiedEmailId, setCopiedEmailId] = useState(null);
   const reduced = useReducedMotion();
+
+  const inspectedUser = users.find((u) => u.id === inspectedUserId) || null;
 
   const loadUsers = async () => {
     setLoading(true);
@@ -332,10 +334,9 @@ export const AdminUsersPage = () => {
           <>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
-                <thead className="bg-zinc-50/80 dark:bg-white/[0.02] border-b border-[var(--line)] text-[var(--muted)] text-[11px] uppercase font-mono tracking-[0.08em]">
+                <thead className="bg-zinc-50 dark:bg-white/[0.03] border-b border-[var(--line)] text-[var(--muted)] text-[11px] uppercase font-mono tracking-[0.08em]">
                   <tr>
-                    <th className="px-4 py-3 font-medium">Name</th>
-                    <th className="px-4 py-3 font-medium">Email</th>
+                    <th className="px-4 py-3 font-medium">User</th>
                     <th className="px-4 py-3 font-medium">Role</th>
                     <th className="px-4 py-3 font-medium">Status</th>
                     <th className="px-4 py-3 font-medium text-right">Action</th>
@@ -350,114 +351,75 @@ export const AdminUsersPage = () => {
                         key={u.id}
                         layout={!reduced}
                         transition={{ layout: { type: 'spring', stiffness: 420, damping: 34 } }}
-                        className="group hover:bg-zinc-50/80 dark:hover:bg-white/[0.025] transition-colors"
+                        onClick={() => setInspectedUserId(u.id)}
+                        className="group cursor-pointer hover:bg-zinc-50/90 dark:hover:bg-white/[0.03] transition-colors"
                       >
-                        <td className="px-4 py-3.5 font-medium text-[var(--ink)]">
-                          <div className="flex items-center gap-3">
+                        <td className="px-4 py-3.5">
+                          <div className="flex items-center gap-3 min-w-0">
                             <span
-                              className={`w-8 h-8 rounded-full font-mono text-xs font-semibold flex items-center justify-center shrink-0 ${avatarClass(u.role)}`}
+                              className={`w-9 h-9 rounded-full font-mono text-xs font-semibold flex items-center justify-center shrink-0 ${avatarClass(u.role)}`}
                             >
                               {getInitials(u.name)}
                             </span>
-                            <span>{u.name}</span>
-                            {isSelf && <Badge tone="cobalt">You</Badge>}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3.5 font-mono text-xs text-[var(--muted)]">
-                          <div className="inline-flex items-center gap-1.5">
-                            <span>{u.email}</span>
-                            <button
-                              type="button"
-                              onClick={() => handleCopyEmail(u)}
-                              aria-label={isCopied ? `Copied ${u.email}` : `Copy ${u.email}`}
-                              className={`p-1 rounded-md transition-opacity hover:bg-zinc-200/70 dark:hover:bg-white/10 ${
-                                isCopied ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus:opacity-100'
-                              }`}
-                            >
-                              {isCopied ? (
-                                <Check className="w-3.5 h-3.5 text-[#10B981]" strokeWidth={2.25} />
-                              ) : (
-                                <Copy className="w-3.5 h-3.5 text-[var(--muted)]" strokeWidth={1.75} />
-                              )}
-                            </button>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-semibold text-[var(--ink)] truncate">{u.name}</span>
+                                {isSelf && <Badge tone="cobalt">You</Badge>}
+                              </div>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className="text-xs font-mono text-[var(--muted)] truncate">{u.email}</span>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCopyEmail(u);
+                                  }}
+                                  aria-label={isCopied ? `Copied ${u.email}` : `Copy ${u.email}`}
+                                  className={`p-0.5 rounded transition-opacity hover:bg-zinc-200/70 dark:hover:bg-white/10 ${
+                                    isCopied ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus:opacity-100'
+                                  }`}
+                                >
+                                  {isCopied ? (
+                                    <Check className="w-3 h-3 text-[#10B981]" strokeWidth={2.25} />
+                                  ) : (
+                                    <Copy className="w-3 h-3 text-[var(--muted)]" strokeWidth={1.75} />
+                                  )}
+                                </button>
+                              </div>
+                            </div>
                           </div>
                         </td>
                         <td className="px-4 py-3.5">
-                          <select
-                            aria-label={`Role for ${u.name}`}
-                            disabled={isSelf}
-                            value={u.role}
-                            onChange={(e) => setPendingRoleChange({ user: u, nextRole: e.target.value })}
-                            className="h-8 px-2.5 text-xs font-medium rounded-lg bg-zinc-50/80 dark:bg-white/[0.04] border border-[var(--line)] hover:border-zinc-400 dark:hover:border-white/20 text-[var(--ink)] disabled:opacity-50 transition-colors"
-                          >
-                            <option value="candidate">candidate</option>
-                            <option value="examiner">examiner</option>
-                            <option value="admin">admin</option>
-                          </select>
+                          {u.role === 'admin' ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-[#0A0A0A] text-white dark:bg-[#F4F4F5] dark:text-[#0A0A0A]">
+                              <Shield className="w-3 h-3" strokeWidth={1.75} /> Admin
+                            </span>
+                          ) : u.role === 'examiner' ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                              <BookOpen className="w-3 h-3" strokeWidth={1.75} /> Examiner
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-zinc-100 text-zinc-700 dark:bg-white/[0.06] dark:text-zinc-300 border border-[var(--line)]">
+                              Candidate
+                            </span>
+                          )}
                         </td>
                         <td className="px-4 py-3.5">
                           <Badge tone={u.isActive ? 'success' : 'danger'}>
                             {u.isActive ? 'active' : 'inactive'}
                           </Badge>
                         </td>
-                        <td className="px-4 py-3.5 text-right relative">
-                          {isSelf ? (
-                            <Tooltip label="Current session">
-                              <button
-                                disabled
-                                className="h-8 px-3 rounded-lg text-xs font-medium border border-transparent text-[var(--muted)] opacity-40 cursor-not-allowed"
-                              >
-                                Deactivate
-                              </button>
-                            </Tooltip>
-                          ) : u.isActive ? (
-                            <div className="relative inline-block">
-                              <button
-                                type="button"
-                                onClick={() => setConfirmDeactivateId(confirmDeactivateId === u.id ? null : u.id)}
-                                className="h-8 px-3 rounded-lg text-xs font-medium border border-transparent text-[var(--muted)] hover:text-red-600 hover:bg-red-50 hover:border-red-200 dark:hover:text-red-400 dark:hover:bg-red-500/10 dark:hover:border-red-500/20 transition-colors"
-                              >
-                                Deactivate
-                              </button>
-                              <AnimatePresence>
-                                {confirmDeactivateId === u.id && (
-                                  <motion.div
-                                    initial={reduced ? { opacity: 1 } : { opacity: 0, scale: 0.94, y: -4 }}
-                                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                                    exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.94, y: -4 }}
-                                    transition={{ type: 'spring', stiffness: 450, damping: 28 }}
-                                    style={{ transformOrigin: 'top right' }}
-                                    className="absolute right-0 top-9 z-30 w-52 p-3 rounded-xl luxury-card text-left space-y-2"
-                                  >
-                                    <p className="text-xs font-medium text-ink">Deactivate user?</p>
-                                    <div className="flex justify-end gap-1.5">
-                                      <Button size="sm" variant="secondary" onClick={() => setConfirmDeactivateId(null)}>
-                                        Cancel
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="danger"
-                                        onClick={() => {
-                                          setConfirmDeactivateId(null);
-                                          handleToggleActive(u);
-                                        }}
-                                      >
-                                        Confirm
-                                      </Button>
-                                    </div>
-                                  </motion.div>
-                                )}
-                              </AnimatePresence>
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => handleToggleActive(u)}
-                              className="h-8 px-3 rounded-lg text-xs font-medium border border-transparent text-[#059669] dark:text-emerald-400 hover:bg-emerald-50 hover:border-emerald-200 dark:hover:bg-emerald-500/10 dark:hover:border-emerald-500/20 transition-colors"
-                            >
-                              Activate
-                            </button>
-                          )}
+                        <td className="px-4 py-3.5 text-right">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setInspectedUserId(u.id);
+                            }}
+                            className="h-8 px-3 rounded-lg text-xs font-medium text-[var(--muted)] group-hover:text-[var(--ink)] hover:bg-zinc-100 dark:hover:bg-white/5 inline-flex items-center gap-1 transition-colors"
+                          >
+                            Manage <ArrowRight className="w-3.5 h-3.5" />
+                          </button>
                         </td>
                       </motion.tr>
                     );
@@ -508,6 +470,106 @@ export const AdminUsersPage = () => {
           </>
         )}
       </div>
+
+      {/* User Inspector Slide-Over Drawer */}
+      {inspectedUser && (
+        <div
+          className="fixed inset-0 z-40 flex justify-end bg-black/30 backdrop-blur-xs"
+          onClick={() => setInspectedUserId(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="User Inspector"
+        >
+          <aside
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md h-full bg-[var(--surface)] border-l border-[var(--line)] text-[var(--ink)] shadow-2xl p-6 overflow-y-auto flex flex-col justify-between gap-6"
+          >
+            <div className="space-y-6">
+              <div className="flex items-center justify-between pb-4 border-b border-[var(--line)]">
+                <div>
+                  <p className="text-[11px] font-mono uppercase tracking-widest text-[var(--muted)]">Identity Directory</p>
+                  <h2 className="font-display font-bold text-lg text-[var(--ink)] tracking-[-0.02em]">
+                    User Inspector
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setInspectedUserId(null)}
+                  aria-label="Close inspector"
+                  className="p-2 rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="flex items-center gap-3.5 p-4 rounded-xl bg-canvas border border-[var(--line)]">
+                <span
+                  className={`w-11 h-11 rounded-full font-mono text-sm font-semibold flex items-center justify-center shrink-0 ${avatarClass(inspectedUser.role)}`}
+                >
+                  {getInitials(inspectedUser.name)}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-base text-[var(--ink)] truncate">{inspectedUser.name}</span>
+                    {inspectedUser.id === currentUser?.id && <Badge tone="cobalt">You</Badge>}
+                  </div>
+                  <div className="text-xs font-mono text-[var(--muted)] truncate mt-0.5">{inspectedUser.email}</div>
+                </div>
+                <Badge tone={inspectedUser.isActive ? 'success' : 'danger'}>
+                  {inspectedUser.isActive ? 'active' : 'inactive'}
+                </Badge>
+              </div>
+
+              <div className="space-y-2">
+                <label
+                  htmlFor="inspector-role-select"
+                  className="block text-[11px] font-mono uppercase tracking-wider text-[var(--muted)]"
+                >
+                  Change Role
+                </label>
+                <select
+                  id="inspector-role-select"
+                  disabled={inspectedUser.id === currentUser?.id}
+                  value={inspectedUser.role}
+                  onChange={(e) => setPendingRoleChange({ user: inspectedUser, nextRole: e.target.value })}
+                  className="w-full h-10 px-3 text-sm font-medium rounded-lg bg-canvas border border-[var(--line)] text-[var(--ink)] disabled:opacity-50"
+                >
+                  <option value="candidate">Candidate</option>
+                  <option value="examiner">Examiner</option>
+                  <option value="admin">Administrator</option>
+                </select>
+                {inspectedUser.id === currentUser?.id && (
+                  <p className="text-[11px] font-mono text-[var(--muted)]">
+                    Self-lockout protection prevents modifying your own role.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-[var(--line)] flex items-center justify-between gap-3">
+              <Button variant="secondary" onClick={() => setInspectedUserId(null)}>
+                Close
+              </Button>
+              {inspectedUser.id === currentUser?.id ? (
+                <button
+                  type="button"
+                  disabled
+                  className="h-10 px-4 rounded-lg text-xs font-semibold border border-[var(--line)] text-[var(--muted)] opacity-45 cursor-not-allowed"
+                >
+                  Deactivate Account
+                </button>
+              ) : (
+                <Button
+                  variant={inspectedUser.isActive ? 'danger' : 'emerald'}
+                  onClick={() => handleToggleActive(inspectedUser)}
+                >
+                  {inspectedUser.isActive ? 'Deactivate Account' : 'Reactivate Account'}
+                </Button>
+              )}
+            </div>
+          </aside>
+        </div>
+      )}
 
       {/* Create User Dialog */}
       <Dialog open={showCreate} onClose={() => setShowCreate(false)} title="Provision User Account">
