@@ -16,7 +16,7 @@ function formatCountdown(ms) {
 
 export const CandidateExamsPage = () => {
   const navigate = useNavigate();
-  const [exams, setExams] = useState([]);
+  const [buckets, setBuckets] = useState({ available: [], upcoming: [], completed: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [tab, setTab] = useState('available');
@@ -27,7 +27,25 @@ export const CandidateExamsPage = () => {
     setError('');
     try {
       const res = await attemptService.getCandidateExams();
-      setExams(res.data?.exams || []);
+      const d = res.data || {};
+      if (Array.isArray(d.available) || Array.isArray(d.upcoming) || Array.isArray(d.completed)) {
+        setBuckets({
+          available: d.available || [],
+          upcoming: d.upcoming || [],
+          completed: d.completed || [],
+        });
+      } else {
+        const exams = d.exams || [];
+        setBuckets({
+          available: exams.filter(
+            (e) => (e.effectiveStatus || e.derivedStatus) === 'ongoing' && !['submitted', 'graded', 'expired'].includes(e.attemptStatus)
+          ),
+          upcoming: exams.filter((e) => (e.effectiveStatus || e.derivedStatus) === 'published'),
+          completed: exams.filter(
+            (e) => (e.effectiveStatus || e.derivedStatus) === 'completed' || ['submitted', 'graded', 'expired'].includes(e.attemptStatus)
+          ),
+        });
+      }
     } catch (err) {
       setError(err.message || 'Failed to load exams');
     } finally {
@@ -41,14 +59,7 @@ export const CandidateExamsPage = () => {
     return () => clearInterval(id);
   }, []);
 
-  const available = exams.filter(
-    (e) => e.derivedStatus === 'ongoing' && e.attemptStatus !== 'submitted' && e.attemptStatus !== 'graded'
-  );
-  const upcoming = exams.filter((e) => e.derivedStatus === 'published');
-  const completed = exams.filter(
-    (e) => e.derivedStatus === 'completed' || e.attemptStatus === 'submitted' || e.attemptStatus === 'graded'
-  );
-
+  const { available, upcoming, completed } = buckets;
   const visible = tab === 'available' ? available : tab === 'upcoming' ? upcoming : completed;
 
   return (
@@ -81,28 +92,28 @@ export const CandidateExamsPage = () => {
       ) : (
         <div className="space-y-4">
           {visible.map((exam) => {
+            const st = exam.effectiveStatus || exam.derivedStatus || 'published';
             const opensInMs = Date.parse(exam.startAt) - nowMs;
             const accessReason =
-              exam.attemptStatus === 'submitted' || exam.attemptStatus === 'graded'
-                ? 'Already submitted'
-                : exam.derivedStatus === 'published'
+              exam.accessReason ||
+              (['submitted', 'graded', 'expired'].includes(exam.attemptStatus)
+                ? 'Already finalized'
+                : st === 'published'
                 ? formatCountdown(opensInMs)
-                : exam.derivedStatus === 'completed'
+                : st === 'completed'
                 ? 'Closed'
-                : 'Open for entry';
+                : 'Open for entry');
 
             return (
               <article
                 key={exam.id}
                 className={`luxury-card luxury-card-hover rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t-2 ${
-                  exam.derivedStatus === 'ongoing' ? 'border-t-[#059669]' : 'border-t-[#0B0F0E]'
+                  st === 'ongoing' ? 'border-t-[#059669]' : 'border-t-[#0B0F0E]'
                 }`}
               >
                 <div className="space-y-1.5 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge tone={exam.derivedStatus === 'ongoing' ? 'cobalt' : 'neutral'}>
-                      {exam.derivedStatus}
-                    </Badge>
+                    <Badge tone={st === 'ongoing' ? 'cobalt' : 'neutral'}>{st}</Badge>
                     {exam.attemptStatus === 'in_progress' && <Badge tone="warning">In Progress</Badge>}
                     <span className="text-xs font-mono text-ink-muted">{accessReason}</span>
                   </div>
@@ -112,7 +123,7 @@ export const CandidateExamsPage = () => {
                   )}
                   <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-ink-muted">
                     <span className="inline-flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5" /> {exam.durationMin} min
+                      <Clock className="w-3.5 h-3.5" /> {exam.durationMinutes ?? exam.durationMin} min
                     </span>
                     <span>{exam.totalMarks} marks</span>
                     <span className="inline-flex items-center gap-1">

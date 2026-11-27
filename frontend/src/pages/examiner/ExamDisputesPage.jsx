@@ -12,8 +12,8 @@ export const ExamDisputesPage = () => {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
   const [selected, setSelected] = useState(null);
-  const [reason, setReason] = useState('');
-  const [newMarks, setNewMarks] = useState('');
+  const [resolutionNote, setResolutionNote] = useState('');
+  const [adjustedScore, setAdjustedScore] = useState('');
   const [resolving, setResolving] = useState(false);
 
   const load = async () => {
@@ -37,20 +37,20 @@ export const ExamDisputesPage = () => {
   }, [id]);
 
   const handleResolve = async (status) => {
-    if (!selected || !reason.trim()) {
-      toast.error('A resolution reason is required for the audit trail.');
+    if (!selected || !resolutionNote.trim()) {
+      toast.error('A resolution note is required for the audit trail.');
       return;
     }
     setResolving(true);
     try {
       await examService.resolveDispute(selected.id, {
         status,
-        reason: reason.trim(),
-        newMarks: status === 'resolved' && newMarks !== '' ? Number(newMarks) : undefined,
+        resolutionNote: resolutionNote.trim(),
+        ...(status === 'accepted' && adjustedScore !== '' ? { adjustedScore: Number(adjustedScore) } : {}),
       });
       toast.success(`Dispute marked ${status}`);
-      setReason('');
-      setNewMarks('');
+      setResolutionNote('');
+      setAdjustedScore('');
       load();
     } catch (err) {
       toast.error(err.message);
@@ -65,14 +65,14 @@ export const ExamDisputesPage = () => {
     <main className="space-y-6">
       <PageHeader
         title="5.4 Trust & Dispute Resolution"
-        subtitle="Original grade preserved; changes are versioned and attributable."
+        subtitle="Original grade preserved; adjustments recalculate totals & HMAC report verification."
         breadcrumbs={[{ label: 'Examiner', to: '/examiner' }, { label: 'Disputes Inbox' }]}
         actions={
           <Select aria-label="Filter disputes" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
             <option value="all">All Statuses</option>
-            <option value="submitted">Submitted</option>
+            <option value="open">Open</option>
             <option value="under_review">Under Review</option>
-            <option value="resolved">Resolved</option>
+            <option value="accepted">Accepted</option>
             <option value="rejected">Rejected</option>
           </Select>
         }
@@ -94,12 +94,12 @@ export const ExamDisputesPage = () => {
                 }`}
               >
                 <div className="flex items-center justify-between gap-2 mb-1">
-                  <span className="font-semibold text-sm text-ink">{d.candidateName}</span>
-                  <Badge tone={d.status === 'resolved' ? 'success' : d.status === 'rejected' ? 'danger' : 'warning'}>
+                  <span className="font-semibold text-sm text-ink">{d.candidate?.name || d.candidateName || 'Candidate'}</span>
+                  <Badge tone={d.status === 'accepted' ? 'success' : d.status === 'rejected' ? 'danger' : 'warning'}>
                     {d.status}
                   </Badge>
                 </div>
-                <p className="text-xs font-mono text-ink-muted">{d.category}</p>
+                <p className="text-xs font-mono text-ink-muted truncate">{d.question?.text || d.questionId}</p>
               </button>
             ))}
           </aside>
@@ -108,61 +108,52 @@ export const ExamDisputesPage = () => {
             <section className="lg:col-span-2 bg-surface border border-line rounded-xl p-6 space-y-5">
               <div className="border-b border-line pb-3">
                 <div className="flex items-center gap-2 text-xs font-mono text-cobalt mb-1">
-                  <Scale className="w-4 h-4" /> Side-by-Side Review
+                  <Scale className="w-4 h-4" /> Dispute Review
                 </div>
-                <h2 className="font-semibold text-base text-ink">{selected.questionText}</h2>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                <div className="p-3.5 rounded-lg bg-canvas border border-line">
-                  <div className="text-xs font-mono text-ink-muted mb-1">Candidate Response</div>
-                  <p className="text-ink">{selected.candidateAnswer}</p>
-                </div>
-                <div className="p-3.5 rounded-lg bg-canvas border border-line">
-                  <div className="text-xs font-mono text-ink-muted mb-1">Rubric / Max ({selected.maxMarks})</div>
-                  <p className="text-ink">{selected.rubric || 'Objective marking scheme'}</p>
-                </div>
+                <h2 className="font-semibold text-base text-ink">{selected.question?.text || `Question ${selected.questionId}`}</h2>
+                {selected.question?.marks !== undefined && (
+                  <p className="text-xs font-mono text-ink-muted mt-1">Max Marks: {selected.question.marks}</p>
+                )}
               </div>
 
               <div className="p-3.5 rounded-lg bg-amber-50/70 border border-amber-200 text-xs">
-                <strong className="block mb-1">Candidate&apos;s Concern ({selected.category}):</strong>
-                {selected.explanation}
+                <strong className="block mb-1">Candidate&apos;s Concern:</strong>
+                {selected.reason}
               </div>
 
-              {/* Immutable Grade Version Audit Trail */}
-              <div className="space-y-2">
-                <h3 className="text-xs font-mono uppercase text-ink-muted">Grade Version Audit Trail</h3>
-                {(selected.gradeVersions || []).map((v) => (
-                  <div key={v.version} className="flex items-center justify-between text-xs font-mono p-2.5 rounded bg-canvas border border-line">
-                    <span>v{v.version}: <strong>{v.marks}</strong> marks — {v.reason}</span>
-                    <span className="text-ink-muted">{new Date(v.at).toLocaleString()}</span>
-                  </div>
-                ))}
-              </div>
+              {selected.resolutionNote && (
+                <div className="p-3.5 rounded-lg bg-canvas border border-line text-xs font-mono space-y-1">
+                  <div>Status: <strong>{selected.status}</strong></div>
+                  <div>Note: {selected.resolutionNote}</div>
+                  {selected.adjustedScore !== null && selected.adjustedScore !== undefined && (
+                    <div>Adjusted Score: <strong>{selected.adjustedScore}</strong></div>
+                  )}
+                </div>
+              )}
 
               <div className="pt-3 border-t border-line space-y-3">
                 <Textarea
-                  label="Resolution Reason (Required)"
+                  label="Resolution Note (Required)"
                   rows={2}
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
+                  value={resolutionNote}
+                  onChange={(e) => setResolutionNote(e.target.value)}
                   placeholder="Explain decision for audit trail..."
                 />
                 <Input
-                  label={`Optional Re-grade Marks (0 – ${selected.maxMarks}, creates new version)`}
+                  label={`Optional Adjusted Score (0 – ${selected.question?.marks ?? 100})`}
                   type="number"
                   min={0}
-                  max={selected.maxMarks}
-                  step={0.5}
-                  value={newMarks}
-                  onChange={(e) => setNewMarks(e.target.value)}
+                  max={selected.question?.marks}
+                  step={0.25}
+                  value={adjustedScore}
+                  onChange={(e) => setAdjustedScore(e.target.value)}
                 />
                 <div className="flex flex-wrap justify-end gap-2">
                   <Button variant="danger" loading={resolving} onClick={() => handleResolve('rejected')}>
                     <XCircle className="w-4 h-4" /> Reject Concern
                   </Button>
-                  <Button loading={resolving} onClick={() => handleResolve('resolved')}>
-                    <CheckCircle2 className="w-4 h-4" /> Resolve & Version Grade
+                  <Button loading={resolving} onClick={() => handleResolve('accepted')}>
+                    <CheckCircle2 className="w-4 h-4" /> Accept & Resolve
                   </Button>
                 </div>
               </div>

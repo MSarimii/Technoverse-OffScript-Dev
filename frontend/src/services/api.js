@@ -1,11 +1,23 @@
 import axios from 'axios';
 import { mapErrorCodeToCopy } from '../lib/errors';
 
-export const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false';
+export const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 
 let memoryToken = null;
 export function setMemoryToken(tok) {
   memoryToken = tok;
+}
+
+export function getTabSessionId() {
+  if (typeof sessionStorage === 'undefined') return 'tab-default';
+  let sid = sessionStorage.getItem('sems_tab_session_id');
+  if (!sid) {
+    sid = (typeof crypto !== 'undefined' && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : `sess-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    sessionStorage.setItem('sems_tab_session_id', sid);
+  }
+  return sid;
 }
 
 export function normalizeApiError(error) {
@@ -22,12 +34,22 @@ export function normalizeApiError(error) {
   const payload = error.response?.data;
   const errObj = payload?.error || {};
   const code = errObj.code || payload?.code || 'UNKNOWN_ERROR';
-  const message = mapErrorCodeToCopy(code, errObj.message || payload?.message || error.message);
+  const detailsFields = Array.isArray(errObj.details)
+    ? errObj.details.reduce((acc, d) => {
+        if (d?.path) acc[d.path] = d.message;
+        return acc;
+      }, {})
+    : {};
+  const firstDetail = Array.isArray(errObj.details) && errObj.details[0]?.message
+    ? `: ${errObj.details[0].message}`
+    : '';
+  const rawMessage = (errObj.message || payload?.message || error.message) + (firstDetail && !errObj.message?.includes(firstDetail) ? firstDetail : '');
+  const message = mapErrorCodeToCopy(code, rawMessage);
 
   return {
     code,
     message,
-    fields: errObj.fields || {},
+    fields: { ...detailsFields, ...(errObj.fields || {}) },
     statusCode: error.response?.status || error.statusCode || 500,
     isNetworkError: false,
   };
@@ -47,6 +69,7 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    config.headers['x-session-id'] = getTabSessionId();
     return config;
   },
   (error) => Promise.reject(error)

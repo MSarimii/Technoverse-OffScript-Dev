@@ -20,20 +20,28 @@ export const AdminUsersPage = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(1);
 
+  const [overview, setOverview] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'candidate' });
 
   const [pendingRoleChange, setPendingRoleChange] = useState(null); // { user, nextRole }
   const [confirmDeactivateId, setConfirmDeactivateId] = useState(null);
+  const [resetTarget, setResetTarget] = useState(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [resetting, setResetting] = useState(false);
   const reduced = useReducedMotion();
 
   const loadUsers = async () => {
     setLoading(true);
     setError('');
     try {
-      const res = await adminService.getUsers();
+      const [res, ovRes] = await Promise.all([
+        adminService.getUsers(),
+        adminService.getOverview().catch(() => null),
+      ]);
       setUsers(res.data?.users || []);
+      if (ovRes?.data) setOverview(ovRes.data);
     } catch (err) {
       setError(err.message || 'Failed to load users');
     } finally {
@@ -113,9 +121,26 @@ export const AdminUsersPage = () => {
   const safePage = Math.min(page, totalPages);
   const paged = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
-  const adminCount = users.filter((u) => u.role === 'admin').length;
-  const examinerCount = users.filter((u) => u.role === 'examiner').length;
-  const candidateCount = users.filter((u) => u.role === 'candidate').length;
+  const adminCount = overview?.users?.byRole?.admin ?? users.filter((u) => u.role === 'admin').length;
+  const examinerCount = overview?.users?.byRole?.examiner ?? users.filter((u) => u.role === 'examiner').length;
+  const candidateCount = overview?.users?.byRole?.candidate ?? users.filter((u) => u.role === 'candidate').length;
+  const totalCount = overview?.users?.total ?? users.length;
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    if (!resetTarget || resetting) return;
+    setResetting(true);
+    try {
+      await adminService.resetPassword(resetTarget.id, newPassword);
+      toast.success(`Password reset for ${resetTarget.name}`);
+      setResetTarget(null);
+      setNewPassword('');
+    } catch (err) {
+      toast.error(err.message || 'Password reset failed');
+    } finally {
+      setResetting(false);
+    }
+  };
 
   const avatarClass = (role) =>
     role === 'admin'
@@ -143,7 +168,7 @@ export const AdminUsersPage = () => {
         className="grid grid-cols-2 sm:grid-cols-4 border border-line border-t-2 border-t-[#0B0F0E] divide-y sm:divide-y-0 sm:divide-x divide-line luxury-card rounded-2xl overflow-hidden"
       >
         {[
-          { label: 'Total Accounts', val: users.length, accent: 'text-[#0B0F0E]' },
+          { label: 'Total Accounts', val: totalCount, accent: 'text-[#0B0F0E]' },
           { label: 'Administrators', val: adminCount, accent: 'text-[#0B0F0E]' },
           { label: 'Examiners', val: examinerCount, accent: 'text-[#059669]' },
           { label: 'Candidates', val: candidateCount, accent: 'text-[#0B0F0E]' },
@@ -268,63 +293,75 @@ export const AdminUsersPage = () => {
                           </Badge>
                         </td>
                         <td className="px-4 py-3 text-right relative">
-                          {isSelf ? (
-                            <Tooltip label="Current session">
-                              <button
-                                disabled
-                                className="px-2.5 py-1 rounded-full text-xs font-medium text-[#64748B] opacity-45 cursor-not-allowed"
-                              >
-                                Deactivate
-                              </button>
-                            </Tooltip>
-                          ) : u.isActive ? (
-                            <div className="relative inline-block">
-                              <button
-                                type="button"
-                                onClick={() => setConfirmDeactivateId(confirmDeactivateId === u.id ? null : u.id)}
-                                className="px-2.5 py-1 rounded-full text-xs font-medium text-[#64748B] hover:text-[#DC2626] hover:bg-[#FEF2F2] transition-colors"
-                              >
-                                Deactivate
-                              </button>
-                              <AnimatePresence>
-                                {confirmDeactivateId === u.id && (
-                                  <motion.div
-                                    initial={reduced ? { opacity: 1 } : { opacity: 0, scale: 0.94, y: -4 }}
-                                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                                    exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.94, y: -4 }}
-                                    transition={{ type: 'spring', stiffness: 450, damping: 28 }}
-                                    style={{ transformOrigin: 'top right' }}
-                                    className="absolute right-0 top-9 z-30 w-52 p-3 rounded-xl luxury-card text-left space-y-2"
-                                  >
-                                    <p className="text-xs font-medium text-ink">Deactivate user?</p>
-                                    <div className="flex justify-end gap-1.5">
-                                      <Button size="sm" variant="secondary" onClick={() => setConfirmDeactivateId(null)}>
-                                        Cancel
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="danger"
-                                        onClick={() => {
-                                          setConfirmDeactivateId(null);
-                                          handleToggleActive(u);
-                                        }}
-                                      >
-                                        Confirm
-                                      </Button>
-                                    </div>
-                                  </motion.div>
-                                )}
-                              </AnimatePresence>
-                            </div>
-                          ) : (
+                          <div className="inline-flex items-center justify-end gap-1.5">
                             <button
                               type="button"
-                              onClick={() => handleToggleActive(u)}
-                              className="px-2.5 py-1 rounded-full text-xs font-medium text-[#059669] hover:bg-[#ECFDF5] transition-colors"
+                              onClick={() => {
+                                setResetTarget(u);
+                                setNewPassword('');
+                              }}
+                              className="px-2.5 py-1 rounded-full text-xs font-medium text-ink-muted hover:text-ink hover:bg-subtle transition-colors"
                             >
-                              Activate
+                              Reset Pw
                             </button>
-                          )}
+                            {isSelf ? (
+                              <Tooltip label="Current session">
+                                <button
+                                  disabled
+                                  className="px-2.5 py-1 rounded-full text-xs font-medium text-[#64748B] opacity-45 cursor-not-allowed"
+                                >
+                                  Deactivate
+                                </button>
+                              </Tooltip>
+                            ) : u.isActive ? (
+                              <div className="relative inline-block">
+                                <button
+                                  type="button"
+                                  onClick={() => setConfirmDeactivateId(confirmDeactivateId === u.id ? null : u.id)}
+                                  className="px-2.5 py-1 rounded-full text-xs font-medium text-[#64748B] hover:text-[#DC2626] hover:bg-[#FEF2F2] transition-colors"
+                                >
+                                  Deactivate
+                                </button>
+                                <AnimatePresence>
+                                  {confirmDeactivateId === u.id && (
+                                    <motion.div
+                                      initial={reduced ? { opacity: 1 } : { opacity: 0, scale: 0.94, y: -4 }}
+                                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                                      exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.94, y: -4 }}
+                                      transition={{ type: 'spring', stiffness: 450, damping: 28 }}
+                                      style={{ transformOrigin: 'top right' }}
+                                      className="absolute right-0 top-9 z-30 w-52 p-3 rounded-xl luxury-card text-left space-y-2"
+                                    >
+                                      <p className="text-xs font-medium text-ink">Deactivate user?</p>
+                                      <div className="flex justify-end gap-1.5">
+                                        <Button size="sm" variant="secondary" onClick={() => setConfirmDeactivateId(null)}>
+                                          Cancel
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="danger"
+                                          onClick={() => {
+                                            setConfirmDeactivateId(null);
+                                            handleToggleActive(u);
+                                          }}
+                                        >
+                                          Confirm
+                                        </Button>
+                                      </div>
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleToggleActive(u)}
+                                className="px-2.5 py-1 rounded-full text-xs font-medium text-[#059669] hover:bg-[#ECFDF5] transition-colors"
+                              >
+                                Activate
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -431,6 +468,33 @@ export const AdminUsersPage = () => {
             </div>
           </div>
         )}
+      </Dialog>
+
+      {/* Reset Password Dialog */}
+      <Dialog
+        open={Boolean(resetTarget)}
+        onClose={() => setResetTarget(null)}
+        title={resetTarget ? `Reset Password — ${resetTarget.name}` : 'Reset Password'}
+      >
+        <form onSubmit={handleResetPassword} className="space-y-4">
+          <Input
+            label="New Password"
+            type="password"
+            required
+            minLength={8}
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            placeholder="Minimum 8 characters"
+          />
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="secondary" onClick={() => setResetTarget(null)}>
+              Cancel
+            </Button>
+            <Button type="submit" loading={resetting}>
+              Update Password
+            </Button>
+          </div>
+        </form>
       </Dialog>
     </main>
   );

@@ -16,9 +16,9 @@ const loginSchema = z.object({
 });
 
 const DEMO_ACCOUNTS = [
-  { label: 'Candidate', name: 'Zainab Khan', email: 'candidate@sems.edu' },
-  { label: 'Examiner', name: 'Prof. Ayesha Siddiqui', email: 'examiner@sems.edu' },
-  { label: 'Admin', name: 'Dr. Tariq Mahmood', email: 'admin@sems.edu' },
+  { label: 'Candidate', name: 'Candidate One', email: 'candidate1@sems.edu' },
+  { label: 'Examiner', name: 'Examiner One', email: 'examiner1@sems.edu' },
+  { label: 'Admin', name: 'SEMS Administrator', email: 'admin@sems.edu' },
 ];
 
 export const LoginPage = () => {
@@ -53,7 +53,7 @@ export const LoginPage = () => {
   const handleDemoLogin = async (demoEmail) => {
     setServerError('');
     try {
-      const user = await login(demoEmail, 'demo1234');
+      const user = await login(demoEmail, 'Pass1234!');
       toast.success(`Signed in as ${user.name} (${user.role})`);
       navigate(getRoleHome(user.role), { replace: true });
     } catch (err) {

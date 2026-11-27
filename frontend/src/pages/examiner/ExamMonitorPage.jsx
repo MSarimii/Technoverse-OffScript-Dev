@@ -10,6 +10,7 @@ import { Megaphone, AlertCircle, Wifi, RefreshCw } from 'lucide-react';
 export const ExamMonitorPage = () => {
   const { id } = useParams();
   const [attempts, setAttempts] = useState([]);
+  const [incidents, setIncidents] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
@@ -18,9 +19,14 @@ export const ExamMonitorPage = () => {
   const [selectedAttempt, setSelectedAttempt] = useState(null);
 
   const fetchMonitor = useCallback(async () => {
-    const res = await examService.getMonitor(id);
-    setAttempts(res.data?.attempts || []);
-    setAnnouncements(res.data?.announcements || []);
+    const [monRes, annRes, incRes] = await Promise.all([
+      examService.getMonitor(id),
+      examService.getAnnouncements(id).catch(() => ({ data: { announcements: [] } })),
+      examService.getIncidents(id).catch(() => ({ data: { incidents: [] } })),
+    ]);
+    setAttempts(monRes.data?.attempts || []);
+    setAnnouncements(annRes.data?.announcements || monRes.data?.announcements || []);
+    setIncidents(incRes.data?.incidents || []);
   }, [id]);
 
   const { lastSyncedAt, pollError, refresh } = usePolling(fetchMonitor, 4000, true);
@@ -41,14 +47,29 @@ export const ExamMonitorPage = () => {
     }
   };
 
+  const handleReviewIncident = async (incidentId, reviewStatus) => {
+    try {
+      await examService.reviewIncident(incidentId, { reviewStatus });
+      toast.success(`Incident marked ${reviewStatus}`);
+      refresh();
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
   const inProgressCount = attempts.filter((a) => a.status === 'in_progress').length;
-  const submittedCount = attempts.filter((a) => a.status === 'submitted' || a.status === 'graded').length;
+  const submittedCount = attempts.filter((a) => ['submitted', 'graded', 'expired'].includes(a.status)).length;
 
   const filtered = attempts.filter((a) => {
+    const name = a.candidate?.name || a.candidateName || '';
     const matchState = filterState === 'all' || a.status === filterState;
-    const matchText = !search || a.candidateName.toLowerCase().includes(search.toLowerCase());
+    const matchText = !search || name.toLowerCase().includes(search.toLowerCase());
     return matchState && matchText;
   });
+
+  const selectedIncidents = selectedAttempt
+    ? incidents.filter((inc) => inc.attemptId === selectedAttempt.attemptId)
+    : [];
 
   return (
     <main className="space-y-6">
@@ -87,7 +108,7 @@ export const ExamMonitorPage = () => {
           <div className="font-display font-bold text-3xl text-[#059669] tabular-nums mt-1">{inProgressCount}</div>
         </div>
         <div className="bg-surface border border-line rounded-2xl p-4">
-          <div className="text-xs font-mono text-ink-muted uppercase">Submitted</div>
+          <div className="text-xs font-mono text-ink-muted uppercase">Finalized</div>
           <div className="font-display font-bold text-3xl text-status-answered tabular-nums mt-1">{submittedCount}</div>
         </div>
       </section>
@@ -110,6 +131,7 @@ export const ExamMonitorPage = () => {
               <option value="in_progress">In Progress</option>
               <option value="submitted">Submitted</option>
               <option value="graded">Graded</option>
+              <option value="expired">Expired</option>
             </select>
           </div>
           <div className="overflow-x-auto">
@@ -131,14 +153,17 @@ export const ExamMonitorPage = () => {
                   </tr>
                 ) : (
                   filtered.map((a) => {
+                    const name = a.candidate?.name || a.candidateName || 'Candidate';
                     const pct = a.totalQuestions ? Math.round((a.answeredCount / a.totalQuestions) * 100) : 0;
+                    const gapCount = a.connectionGapCount ?? 0;
+                    const incCount = a.incidentCount ?? a.events?.length ?? 0;
                     return (
                       <tr
                         key={a.attemptId}
                         onClick={() => setSelectedAttempt(a)}
                         className="hover:bg-canvas/70 cursor-pointer"
                       >
-                        <td className="px-4 py-3 font-medium text-ink">{a.candidateName}</td>
+                        <td className="px-4 py-3 font-medium text-ink">{name}</td>
                         <td className="px-4 py-3 font-mono text-xs">{a.status}</td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2 font-mono text-xs">
@@ -149,10 +174,10 @@ export const ExamMonitorPage = () => {
                           </div>
                         </td>
                         <td className="px-4 py-3 text-xs font-mono text-ink-muted">
-                          {a.lateSyncedCount > 0 && (
-                            <Badge tone="warning" className="mr-1">{a.lateSyncedCount} late</Badge>
+                          {gapCount > 0 && (
+                            <Badge tone="warning" className="mr-1">{gapCount} gap(s)</Badge>
                           )}
-                          {a.events?.length || 0} event(s)
+                          {incCount} event(s)
                         </td>
                       </tr>
                     );
@@ -187,8 +212,8 @@ export const ExamMonitorPage = () => {
             <ol className="text-xs text-ink-muted space-y-1.5 list-decimal list-inside">
               <li>Server sets an immutable <code className="font-mono">deadlineAt</code> at attempt start.</li>
               <li>Candidate answers queue locally with monotonic <code className="font-mono">seq</code> during outages.</li>
-              <li>On reconnect, queued answers flush in order within a bounded 3-min late-sync window.</li>
-              <li>Trade-off: no extra time is ever granted; late-synced answers are flagged for review.</li>
+              <li>On reconnect, queued answers flush in order within a bounded late-sync window.</li>
+              <li>Trade-off: no extra time is ever granted; connection gaps are logged for review.</li>
             </ol>
           </div>
 
@@ -213,40 +238,42 @@ export const ExamMonitorPage = () => {
       <Drawer
         open={Boolean(selectedAttempt)}
         onClose={() => setSelectedAttempt(null)}
-        title={selectedAttempt ? `${selectedAttempt.candidateName} — Timeline` : 'Attempt Timeline'}
+        title={selectedAttempt ? `${selectedAttempt.candidate?.name || selectedAttempt.candidateName} — Timeline` : 'Attempt Timeline'}
       >
         {selectedAttempt && (
           <div className="space-y-3 text-xs font-mono">
             <div>Status: <strong>{selectedAttempt.status}</strong></div>
             <div>Progress: {selectedAttempt.answeredCount}/{selectedAttempt.totalQuestions}</div>
+            <div>Last Heartbeat: {selectedAttempt.lastHeartbeatAt ? new Date(selectedAttempt.lastHeartbeatAt).toLocaleTimeString() : '—'}</div>
             <div className="pt-2 border-t border-line">
-              <div className="text-ink-muted mb-1">Connectivity Timeline (5.3)</div>
+              <div className="text-ink-muted mb-1">Connectivity Summary (5.3)</div>
               <p className="text-[11px] text-ink-muted mb-2">Gaps are context, not evidence of misconduct.</p>
-              <div className="h-3 w-full rounded bg-emerald-200 overflow-hidden flex mb-2" aria-label="Connectivity strip">
-                <div className="bg-status-answered flex-1" />
-                {(selectedAttempt.connectivityLedger || []).map((_, idx) => (
-                  <div key={idx} className="bg-status-review w-6" title="Disconnected interval" />
-                ))}
-                <div className="bg-status-answered flex-1" />
+              <div className="p-2 rounded bg-canvas border border-line">
+                Recorded connection gaps: <strong>{selectedAttempt.connectionGapCount ?? 0}</strong>
               </div>
-              {(selectedAttempt.connectivityLedger || []).length === 0 ? (
-                <p className="text-ink-muted">Continuous connection — no recorded outages.</p>
-              ) : (
-                selectedAttempt.connectivityLedger.map((gap, i) => (
-                  <div key={i} className="p-2 rounded bg-canvas border border-line mb-1">
-                    Outage: {gap.durationSec}s · Late-synced: {selectedAttempt.lateSyncedCount || 0}
-                  </div>
-                ))
-              )}
             </div>
             <div className="pt-2 border-t border-line">
-              <div className="text-ink-muted mb-1">Activity Indicators</div>
-              {(selectedAttempt.events || []).length === 0 ? (
+              <div className="text-ink-muted mb-1">Activity Indicators ({selectedIncidents.length})</div>
+              {selectedIncidents.length === 0 ? (
                 <p className="text-ink-muted">No indicators recorded.</p>
               ) : (
-                selectedAttempt.events.map((ev, i) => (
-                  <div key={i} className="p-2 rounded bg-canvas border border-line mb-1">
-                    {ev.type} · {new Date(ev.at).toLocaleTimeString()}
+                selectedIncidents.map((inc) => (
+                  <div key={inc.id} className="p-2.5 rounded bg-canvas border border-line mb-2 space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span>{inc.type}</span>
+                      <Badge tone={inc.reviewStatus === 'dismissed' ? 'neutral' : inc.reviewStatus === 'reviewed' ? 'success' : 'warning'}>
+                        {inc.reviewStatus || 'new'}
+                      </Badge>
+                    </div>
+                    <div className="text-[10px] text-ink-muted">{new Date(inc.occurredAt || inc.createdAt).toLocaleString()}</div>
+                    <div className="flex gap-1.5">
+                      <Button size="sm" variant="secondary" onClick={() => handleReviewIncident(inc.id, 'reviewed')}>
+                        Mark Reviewed
+                      </Button>
+                      <Button size="sm" variant="secondary" onClick={() => handleReviewIncident(inc.id, 'dismissed')}>
+                        Dismiss
+                      </Button>
+                    </div>
                   </div>
                 ))
               )}

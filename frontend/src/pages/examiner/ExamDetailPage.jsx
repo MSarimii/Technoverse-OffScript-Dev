@@ -4,7 +4,7 @@ import { examService } from '../../services/examService';
 import { PageHeader } from '../../components/layout/AppLayout';
 import { Button, Badge, Skeleton, ErrorState } from '../../components/ui';
 import { toast } from 'sonner';
-import { Edit3, Send, FlaskConical, Activity, CheckSquare, BarChart3 } from 'lucide-react';
+import { Edit3, Send, FlaskConical, Activity, CheckSquare, BarChart3, Download, RefreshCw, Trash2 } from 'lucide-react';
 
 export const ExamDetailPage = () => {
   const { id } = useParams();
@@ -40,10 +40,43 @@ export const ExamDetailPage = () => {
     }
   };
 
+  const handleDelete = async () => {
+    if (!window.confirm(`Delete "${exam?.title}"?`)) return;
+    try {
+      await examService.deleteExam(id);
+      toast.success('Examination deleted');
+      navigate('/examiner', { replace: true });
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
+  const handleRegrade = async () => {
+    try {
+      const res = await examService.regradeExam(id);
+      toast.success(`Objective regrade complete (${res.data?.regraded ?? 0} attempt(s) updated)`);
+      load();
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
+  const handleCsvExport = async () => {
+    try {
+      await examService.downloadResultsCsv(id);
+      toast.success('Results CSV downloaded');
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
   if (loading) return <Skeleton className="h-48 w-full" />;
   if (error || !exam) return <ErrorState message={error || 'Examination not found'} onRetry={load} />;
 
-  const st = exam.derivedStatus;
+  const st = exam.effectiveStatus || exam.derivedStatus || exam.status;
+  const durationMinutes = exam.durationMinutes ?? exam.durationMin;
+  const questionCount = exam.questionCount ?? exam.questions?.length ?? exam.questionRefs?.length ?? 0;
+  const enrolledCount = exam.enrolledCount ?? exam.enrolledCandidateIds?.length ?? 0;
 
   return (
     <main className="space-y-6">
@@ -67,6 +100,9 @@ export const ExamDetailPage = () => {
                 <Button onClick={handlePublish}>
                   <Send className="w-4 h-4" /> Publish
                 </Button>
+                <Button variant="danger" onClick={handleDelete}>
+                  <Trash2 className="w-4 h-4" /> Delete
+                </Button>
               </>
             )}
             <Button variant="secondary" onClick={() => navigate(`/candidate/exam/${id}?sandbox=1`)}>
@@ -89,12 +125,20 @@ export const ExamDetailPage = () => {
               </Link>
             )}
             {st === 'completed' && (
-              <Link
-                to={`/examiner/exams/${id}/analytics`}
-                className="min-h-[44px] inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium border border-line rounded-lg bg-surface hover:bg-subtle"
-              >
-                <BarChart3 className="w-4 h-4" /> Analytics
-              </Link>
+              <>
+                <Link
+                  to={`/examiner/exams/${id}/analytics`}
+                  className="min-h-[44px] inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium border border-line rounded-lg bg-surface hover:bg-subtle"
+                >
+                  <BarChart3 className="w-4 h-4" /> Analytics
+                </Link>
+                <Button variant="secondary" onClick={handleRegrade}>
+                  <RefreshCw className="w-4 h-4" /> Regrade
+                </Button>
+                <Button variant="secondary" onClick={handleCsvExport}>
+                  <Download className="w-4 h-4" /> Export CSV
+                </Button>
+              </>
             )}
           </>
         }
@@ -109,10 +153,10 @@ export const ExamDetailPage = () => {
 
       <section className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: 'Duration', val: `${exam.durationMin} min` },
+          { label: 'Duration', val: `${durationMinutes} min` },
           { label: 'Total Marks', val: exam.totalMarks },
-          { label: 'Questions', val: exam.questionRefs?.length || 0 },
-          { label: 'Enrolled', val: exam.enrolledCandidateIds?.length || 0 },
+          { label: 'Questions', val: questionCount },
+          { label: 'Enrolled', val: enrolledCount },
         ].map((item) => (
           <div key={item.label} className="bg-surface border border-line rounded-xl p-4">
             <div className="text-xs font-mono text-ink-muted">{item.label}</div>
@@ -133,7 +177,9 @@ export const ExamDetailPage = () => {
           <div className="font-mono text-xs text-ink mt-1">
             Shuffle Questions: {exam.settings?.shuffleQuestions ? 'Yes' : 'No'} · Shuffle Options:{' '}
             {exam.settings?.shuffleOptions ? 'Yes' : 'No'} · Balanced Blueprint:{' '}
-            {exam.settings?.balancedRandomization ? 'Enabled' : 'Disabled'}
+            {exam.blueprint?.poolMode
+              ? `Enabled (${exam.blueprint.easy}E / ${exam.blueprint.medium}M / ${exam.blueprint.hard}H)`
+              : 'Disabled'}
           </div>
         </div>
       </section>

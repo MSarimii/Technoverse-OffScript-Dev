@@ -15,21 +15,31 @@ export const PreExamPage = () => {
   const [error, setError] = useState('');
   const [acknowledged, setAcknowledged] = useState(false);
   const [checkingNet, setCheckingNet] = useState(false);
-  const [netStatus, setNetStatus] = useState('untested'); // untested | ok | fail
+  const [netStatus, setNetStatus] = useState('untested');
   const [starting, setStarting] = useState(false);
 
   useEffect(() => {
-    // Prefetch ExamWorkspace chunk so entry is instant
     import('./ExamWorkspacePage').catch(() => {});
 
     attemptService
-      .getCandidateExams()
+      .getCandidateExamDetail(examId)
       .then((res) => {
-        const found = (res.data?.exams || []).find((e) => e.id === examId);
+        const found = res.data?.exam;
         if (!found) setError('Examination not found or you are not enrolled.');
         else setExam(found);
       })
-      .catch((err) => setError(err.message || 'Unable to load examination details'))
+      .catch(async (err) => {
+        try {
+          const listRes = await attemptService.getCandidateExams();
+          const d = listRes.data || {};
+          const all = [...(d.available || []), ...(d.upcoming || []), ...(d.completed || []), ...(d.exams || [])];
+          const found = all.find((e) => e.id === examId);
+          if (found) setExam(found);
+          else setError(err.message || 'Unable to load examination details');
+        } catch {
+          setError(err.message || 'Unable to load examination details');
+        }
+      })
       .finally(() => setLoading(false));
   }, [examId]);
 
@@ -53,7 +63,13 @@ export const PreExamPage = () => {
     try {
       const res = await attemptService.startAttempt(examId);
       const attempt = res.data?.attempt;
-      navigate(`/candidate/exam/${examId}`, { state: { attemptId: attempt.id } });
+      navigate(`/candidate/exam/${examId}`, {
+        state: {
+          attemptId: attempt?.id,
+          initialAttempt: attempt,
+          examTitle: exam.title,
+        },
+      });
     } catch (err) {
       toast.error(err.message || 'Unable to enter examination');
       setStarting(false);
@@ -78,7 +94,7 @@ export const PreExamPage = () => {
 
       <section className="bg-surface border border-line rounded-xl p-6 space-y-4">
         <div className="flex flex-wrap gap-2">
-          <Badge tone="cobalt">{exam.durationMin} minutes</Badge>
+          <Badge tone="cobalt">{exam.durationMinutes ?? exam.durationMin} minutes</Badge>
           <Badge tone="neutral">{exam.totalMarks} total marks</Badge>
           {isResume && <Badge tone="warning">In Progress — Resume Available</Badge>}
         </div>

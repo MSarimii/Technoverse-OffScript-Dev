@@ -22,11 +22,13 @@ export const CandidateResultsPage = () => {
 
   const avgPct = results.length
     ? Math.round(
-        results.reduce((acc, r) => acc + ((r.score || 0) / Math.max(1, r.totalMarks || 1)) * 100, 0) /
-          results.length
+        results.reduce(
+          (acc, r) => acc + (r.percentage ?? ((r.totalScore ?? r.score ?? 0) / Math.max(1, r.maxScore ?? r.totalMarks ?? 1)) * 100),
+          0
+        ) / results.length
       )
     : 0;
-  const verifiedCount = results.filter((r) => Boolean(r.verificationId)).length;
+  const verifiedCount = results.filter((r) => Boolean(r.verificationId || r.gradingStatus === 'complete')).length;
 
   return (
     <main className="space-y-8">
@@ -85,7 +87,9 @@ export const CandidateResultsPage = () => {
       ) : (
         <div className="space-y-4">
           {results.map((r) => {
-            const pct = Math.min(100, Math.max(0, Math.round(((r.score || 0) / Math.max(1, r.totalMarks || 1)) * 100)));
+            const score = r.totalScore ?? r.score ?? 0;
+            const maxScore = r.maxScore ?? r.totalMarks ?? 1;
+            const pct = Math.min(100, Math.max(0, Math.round(r.percentage ?? (score / Math.max(1, maxScore)) * 100)));
             const radius = 32;
             const circumference = 2 * Math.PI * radius;
             const dashOffset = circumference - (pct / 100) * circumference;
@@ -96,7 +100,6 @@ export const CandidateResultsPage = () => {
                 className="luxury-card luxury-card-hover rounded-2xl p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6"
               >
                 <div className="flex items-center gap-5 min-w-0 flex-1">
-                  {/* Surgical Emerald Score Ring */}
                   <div className="shrink-0 flex flex-col items-center">
                     <svg width="80" height="80" viewBox="0 0 80 80" aria-label={`Score ${pct}%`}>
                       <circle cx="40" cy="40" r={radius} fill="none" stroke="var(--line)" strokeWidth="6" />
@@ -118,14 +121,13 @@ export const CandidateResultsPage = () => {
                       </text>
                     </svg>
                     <span className="text-[11px] font-mono text-ink-muted tabular-nums mt-1">
-                      {r.score} / {r.totalMarks}
+                      {score} / {maxScore}
                     </span>
                   </div>
 
-                  {/* Center Telemetry Metadata */}
                   <div className="min-w-0 flex-1 space-y-2">
                     <p className="eyebrow-rule font-mono text-[11px] uppercase tracking-[0.1em] text-[#065F46]">
-                      CS-301 · Official Transcript
+                      Official Academic Transcript
                     </p>
                     <h2 className="font-display font-semibold text-xl sm:text-2xl tracking-[-0.02em] text-ink leading-tight break-words">
                       {r.examTitle}
@@ -170,7 +172,12 @@ export const CandidateResultsPage = () => {
                     variant="secondary"
                     onClick={() => {
                       if (USE_MOCK) navigate(`/candidate/results/${r.attemptId}`);
-                      else window.open(attemptService.getAttemptReportUrl(r.attemptId), '_blank', 'noopener');
+                      else {
+                        attemptService
+                          .downloadAttemptReportPdf(r.attemptId)
+                          .then(() => toast.success('Transcript PDF downloaded'))
+                          .catch((err) => toast.error(err.message || 'Unable to download PDF'));
+                      }
                     }}
                   >
                     <Printer className="w-4 h-4" strokeWidth={1.5} /> Download PDF

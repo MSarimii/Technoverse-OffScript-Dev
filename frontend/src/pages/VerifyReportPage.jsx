@@ -122,15 +122,26 @@ export const VerifyReportPage = () => {
                     </div>
                     <div>
                       <dt className="text-[11px] font-mono uppercase text-ink-muted">Candidate (Masked)</dt>
-                      <dd className="font-mono text-ink mt-0.5">{result.maskedCandidateName}</dd>
+                      <dd className="font-mono text-ink mt-0.5">
+                        {result.candidateMasked || result.maskedCandidateName}
+                        {result.rollNoMasked ? ` (${result.rollNoMasked})` : ''}
+                      </dd>
                     </div>
+                    {result.score && (
+                      <div>
+                        <dt className="text-[11px] font-mono uppercase text-ink-muted">Verified Score</dt>
+                        <dd className="font-mono font-semibold text-ink mt-0.5">
+                          {result.score.totalScore} / {result.score.maxScore} ({result.score.percentage}%)
+                        </dd>
+                      </div>
+                    )}
                     <div>
                       <dt className="text-[11px] font-mono uppercase text-ink-muted">Issued Date</dt>
                       <dd className="font-mono text-ink mt-0.5">{new Date(result.issuedAt).toLocaleDateString()}</dd>
                     </div>
                     <div>
                       <dt className="text-[11px] font-mono uppercase text-ink-muted">Verification ID</dt>
-                      <dd className="font-mono text-champagne font-semibold mt-0.5">{verificationId}</dd>
+                      <dd className="font-mono text-champagne font-semibold mt-0.5">{result.code || verificationId}</dd>
                     </div>
                   </dl>
                 </div>

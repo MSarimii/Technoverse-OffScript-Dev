@@ -5,7 +5,7 @@ import { PageHeader } from '../../components/layout/AppLayout';
 import { Button, Badge, Skeleton, EmptyState, ErrorState } from '../../components/ui';
 import { toast } from 'sonner';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { Plus, Eye, Activity, CheckSquare, BarChart3, FlaskConical, Send, AlertTriangle, MoreHorizontal, Scale, Flag } from 'lucide-react';
+import { Plus, Eye, Activity, CheckSquare, BarChart3, FlaskConical, Send, AlertTriangle, MoreHorizontal, Scale, Flag, Trash2 } from 'lucide-react';
 
 export const ExaminerDashboardPage = () => {
   const navigate = useNavigate();
@@ -62,21 +62,36 @@ export const ExaminerDashboardPage = () => {
     }
   };
 
-  const counts = {
-    draft: exams.filter((e) => e.derivedStatus === 'draft').length,
-    published: exams.filter((e) => e.derivedStatus === 'published').length,
-    ongoing: exams.filter((e) => e.derivedStatus === 'ongoing').length,
-    completed: exams.filter((e) => e.derivedStatus === 'completed').length,
+  const handleDeleteExam = async (id, title) => {
+    if (!window.confirm(`Delete examination "${title}"? This cannot be undone.`)) return;
+    try {
+      await examService.deleteExam(id);
+      setExams((prev) => prev.filter((e) => e.id !== id));
+      toast.success('Examination deleted');
+    } catch (err) {
+      toast.error(err.message);
+    }
   };
 
-  const needsAttention = exams.filter(
-    (e) =>
-      (e.derivedStatus === 'completed' && !e.resultsPublished) ||
-      (e.derivedStatus === 'published' && Date.parse(e.startAt) - Date.now() < 48 * 3600 * 1000) ||
-      e.derivedStatus === 'ongoing'
-  );
+  const getStatus = (e) => e.effectiveStatus || e.derivedStatus || e.status;
 
-  const visible = filter === 'all' ? exams : exams.filter((e) => e.derivedStatus === filter);
+  const counts = {
+    draft: exams.filter((e) => getStatus(e) === 'draft').length,
+    published: exams.filter((e) => getStatus(e) === 'published').length,
+    ongoing: exams.filter((e) => getStatus(e) === 'ongoing').length,
+    completed: exams.filter((e) => getStatus(e) === 'completed').length,
+  };
+
+  const needsAttention = exams.filter((e) => {
+    const st = getStatus(e);
+    return (
+      (st === 'completed' && !e.resultsPublished) ||
+      (st === 'published' && Date.parse(e.startAt) - Date.now() < 48 * 3600 * 1000) ||
+      st === 'ongoing'
+    );
+  });
+
+  const visible = filter === 'all' ? exams : exams.filter((e) => getStatus(e) === filter);
 
   return (
     <main className="space-y-6">
@@ -136,9 +151,9 @@ export const ExaminerDashboardPage = () => {
                   {ex.title}
                 </Link>
                 <span className="text-xs font-mono text-ink-muted">
-                  {ex.derivedStatus === 'ongoing'
+                  {getStatus(ex) === 'ongoing'
                     ? 'Live now — Monitor active attempts'
-                    : ex.derivedStatus === 'completed'
+                    : getStatus(ex) === 'completed'
                     ? 'Unpublished results — Review & publish'
                     : 'Starting soon'}
                 </span>
@@ -185,7 +200,7 @@ export const ExaminerDashboardPage = () => {
       ) : (
         <div className="space-y-4">
           {visible.map((exam) => {
-            const st = exam.derivedStatus;
+            const st = getStatus(exam);
             const isMenuOpen = openMenuId === exam.id;
 
             return (
@@ -201,8 +216,9 @@ export const ExaminerDashboardPage = () => {
                     {exam.title}
                   </Link>
                   <p className="text-xs font-mono text-ink-muted mt-1 tabular-nums">
-                    {exam.durationMin} min · {exam.totalMarks} marks · {exam.questionRefs?.length || 0} questions ·{' '}
-                    {exam.enrolledCandidateIds?.length || 0} enrolled
+                    {exam.durationMinutes ?? exam.durationMin} min · {exam.totalMarks} marks ·{' '}
+                    {exam.questionCount ?? exam.questions?.length ?? exam.questionRefs?.length ?? 0} questions ·{' '}
+                    {exam.enrolledCount ?? exam.enrolledCandidateIds?.length ?? 0} enrolled
                   </p>
                 </div>
 
@@ -281,6 +297,16 @@ export const ExaminerDashboardPage = () => {
                               icon: Flag,
                               onClick: () => navigate(`/examiner/exams/${exam.id}/disputes`),
                             },
+                            ...(st === 'draft'
+                              ? [
+                                  {
+                                    label: 'Delete Draft',
+                                    desc: 'Remove unpublished examination',
+                                    icon: Trash2,
+                                    onClick: () => handleDeleteExam(exam.id, exam.title),
+                                  },
+                                ]
+                              : []),
                           ].map((item) => {
                             const Icon = item.icon;
                             return (

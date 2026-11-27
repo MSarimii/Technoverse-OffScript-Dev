@@ -2,13 +2,12 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { examService } from '../../services/examService';
 import { questionService } from '../../services/questionService';
-import { adminService } from '../../services/adminService';
 import { PageHeader } from '../../components/layout/AppLayout';
 import { Button, Input, Textarea, Checkbox, Dialog, Badge } from '../../components/ui';
 import { toast } from 'sonner';
 import { Check, Scale, Send, ArrowUp, ArrowDown, AlertTriangle } from 'lucide-react';
 
-const DRAFT_KEY = 'sems_exam_wizard_draft_v1';
+const DRAFT_KEY = 'sems_exam_wizard_draft_v2';
 
 export const ExamWizardPage = () => {
   const { id } = useParams();
@@ -21,6 +20,7 @@ export const ExamWizardPage = () => {
   const [candidates, setCandidates] = useState([]);
   const [qSearch, setQSearch] = useState('');
   const [candSearch, setCandSearch] = useState('');
+  const [bulkEmails, setBulkEmails] = useState('');
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -38,14 +38,21 @@ export const ExamWizardPage = () => {
       instructions: '',
       startAt: new Date(Date.now() + 3600 * 1000).toISOString().slice(0, 16),
       endAt: new Date(Date.now() + 5 * 3600 * 1000).toISOString().slice(0, 16),
-      durationMin: 45,
+      durationMinutes: 45,
       totalMarks: 10,
       settings: {
         shuffleQuestions: true,
         shuffleOptions: true,
-        balancedRandomization: true,
-        showResultsPolicy: 'after_publish',
-        blueprint: [{ topic: 'DSA', difficulty: 1, count: 1 }],
+        showScoreImmediately: false,
+        allowLateStart: true,
+        strictEnd: true,
+        negativeMarkingEnabled: true,
+      },
+      blueprint: {
+        easy: 0,
+        medium: 0,
+        hard: 0,
+        poolMode: false,
       },
       questionRefs: [],
       enrolledCandidateIds: [],
@@ -53,28 +60,54 @@ export const ExamWizardPage = () => {
   });
 
   useEffect(() => {
-    Promise.all([questionService.getQuestions(), adminService.getUsers().catch(() => ({ data: { users: [] } }))]).then(
-      ([qRes, uRes]) => {
-        setQuestions(qRes.data?.questions || []);
-        setCandidates((uRes.data?.users || []).filter((u) => u.role === 'candidate'));
-      }
-    );
+    Promise.all([
+      questionService.getQuestions(),
+      examService.listCandidates().catch(() => ({ data: { candidates: [] } })),
+    ]).then(([qRes, cRes]) => {
+      setQuestions(qRes.data?.questions || []);
+      setCandidates(cRes.data?.candidates || cRes.data?.users || []);
+    });
 
     if (isEdit) {
-      examService.getExamById(id).then((res) => {
+      Promise.all([
+        examService.getExamById(id),
+        examService.getEnrollments(id).catch(() => ({ data: { enrollments: [] } })),
+      ]).then(([res, enrRes]) => {
         const ex = res.data?.exam;
+        const enrolledIds = (enrRes.data?.enrollments || []).map((e) => e.userId || e.user?.id).filter(Boolean);
         if (ex) {
           setExam({
-            ...ex,
+            title: ex.title || '',
+            instructions: ex.instructions || '',
             startAt: new Date(ex.startAt).toISOString().slice(0, 16),
             endAt: new Date(ex.endAt).toISOString().slice(0, 16),
+            durationMinutes: ex.durationMinutes ?? ex.durationMin ?? 45,
+            totalMarks: ex.totalMarks || 10,
+            settings: {
+              shuffleQuestions: Boolean(ex.settings?.shuffleQuestions),
+              shuffleOptions: Boolean(ex.settings?.shuffleOptions),
+              showScoreImmediately: Boolean(ex.settings?.showScoreImmediately),
+              allowLateStart: ex.settings?.allowLateStart ?? true,
+              strictEnd: ex.settings?.strictEnd ?? true,
+              negativeMarkingEnabled: Boolean(ex.settings?.negativeMarkingEnabled),
+            },
+            blueprint: {
+              easy: ex.blueprint?.easy ?? 0,
+              medium: ex.blueprint?.medium ?? 0,
+              hard: ex.blueprint?.hard ?? 0,
+              poolMode: Boolean(ex.blueprint?.poolMode),
+            },
+            questionRefs: (ex.questions || ex.questionRefs || []).map((q) => ({
+              questionId: q.questionId,
+              marks: q.marks,
+            })),
+            enrolledCandidateIds: enrolledIds,
           });
         }
       });
     }
   }, [id, isEdit]);
 
-  // Autosave draft locally for new exams
   useEffect(() => {
     if (!isEdit) {
       localStorage.setItem(DRAFT_KEY, JSON.stringify(exam));
@@ -85,19 +118,22 @@ export const ExamWizardPage = () => {
   const endMs = Date.parse(exam.endAt);
   const windowMinutes = (endMs - startMs) / 60000;
   const windowValid = !Number.isNaN(startMs) && !Number.isNaN(endMs) && endMs > startMs;
-  const durationFits = windowValid && exam.durationMin > 0 && exam.durationMin <= windowMinutes;
+  const durationFits = windowValid && exam.durationMinutes > 0 && exam.durationMinutes <= windowMinutes;
 
   const selectedMarksSum = exam.questionRefs.reduce((s, r) => s + Number(r.marks || 0), 0);
-  const marksMatch = Number(exam.totalMarks) === selectedMarksSum;
+  const selectedQSet = new Set(exam.questionRefs.map((r) => r.questionId));
+  const poolQs = exam.questionRefs.length > 0 ? questions.filter((q) => selectedQSet.has(q.id)) : questions;
+  const countByDiff = (diff) => poolQs.filter((q) => q.difficulty === diff).length;
 
-  const getPoolCount = (topic, diff) =>
-    questions.filter((q) => q.topic === topic && Number(q.difficulty) === Number(diff)).length;
-
+  const bp = exam.blueprint || { easy: 0, medium: 0, hard: 0, poolMode: false };
   const blueprintValid =
-    !exam.settings?.balancedRandomization ||
-    (exam.settings?.blueprint || []).every((b) => getPoolCount(b.topic, b.difficulty) >= Number(b.count));
+    !bp.poolMode ||
+    (bp.easy + bp.medium + bp.hard > 0 &&
+      bp.easy <= countByDiff('easy') &&
+      bp.medium <= countByDiff('medium') &&
+      bp.hard <= countByDiff('hard'));
 
-  const canPublish = Boolean(exam.title.trim()) && windowValid && durationFits && exam.questionRefs.length > 0 && marksMatch && blueprintValid;
+  const canPublish = Boolean(exam.title.trim()) && windowValid && durationFits && exam.questionRefs.length > 0 && blueprintValid;
 
   const toggleQuestion = (q) => {
     const exists = exam.questionRefs.some((r) => r.questionId === q.id);
@@ -117,22 +153,55 @@ export const ExamWizardPage = () => {
 
   const filteredCandidates = candidates.filter(
     (c) =>
-      c.name.toLowerCase().includes(candSearch.toLowerCase()) ||
-      c.email.toLowerCase().includes(candSearch.toLowerCase())
+      c.name?.toLowerCase().includes(candSearch.toLowerCase()) ||
+      c.email?.toLowerCase().includes(candSearch.toLowerCase())
   );
 
   const handleSave = async (publishNow = false) => {
     if (saving) return;
     setSaving(true);
     try {
-      const payload = {
-        ...exam,
-        totalMarks: Number(exam.totalMarks),
+      const corePayload = {
+        title: exam.title.trim(),
+        instructions: exam.instructions || '',
         startAt: new Date(exam.startAt).toISOString(),
         endAt: new Date(exam.endAt).toISOString(),
+        durationMinutes: Number(exam.durationMinutes),
+        settings: exam.settings,
       };
-      const res = isEdit ? await examService.updateExam(id, payload) : await examService.createExam(payload);
+
+      const res = isEdit
+        ? await examService.updateExam(id, corePayload)
+        : await examService.createExam(corePayload);
       const savedId = res.data?.exam?.id || id;
+
+      if (savedId && exam.questionRefs.length > 0) {
+        await examService.setExamQuestions(
+          savedId,
+          exam.questionRefs.map((r) => ({ questionId: r.questionId, marks: Number(r.marks) }))
+        );
+      }
+
+      if (savedId) {
+        await examService.setExamBlueprint(savedId, {
+          easy: Number(bp.easy) || 0,
+          medium: Number(bp.medium) || 0,
+          hard: Number(bp.hard) || 0,
+          poolMode: Boolean(bp.poolMode),
+        });
+      }
+
+      if (savedId && (exam.enrolledCandidateIds.length > 0 || bulkEmails.trim())) {
+        const emails = bulkEmails
+          .split(/[\s,;]+/)
+          .map((s) => s.trim())
+          .filter(Boolean);
+        await examService.enrollCandidates(savedId, {
+          userIds: exam.enrolledCandidateIds,
+          ...(emails.length ? { emails } : {}),
+        });
+      }
+
       if (publishNow && savedId) {
         await examService.publishExam(savedId);
         toast.success('Examination published');
@@ -148,8 +217,6 @@ export const ExamWizardPage = () => {
       setShowPublishConfirm(false);
     }
   };
-
-  const topics = Array.from(new Set(questions.map((q) => q.topic).filter(Boolean)));
 
   return (
     <main className="max-w-4xl mx-auto space-y-5">
@@ -185,12 +252,12 @@ export const ExamWizardPage = () => {
               error={!exam.title.trim() ? 'Title is required before publishing.' : ''}
             />
             <Textarea
-              label="Candidate Instructions (paragraphs & lists)"
+              label="Candidate Instructions"
               rows={3}
               value={exam.instructions}
               onChange={(e) => setExam({ ...exam, instructions: e.target.value })}
             />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <Input
                 label="Start Window"
                 type="datetime-local"
@@ -207,17 +274,10 @@ export const ExamWizardPage = () => {
               <Input
                 label="Duration (min)"
                 type="number"
-                min={5}
-                value={exam.durationMin}
-                onChange={(e) => setExam({ ...exam, durationMin: Number(e.target.value) })}
-                error={!durationFits ? 'Duration exceeds window.' : ''}
-              />
-              <Input
-                label="Target Total Marks"
-                type="number"
                 min={1}
-                value={exam.totalMarks}
-                onChange={(e) => setExam({ ...exam, totalMarks: Number(e.target.value) })}
+                value={exam.durationMinutes}
+                onChange={(e) => setExam({ ...exam, durationMinutes: Number(e.target.value) })}
+                error={!durationFits ? 'Duration exceeds window.' : ''}
               />
             </div>
             <div className="flex flex-wrap gap-4 pt-2">
@@ -232,9 +292,14 @@ export const ExamWizardPage = () => {
                 onChange={(e) => setExam({ ...exam, settings: { ...exam.settings, shuffleOptions: e.target.checked } })}
               />
               <Checkbox
-                label="5.2 Balanced Randomization (equal difficulty mix per paper)"
-                checked={exam.settings?.balancedRandomization}
-                onChange={(e) => setExam({ ...exam, settings: { ...exam.settings, balancedRandomization: e.target.checked } })}
+                label="Negative marking enabled"
+                checked={exam.settings?.negativeMarkingEnabled}
+                onChange={(e) => setExam({ ...exam, settings: { ...exam.settings, negativeMarkingEnabled: e.target.checked } })}
+              />
+              <Checkbox
+                label="5.2 Balanced Blueprint Pool Mode"
+                checked={bp.poolMode}
+                onChange={(e) => setExam({ ...exam, blueprint: { ...bp, poolMode: e.target.checked } })}
               />
             </div>
           </div>
@@ -248,11 +313,11 @@ export const ExamWizardPage = () => {
                   Pick from Bank
                 </Button>
                 <Button size="sm" variant={questionMode === 'blueprint' ? 'primary' : 'secondary'} onClick={() => setQuestionMode('blueprint')}>
-                  <Scale className="w-3.5 h-3.5" /> Blueprint Matrix
+                  <Scale className="w-3.5 h-3.5" /> Stratified Blueprint (5.2)
                 </Button>
               </div>
-              <Badge tone={marksMatch ? 'success' : 'warning'}>
-                Selected: {selectedMarksSum} / Target: {exam.totalMarks} marks
+              <Badge tone={exam.questionRefs.length > 0 ? 'success' : 'warning'}>
+                Selected: {exam.questionRefs.length} Qs · {selectedMarksSum} marks
               </Badge>
             </div>
 
@@ -273,7 +338,7 @@ export const ExamWizardPage = () => {
                         <label key={q.id} className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer ${checked ? 'bg-navy-50 border-cobalt' : 'bg-canvas border-line'}`}>
                           <input type="checkbox" checked={checked} onChange={() => toggleQuestion(q)} className="mt-1 accent-[#2F5BFF]" />
                           <div className="text-sm">
-                            <span className="font-mono text-xs text-ink-muted block">{q.topic} · {q.type} · Diff {q.difficulty} · {q.marks}m</span>
+                            <span className="font-mono text-xs text-ink-muted block">{q.topic} · {q.type} · {q.difficulty} · {q.marks}m</span>
                             <span className="text-ink">{q.text}</span>
                           </div>
                         </label>
@@ -282,7 +347,7 @@ export const ExamWizardPage = () => {
                 </div>
                 {exam.questionRefs.length > 0 && (
                   <div className="pt-3 border-t border-line space-y-1.5">
-                    <div className="text-xs font-mono text-ink-muted">Selected Order (keyboard Move Up/Down)</div>
+                    <div className="text-xs font-mono text-ink-muted">Selected Order</div>
                     {exam.questionRefs.map((ref, idx) => {
                       const q = questions.find((item) => item.id === ref.questionId);
                       return (
@@ -299,68 +364,35 @@ export const ExamWizardPage = () => {
                 )}
               </div>
             ) : (
-              <div className="space-y-3">
-                {(exam.settings?.blueprint || []).map((row, idx) => {
-                  const pool = getPoolCount(row.topic, row.difficulty);
-                  const tooSmall = pool < Number(row.count);
-                  return (
-                    <div key={idx} className="grid grid-cols-1 sm:grid-cols-4 gap-2 items-center p-3 rounded-lg bg-canvas border border-line">
-                      <select
-                        value={row.topic}
-                        onChange={(e) => {
-                          const next = [...exam.settings.blueprint];
-                          next[idx] = { ...row, topic: e.target.value };
-                          setExam({ ...exam, settings: { ...exam.settings, blueprint: next } });
-                        }}
-                        className="px-2 py-1.5 text-xs bg-surface border border-line rounded"
-                      >
-                        {topics.map((t) => <option key={t} value={t}>{t}</option>)}
-                      </select>
-                      <select
-                        value={row.difficulty}
-                        onChange={(e) => {
-                          const next = [...exam.settings.blueprint];
-                          next[idx] = { ...row, difficulty: Number(e.target.value) };
-                          setExam({ ...exam, settings: { ...exam.settings, blueprint: next } });
-                        }}
-                        className="px-2 py-1.5 text-xs bg-surface border border-line rounded"
-                      >
-                        <option value={1}>Difficulty 1</option>
-                        <option value={2}>Difficulty 2</option>
-                        <option value={3}>Difficulty 3</option>
-                      </select>
-                      <input
-                        type="number"
-                        min={1}
-                        value={row.count}
-                        onChange={(e) => {
-                          const next = [...exam.settings.blueprint];
-                          next[idx] = { ...row, count: Number(e.target.value) };
-                          setExam({ ...exam, settings: { ...exam.settings, blueprint: next } });
-                        }}
-                        className="px-2 py-1.5 text-xs bg-surface border border-line rounded"
-                      />
-                      <span className={`text-xs font-mono ${tooSmall ? 'text-status-danger' : 'text-status-answered'}`}>
-                        Pool: {pool} {tooSmall ? '(Too small!)' : 'OK'}
-                      </span>
-                    </div>
-                  );
-                })}
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() =>
-                    setExam({
-                      ...exam,
-                      settings: {
-                        ...exam.settings,
-                        blueprint: [...(exam.settings?.blueprint || []), { topic: topics[0] || 'DSA', difficulty: 2, count: 1 }],
-                      },
-                    })
-                  }
-                >
-                  + Add Blueprint Rule
-                </Button>
+              <div className="space-y-4">
+                <Checkbox
+                  label="Enable stratified difficulty pool mode (draws equal easy/medium/hard quotas per candidate)"
+                  checked={bp.poolMode}
+                  onChange={(e) => setExam({ ...exam, blueprint: { ...bp, poolMode: e.target.checked } })}
+                />
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {[
+                    { key: 'easy', label: 'Easy Quota' },
+                    { key: 'medium', label: 'Medium Quota' },
+                    { key: 'hard', label: 'Hard Quota' },
+                  ].map((item) => {
+                    const pool = countByDiff(item.key);
+                    const val = Number(bp[item.key] || 0);
+                    return (
+                      <div key={item.key} className="p-3 rounded-lg bg-canvas border border-line space-y-2">
+                        <Input
+                          label={`${item.label} (Pool: ${pool})`}
+                          type="number"
+                          min={0}
+                          max={pool}
+                          value={val}
+                          onChange={(e) => setExam({ ...exam, blueprint: { ...bp, [item.key]: Number(e.target.value) } })}
+                          error={bp.poolMode && val > pool ? 'Exceeds attached pool' : ''}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
@@ -414,6 +446,13 @@ export const ExamWizardPage = () => {
                 );
               })}
             </div>
+            <Textarea
+              label="Additional Candidate Emails (comma or newline separated)"
+              rows={2}
+              value={bulkEmails}
+              onChange={(e) => setBulkEmails(e.target.value)}
+              placeholder="candidate1@sems.edu, candidate2@sems.edu"
+            />
             <p className="text-xs font-mono text-ink-muted">Enrolled: {exam.enrolledCandidateIds.length} candidate(s)</p>
           </div>
         )}
@@ -428,11 +467,11 @@ export const ExamWizardPage = () => {
               <li className={windowValid && durationFits ? 'text-status-answered' : 'text-status-danger'}>
                 {windowValid && durationFits ? '✓' : '✗'} Availability window & duration valid
               </li>
-              <li className={exam.questionRefs.length > 0 && marksMatch ? 'text-status-answered' : 'text-status-danger'}>
-                {exam.questionRefs.length > 0 && marksMatch ? '✓' : '✗'} Questions selected & marks match target ({selectedMarksSum}/{exam.totalMarks})
+              <li className={exam.questionRefs.length > 0 ? 'text-status-answered' : 'text-status-danger'}>
+                {exam.questionRefs.length > 0 ? '✓' : '✗'} {exam.questionRefs.length} question(s) selected ({selectedMarksSum} total marks)
               </li>
               <li className={blueprintValid ? 'text-status-answered' : 'text-status-danger'}>
-                {blueprintValid ? '✓' : '✗'} Blueprint pools sufficient
+                {blueprintValid ? '✓' : '✗'} Blueprint quotas valid
               </li>
             </ul>
 

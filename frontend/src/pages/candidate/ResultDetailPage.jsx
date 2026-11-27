@@ -8,7 +8,7 @@ import { Printer, ShieldCheck, ArrowLeft, ExternalLink, Copy, Flag } from 'lucid
 
 export const ResultDetailPage = () => {
   const { attemptId } = useParams();
-  const [data, setData] = useState(null);
+  const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);
   const [disputeQ, setDisputeQ] = useState(null);
   const [category, setCategory] = useState('grading_error');
@@ -17,9 +17,47 @@ export const ResultDetailPage = () => {
   const [submittingDispute, setSubmittingDispute] = useState(false);
 
   useEffect(() => {
-    attemptService
-      .getCandidateResultDetail(attemptId)
-      .then((res) => setData(res.data))
+    Promise.all([
+      attemptService.getCandidateResultDetail(attemptId),
+      attemptService.getAttemptDisputes(attemptId).catch(() => ({ data: { disputes: [] } })),
+    ])
+      .then(([res, dispRes]) => {
+        const d = res.data || {};
+        if (d.result) {
+          setResult(d.result);
+        } else if (d.attempt) {
+          const att = d.attempt;
+          setResult({
+            attemptId: att.id,
+            examTitle: d.exam?.title,
+            totalScore: att.scores?.total ?? 0,
+            maxScore: d.exam?.totalMarks ?? 1,
+            paper: (att.snapshot?.questions || []).map((q) => ({
+              questionId: q.id,
+              type: q.type,
+              text: q.text,
+              marks: q.marks,
+              optionOrder: (q.options || []).map((o) => ({ optionId: o.id, text: o.text })),
+              topic: q.topic,
+            })),
+            answers: Object.entries(att.answers || {}).map(([qid, a]) => ({
+              questionId: qid,
+              selectedOptionIds: Array.isArray(a.value) ? a.value : a.value ? [a.value] : [],
+              text: typeof a.value === 'string' ? a.value : '',
+            })),
+            grades: Object.entries(att.scores?.perQuestion || {}).map(([qid, score]) => ({
+              questionId: qid,
+              finalScore: score,
+            })),
+            verificationId: att.verificationId,
+          });
+        }
+        const dispMap = {};
+        (dispRes.data?.disputes || []).forEach((disp) => {
+          dispMap[disp.questionId] = disp;
+        });
+        setSubmittedDisputes(dispMap);
+      })
       .catch((err) => toast.error(err.message || 'Unable to load result detail'))
       .finally(() => setLoading(false));
   }, [attemptId]);
@@ -28,25 +66,29 @@ export const ResultDetailPage = () => {
     return <div className="p-12 text-center font-mono text-sm text-ink-muted">Loading transcript...</div>;
   }
 
-  if (!data?.attempt) {
+  if (!result) {
     return <div className="p-12 text-center text-sm text-status-danger">Transcript unavailable.</div>;
   }
 
-  const { attempt, exam } = data;
-  const questions = attempt.snapshot?.questions || [];
-  const score = attempt.scores?.total ?? 0;
-  const totalMarks = exam?.totalMarks || 1;
-  const pct = Math.min(100, Math.max(0, Math.round((score / totalMarks) * 100)));
+  const questions = result.paper || [];
+  const score = result.totalScore ?? 0;
+  const totalMarks = result.maxScore || 1;
+  const pct = Math.min(100, Math.max(0, Math.round(result.percentage ?? (score / totalMarks) * 100)));
   const radius = 28;
   const circumference = 2 * Math.PI * radius;
   const dashOffset = circumference - (pct / 100) * circumference;
 
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
     if (USE_MOCK) {
       window.print();
       return;
     }
-    window.open(attemptService.getAttemptReportUrl(attemptId), '_blank', 'noopener');
+    try {
+      await attemptService.downloadAttemptReportPdf(attemptId);
+      toast.success('Transcript PDF downloaded');
+    } catch (err) {
+      toast.error(err.message || 'Unable to download PDF');
+    }
   };
 
   return (
@@ -77,18 +119,18 @@ export const ResultDetailPage = () => {
             </text>
           </svg>
           <div>
-            <h1 className="font-display font-bold text-2xl sm:text-3xl tracking-[-0.02em] text-ink">{exam?.title}</h1>
+            <h1 className="font-display font-bold text-2xl sm:text-3xl tracking-[-0.02em] text-ink">{result.examTitle}</h1>
             <p className="text-sm font-mono text-ink-muted mt-1">
               Total Score: <strong className="text-ink">{score}</strong> / {totalMarks}
             </p>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          {attempt.verificationId && (
+          {result.verificationId && (
             <>
               <button
                 onClick={() => {
-                  navigator.clipboard?.writeText(attempt.verificationId);
+                  navigator.clipboard?.writeText(result.verificationId);
                   toast.success('Verification ID copied');
                 }}
                 className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-mono border border-line rounded-lg bg-canvas hover:bg-subtle"
@@ -96,11 +138,11 @@ export const ResultDetailPage = () => {
                 <Copy className="w-3.5 h-3.5" /> Copy ID
               </button>
               <Link
-                to={`/verify/${attempt.verificationId}`}
+                to={`/verify/${result.verificationId}`}
                 className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-mono border border-line rounded-lg bg-canvas hover:bg-subtle"
               >
                 <ShieldCheck className="w-4 h-4 text-status-answered" />
-                {attempt.verificationId}
+                {result.verificationId}
                 <ExternalLink className="w-3 h-3" />
               </Link>
             </>
@@ -117,39 +159,43 @@ export const ResultDetailPage = () => {
 
       <div className="space-y-4">
         {questions.map((q, idx) => {
-          const awarded = attempt.scores?.perQuestion?.[q.id] ?? 0;
-          const ansVal = attempt.answers?.[q.id]?.value;
-          const isLate = attempt.answers?.[q.id]?.lateSynced;
+          const qid = q.questionId || q.id;
+          const gradeObj = (result.grades || []).find((g) => g.questionId === qid);
+          const ansObj = (result.answers || []).find((a) => a.questionId === qid);
+          const awarded = gradeObj?.finalScore ?? 0;
+
+          let responseDisplay = '(Unanswered)';
+          if (q.type === 'written') {
+            responseDisplay = ansObj?.text || '(Unanswered)';
+          } else if (ansObj?.selectedOptionIds?.length) {
+            const labels = ansObj.selectedOptionIds.map(
+              (oid) => q.optionOrder?.find((o) => o.optionId === oid)?.text || oid
+            );
+            responseDisplay = labels.join(', ');
+          }
+
           return (
-            <div key={q.id} className="bg-surface border border-line rounded-lg p-5">
+            <div key={qid} className="bg-surface border border-line rounded-lg p-5">
               <div className="flex items-start justify-between gap-4 mb-2">
                 <span className="text-xs font-mono text-ink-muted">
                   Question {idx + 1} · {q.topic}
                 </span>
-                <div className="flex items-center gap-2">
-                  {isLate && (
-                    <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-amber-100 text-amber-900">
-                      Late-Synced
-                    </span>
-                  )}
-                  <span className="text-xs font-mono font-semibold text-ink">
-                    {awarded} / {q.marks} marks
-                  </span>
-                </div>
+                <span className="text-xs font-mono font-semibold text-ink">
+                  {awarded} / {q.marks} marks
+                </span>
               </div>
               <p className="text-sm font-medium text-ink mb-2">{q.text}</p>
               <div className="text-xs font-mono text-ink-muted bg-canvas p-3 rounded border border-line">
-                Your response:{' '}
-                <span className="text-ink">
-                  {Array.isArray(ansVal)
-                    ? ansVal.join(', ') || '(No selection)'
-                    : q.options?.find((o) => o.id === ansVal)?.text || ansVal || '(Unanswered)'}
-                </span>
+                Your response: <span className="text-ink">{responseDisplay}</span>
               </div>
+              {gradeObj?.feedback && (
+                <p className="mt-2 text-xs font-mono text-ink-muted">Feedback: {gradeObj.feedback}</p>
+              )}
               <div className="mt-3 flex items-center justify-between">
-                {submittedDisputes[q.id] ? (
+                {submittedDisputes[qid] ? (
                   <span className="text-xs font-mono text-cobalt">
-                    Concern status: {submittedDisputes[q.id].status}
+                    Dispute status: <strong>{submittedDisputes[qid].status}</strong>
+                    {submittedDisputes[qid].resolutionNote ? ` — ${submittedDisputes[qid].resolutionNote}` : ''}
                   </span>
                 ) : (
                   <button
@@ -171,13 +217,14 @@ export const ResultDetailPage = () => {
             e.preventDefault();
             if (!explanation.trim() || submittingDispute) return;
             setSubmittingDispute(true);
+            const qid = disputeQ.questionId || disputeQ.id;
+            const reason = `[${category}] ${explanation.trim()}`.slice(0, 1000);
             try {
               const res = await attemptService.createDispute(attemptId, {
-                questionId: disputeQ.id,
-                category,
-                explanation: explanation.trim(),
+                questionId: qid,
+                reason,
               });
-              setSubmittedDisputes((prev) => ({ ...prev, [disputeQ.id]: res.data.dispute }));
+              setSubmittedDisputes((prev) => ({ ...prev, [qid]: res.data.dispute }));
               setDisputeQ(null);
               setExplanation('');
               toast.success('Concern submitted for examiner review');
@@ -195,9 +242,10 @@ export const ResultDetailPage = () => {
             <option value="technical_incident">Technical Incident</option>
           </Select>
           <Textarea
-            label="Explanation (max 1,000 chars)"
+            label="Explanation (min 5, max 1,000 chars)"
             required
-            maxLength={1000}
+            minLength={5}
+            maxLength={960}
             rows={4}
             value={explanation}
             onChange={(e) => setExplanation(e.target.value)}

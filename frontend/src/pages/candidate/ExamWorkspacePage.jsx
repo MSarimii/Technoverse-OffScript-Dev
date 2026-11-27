@@ -29,6 +29,7 @@ export const ExamWorkspacePage = () => {
 
   const isSandboxRequest = new URLSearchParams(location.search).get('sandbox') === '1';
   const [attempt, setAttempt] = useState(null);
+  const [examTitle, setExamTitle] = useState(location.state?.examTitle || '');
   const [serverTime, setServerTime] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -69,39 +70,70 @@ export const ExamWorkspacePage = () => {
     const init = async () => {
       setLoading(true);
       try {
-        let attemptId = location.state?.attemptId;
-        if (!attemptId) {
-          const startRes = isSandboxRequest
-            ? await examService.startSandbox(examId)
-            : await attemptService.startAttempt(examId);
-          attemptId = startRes.data?.attempt?.id;
+        let loaded = location.state?.initialAttempt;
+        let resolvedTitle = location.state?.examTitle || '';
+
+        if (!loaded) {
+          let attemptId = location.state?.attemptId;
+          if (!attemptId) {
+            const startRes = isSandboxRequest
+              ? await examService.startSandbox(examId)
+              : await attemptService.startAttempt(examId);
+            loaded = startRes.data?.attempt;
+            attemptId = loaded?.id;
+          } else {
+            const res = await attemptService.getAttempt(attemptId);
+            loaded = res.data?.attempt;
+          }
         }
-        const res = await attemptService.getAttempt(attemptId);
+
         if (!mounted) return;
-        const loaded = res.data?.attempt;
-        // Defensive guard: never render answer keys/rubrics if a backend ever leaks them
-        if (loaded?.snapshot?.questions) {
-          loaded.snapshot.questions = loaded.snapshot.questions.map((q) => {
-            if ('rubric' in q || q.options?.some((o) => 'isCorrect' in o)) {
-              console.error('SECURITY_CONTRACT_VIOLATION: Backend leaked rubric or isCorrect to candidate payload.');
-            }
-            const { rubric: _r, ...safeQ } = q;
-            return {
-              ...safeQ,
-              options: (q.options || []).map(({ id, text }) => ({ id, text })),
-            };
-          });
+        if (!loaded) throw new Error('Attempt could not be initialized');
+
+        const rawItems = loaded.paper || loaded.snapshot?.questions || [];
+        const normalizedQuestions = rawItems.map((q) => {
+          const opts = q.optionOrder || q.options || [];
+          return {
+            ...q,
+            id: q.questionId || q.id,
+            options: opts.map((o) => ({
+              id: o.optionId || o.id,
+              text: o.text,
+            })),
+          };
+        });
+        loaded = { ...loaded, normalizedQuestions };
+
+        if (!resolvedTitle) {
+          try {
+            const infoRes = isSandboxRequest
+              ? await examService.getExamById(examId)
+              : await attemptService.getCandidateExamDetail(examId);
+            resolvedTitle = infoRes.data?.exam?.title || '';
+          } catch {
+            resolvedTitle = loaded.examTitle || 'Examination Workspace';
+          }
         }
+
+        setExamTitle(resolvedTitle || 'Examination Workspace');
         setAttempt(loaded);
-        setServerTime(res.data?.serverTime);
-        if (loaded.preferences) {
-          setPrefs((prev) => ({
-            ...prev,
-            ...loaded.preferences,
-            theme: loaded.preferences.theme === 'paper' ? 'light' : loaded.preferences.theme || 'light',
-          }));
-        }
+        setServerTime(loaded.serverNow || new Date().toISOString());
         setScratchpad(loaded.scratchpad || '');
+
+        try {
+          const prefRes = await attemptService.getPreferences();
+          const p = prefRes.data?.preferences || loaded.preferences;
+          if (p && mounted) {
+            setPrefs((prev) => ({
+              ...prev,
+              theme: p.highContrast ? 'high-contrast' : p.theme === 'paper' ? 'light' : p.theme || prev.theme,
+              fontSizePx: p.fontScale === 'sm' ? 14 : p.fontScale === 'lg' ? 20 : prev.fontSizePx,
+              density: p.layout === 'compact' ? 'compact' : 'comfortable',
+            }));
+          }
+        } catch {
+          // ignore preferences hydration error
+        }
       } catch (err) {
         toast.error(err.message || 'Unable to load examination workspace');
         navigate(isSandboxRequest ? '/examiner' : '/candidate', { replace: true });
@@ -147,6 +179,7 @@ export const ExamWorkspacePage = () => {
     clearLocalQueue,
   } = useOfflineAnswerQueue({
     attemptId: attempt?.id,
+    paper: attempt?.normalizedQuestions,
     initialAnswers: attempt?.answers,
     initialMarked: attempt?.markedForReview,
     startedAt: attempt?.startedAt,
@@ -192,7 +225,7 @@ export const ExamWorkspacePage = () => {
         const rttMs = Math.round(performance.now() - t0);
         failedHeartbeatsRef.current = 0;
         setIsReachable(true);
-        syncServerTime(res.data?.serverTime, rttMs);
+        syncServerTime(res.data?.serverNow || res.data?.serverTime, rttMs);
       } catch {
         failedHeartbeatsRef.current += 1;
         if (failedHeartbeatsRef.current >= 2) {
@@ -248,10 +281,10 @@ export const ExamWorkspacePage = () => {
       }
     };
     const onPaste = () => {
-      attemptService.logEvent(attempt.id, { type: 'paste' }).catch(() => {});
+      attemptService.logEvent(attempt.id, { type: 'copy_paste', details: 'paste' }).catch(() => {});
     };
     const onCopy = () => {
-      attemptService.logEvent(attempt.id, { type: 'copy' }).catch(() => {});
+      attemptService.logEvent(attempt.id, { type: 'copy_paste', details: 'copy' }).catch(() => {});
     };
     document.addEventListener('visibilitychange', onVisibility);
     window.addEventListener('blur', onBlur);
@@ -267,7 +300,7 @@ export const ExamWorkspacePage = () => {
     };
   }, [attempt?.id, attempt?.isSandbox]);
 
-  const questions = attempt?.snapshot?.questions || [];
+  const questions = attempt?.normalizedQuestions || attempt?.snapshot?.questions || [];
   const currentQ = questions[currentIndex];
 
   // Keyboard shortcuts
@@ -308,8 +341,8 @@ export const ExamWorkspacePage = () => {
         const idx = Number(e.key) - 1;
         const opt = currentQ.options[idx];
         if (opt) {
-          if (currentQ.type === 'mcq_single') enqueueAnswer(currentQ.id, opt.id);
-          else if (currentQ.type === 'mcq_multi') {
+          if (currentQ.type === 'single' || currentQ.type === 'mcq_single') enqueueAnswer(currentQ.id, opt.id);
+          else if (currentQ.type === 'multiple' || currentQ.type === 'mcq_multi') {
             const prev = Array.isArray(answers[currentQ.id]) ? answers[currentQ.id] : [];
             const next = prev.includes(opt.id) ? prev.filter((id) => id !== opt.id) : [...prev, opt.id];
             enqueueAnswer(currentQ.id, next);
@@ -325,7 +358,13 @@ export const ExamWorkspacePage = () => {
     const next = { ...prefs, ...patch };
     setPrefs(next);
     if (attempt?.id) {
-      attemptService.savePreferences(attempt.id, next).catch(() => {});
+      const apiPrefs = {
+        theme: next.theme === 'high-contrast' ? 'system' : next.theme === 'paper' ? 'light' : next.theme,
+        highContrast: next.theme === 'high-contrast',
+        fontScale: next.fontSizePx <= 14 ? 'sm' : next.fontSizePx >= 18 ? 'lg' : 'md',
+        layout: next.density === 'compact' ? 'compact' : 'standard',
+      };
+      attemptService.savePreferences(attempt.id, apiPrefs).catch(() => {});
     }
   };
 
@@ -456,7 +495,7 @@ export const ExamWorkspacePage = () => {
       {/* Top Workspace Bar */}
       <header className="sticky top-0 z-30 bg-surface border-b border-line px-3 sm:px-6 min-h-[64px] py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div className="min-w-0 flex items-center justify-between sm:block gap-2">
-          <h1 className="font-semibold text-sm sm:text-base text-ink truncate">{attempt.examTitle}</h1>
+          <h1 className="font-semibold text-sm sm:text-base text-ink truncate">{examTitle || attempt.examTitle || 'Examination Workspace'}</h1>
           <div className="flex items-center gap-2 text-xs font-mono shrink-0 relative">
             <button
               type="button"
@@ -695,10 +734,7 @@ export const ExamWorkspacePage = () => {
             Option letters
           </label>
           <button
-            onClick={() => {
-              setPrefs(DEFAULT_PREFS);
-              if (attempt?.id) attemptService.savePreferences(attempt.id, DEFAULT_PREFS).catch(() => {});
-            }}
+            onClick={() => updatePreference(DEFAULT_PREFS)}
             className="text-cobalt font-mono hover:underline ml-auto"
           >
             Reset to defaults
@@ -726,8 +762,8 @@ export const ExamWorkspacePage = () => {
                 </div>
                 <div className="flex items-center gap-2 text-xs font-mono">
                   <span className="font-semibold text-ink">{currentQ.marks} marks</span>
-                  {currentQ.negativeMarks > 0 && (
-                    <span className="text-status-danger">(-{currentQ.negativeMarks} wrong)</span>
+                  {(currentQ.scheme?.negativeMarks ?? currentQ.negativeMarks) > 0 && (
+                    <span className="text-status-danger">(-{currentQ.scheme?.negativeMarks ?? currentQ.negativeMarks} wrong)</span>
                   )}
                 </div>
               </div>
@@ -740,7 +776,7 @@ export const ExamWorkspacePage = () => {
                 {currentQ.text}
               </p>
 
-              {currentQ.type === 'mcq_single' && (
+              {(currentQ.type === 'single' || currentQ.type === 'mcq_single') && (
                 <div className="space-y-2.5" role="radiogroup" aria-label="Answer choices">
                   {currentQ.options.map((opt, oIdx) => {
                     const selected = answers[currentQ.id] === opt.id;
@@ -773,10 +809,10 @@ export const ExamWorkspacePage = () => {
                 </div>
               )}
 
-              {currentQ.type === 'mcq_multi' && (
+              {(currentQ.type === 'multiple' || currentQ.type === 'mcq_multi') && (
                 <div className="space-y-2.5">
                   <p className="text-xs font-mono text-ink-muted mb-2">
-                    Select all applicable options ({currentQ.multiSelectRule === 'partial' ? 'Partial credit' : 'All-or-nothing'}).
+                    Select all applicable options ({(currentQ.scheme?.mode || currentQ.multiSelectRule) === 'partial' ? 'Partial credit' : 'All-or-nothing'}).
                   </p>
                   {currentQ.options.map((opt, oIdx) => {
                     const selected = Array.isArray(answers[currentQ.id]) && answers[currentQ.id].includes(opt.id);

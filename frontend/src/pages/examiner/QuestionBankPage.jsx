@@ -15,9 +15,9 @@ const PAGE_SIZE = 10;
 
 const emptyForm = {
   id: null,
-  type: 'mcq_single',
+  type: 'single',
   topic: 'DSA',
-  difficulty: 2,
+  difficulty: 'medium',
   text: '',
   marks: 2,
   negativeMarks: 0,
@@ -28,6 +28,10 @@ const emptyForm = {
     { id: 'opt-2', text: '', isCorrect: false },
   ],
 };
+
+const normalizeType = (t) => (t === 'mcq_single' ? 'single' : t === 'mcq_multi' ? 'multiple' : t || 'single');
+const normalizeDiff = (d) => (d === 1 || d === '1' ? 'easy' : d === 2 || d === '2' ? 'medium' : d === 3 || d === '3' ? 'hard' : d || 'medium');
+const diffRank = (d) => (d === 'hard' ? 3 : d === 'medium' ? 2 : 1);
 
 export const QuestionBankPage = () => {
   const [questions, setQuestions] = useState([]);
@@ -51,8 +55,9 @@ export const QuestionBankPage = () => {
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const reduced = useReducedMotion();
   const [importText, setImportText] = useState(
-    '[\n  { "type": "mcq_single", "topic": "Networks", "difficulty": 2, "text": "Which protocol provides reliable ordered byte-stream delivery?", "marks": 2 }\n]'
+    '[\n  { "type": "single", "topic": "Networks", "difficulty": "medium", "text": "Which protocol provides reliable ordered byte-stream delivery?", "options": ["TCP", "UDP"], "correctOptionIndexes": [0], "marks": 2 }\n]'
   );
+  const [importFormat, setImportFormat] = useState('json');
   const [importErrors, setImportErrors] = useState([]);
 
   const listRef = useRef(null);
@@ -94,51 +99,73 @@ export const QuestionBankPage = () => {
   };
 
   const openEdit = (q) => {
+    const correctSet = new Set((q.correctOptionIds || []).map(String));
     setForm({
       id: q.id,
-      type: q.type,
+      type: normalizeType(q.type),
       topic: q.topic || 'General',
-      difficulty: q.difficulty || 2,
+      difficulty: normalizeDiff(q.difficulty),
       text: q.text || '',
       marks: q.marks || 2,
-      negativeMarks: q.negativeMarks || 0,
-      multiSelectRule: q.multiSelectRule || 'all_or_nothing',
+      negativeMarks: q.scheme?.negativeMarks ?? q.negativeMarks ?? 0,
+      multiSelectRule: q.scheme?.mode ?? q.multiSelectRule ?? 'all_or_nothing',
       rubric: q.rubric || '',
-      options: q.options?.length ? structuredClone(q.options) : emptyForm.options,
+      options: q.options?.length
+        ? q.options.map((o, idx) => {
+            const oid = String(o.id || o._id || idx);
+            return {
+              id: oid,
+              text: o.text || '',
+              isCorrect: typeof o.isCorrect === 'boolean' ? o.isCorrect : correctSet.has(oid),
+            };
+          })
+        : structuredClone(emptyForm.options),
     });
     setFormError('');
     setShowEditor(true);
   };
 
+  const buildQuestionPayload = (src) => {
+    const type = normalizeType(src.type);
+    const validOpts = (src.options || []).filter((o) => o.text?.trim());
+    const base = {
+      type,
+      topic: (src.topic || 'General').trim(),
+      difficulty: normalizeDiff(src.difficulty),
+      text: src.text.trim(),
+      marks: Number(src.marks),
+      scheme: {
+        mode: src.multiSelectRule || src.scheme?.mode || 'all_or_nothing',
+        negativeMarks: Number(src.negativeMarks ?? src.scheme?.negativeMarks ?? 0) || 0,
+      },
+      rubric: src.rubric || '',
+    };
+    if (type !== 'written') {
+      base.options = validOpts.map((o) => ({ text: o.text.trim() }));
+      base.correctOptionIndexes = validOpts.reduce((acc, o, i) => (o.isCorrect ? [...acc, i] : acc), []);
+    }
+    return base;
+  };
+
   const handleSaveQuestion = async (e) => {
     e.preventDefault();
     setFormError('');
-    if (!form.text.trim()) return setFormError('Question stem is required.');
+    if (!form.text.trim() || form.text.trim().length < 3) return setFormError('Question stem must be at least 3 characters.');
     if (form.type !== 'written') {
       const validOpts = form.options.filter((o) => o.text.trim());
       if (validOpts.length < 2) return setFormError('Provide at least 2 non-empty options.');
       const correctCount = validOpts.filter((o) => o.isCorrect).length;
-      if (form.type === 'mcq_single' && correctCount !== 1) {
+      if (form.type === 'single' && correctCount !== 1) {
         return setFormError('Single MCQ must have exactly 1 correct option.');
       }
-      if (form.type === 'mcq_multi' && correctCount < 1) {
+      if (form.type === 'multiple' && correctCount < 1) {
         return setFormError('Multi-select MCQ must have at least 1 correct option.');
       }
     }
 
     setSaving(true);
     try {
-      const payload = {
-        type: form.type,
-        topic: form.topic.trim() || 'General',
-        difficulty: Number(form.difficulty),
-        text: form.text.trim(),
-        marks: Number(form.marks),
-        negativeMarks: Number(form.negativeMarks) || 0,
-        multiSelectRule: form.multiSelectRule,
-        rubric: form.rubric,
-        options: form.type === 'written' ? [] : form.options.filter((o) => o.text.trim()),
-      };
+      const payload = buildQuestionPayload(form);
       if (form.id) {
         const res = await questionService.updateQuestion(form.id, payload);
         setQuestions((prev) => prev.map((q) => (q.id === form.id ? res.data.question : q)));
@@ -158,11 +185,17 @@ export const QuestionBankPage = () => {
 
   const handleDuplicate = async (q) => {
     try {
-      const res = await questionService.createQuestion({
+      const correctSet = new Set((q.correctOptionIds || []).map(String));
+      const opts = (q.options || []).map((o, idx) => ({
+        text: o.text,
+        isCorrect: typeof o.isCorrect === 'boolean' ? o.isCorrect : correctSet.has(String(o.id || o._id || idx)),
+      }));
+      const payload = buildQuestionPayload({
         ...q,
-        id: undefined,
         text: `${q.text} (Copy)`,
+        options: opts,
       });
+      const res = await questionService.createQuestion(payload);
       setQuestions((prev) => [res.data.question, ...prev]);
       toast.success('Question duplicated');
     } catch (err) {
@@ -182,15 +215,17 @@ export const QuestionBankPage = () => {
   const handleImport = async () => {
     setImportErrors([]);
     try {
-      const parsed = JSON.parse(importText);
-      const rows = Array.isArray(parsed) ? parsed : [parsed];
-      const res = await questionService.importQuestions(rows);
-      const { importedCount, errors } = res.data || {};
+      const res =
+        importFormat === 'csv'
+          ? await questionService.importQuestions({ format: 'csv', content: importText })
+          : await questionService.importQuestions(JSON.parse(importText), 'json');
+      const { imported, importedCount, errors } = res.data || {};
+      const count = imported ?? importedCount ?? 0;
       setImportErrors(errors || []);
-      toast.success(`Imported ${importedCount || 0} question(s)`);
+      toast.success(`Imported ${count} question(s)`);
       load();
     } catch (err) {
-      toast.error(err.message || 'Invalid JSON format');
+      toast.error(err.message || 'Import failed');
     }
   };
 
@@ -200,12 +235,12 @@ export const QuestionBankPage = () => {
     .filter((q) => {
       const matchSearch = !search || q.text.toLowerCase().includes(search.toLowerCase());
       const matchTopic = topicFilter === 'all' || q.topic === topicFilter;
-      const matchDiff = diffFilter === 'all' || String(q.difficulty) === diffFilter;
-      const matchType = typeFilter === 'all' || q.type === typeFilter;
+      const matchDiff = diffFilter === 'all' || normalizeDiff(q.difficulty) === diffFilter;
+      const matchType = typeFilter === 'all' || normalizeType(q.type) === typeFilter;
       return matchSearch && matchTopic && matchDiff && matchType;
     })
     .sort((a, b) => {
-      if (sortBy === 'difficulty') return b.difficulty - a.difficulty;
+      if (sortBy === 'difficulty') return diffRank(normalizeDiff(b.difficulty)) - diffRank(normalizeDiff(a.difficulty));
       if (sortBy === 'marks') return b.marks - a.marks;
       return 0;
     });
@@ -256,8 +291,10 @@ export const QuestionBankPage = () => {
                 if (file.name.toLowerCase().endsWith('.csv')) {
                   const parsed = parseCsvSafe(text);
                   if (parsed.error) return toast.error(parsed.error);
-                  setImportText(JSON.stringify(parsed.rows, null, 2));
+                  setImportFormat('csv');
+                  setImportText(text);
                 } else {
+                  setImportFormat('json');
                   setImportText(text);
                 }
               }}
@@ -308,9 +345,9 @@ export const QuestionBankPage = () => {
             onChange={(e) => triggerFlip(() => { setDiffFilter(e.target.value); setPage(1); })}
           >
             <option value="all">All Difficulties</option>
-            <option value="1">Difficulty 1</option>
-            <option value="2">Difficulty 2</option>
-            <option value="3">Difficulty 3</option>
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
           </Select>
           <Select
             aria-label="Filter by type"
@@ -318,8 +355,8 @@ export const QuestionBankPage = () => {
             onChange={(e) => triggerFlip(() => { setTypeFilter(e.target.value); setPage(1); })}
           >
             <option value="all">All Types</option>
-            <option value="mcq_single">Single MCQ</option>
-            <option value="mcq_multi">Multi-Select</option>
+            <option value="single">Single MCQ</option>
+            <option value="multiple">Multi-Select</option>
             <option value="written">Written</option>
           </Select>
           <Select aria-label="Sort questions" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
@@ -373,11 +410,11 @@ export const QuestionBankPage = () => {
                   <div>
                     <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-ink-muted mb-1">
                       <Badge tone="cobalt">
-                        {q.type === 'mcq_single' ? 'Single Choice' : q.type === 'mcq_multi' ? 'Multi-Select' : 'Written'}
+                        {normalizeType(q.type) === 'single' ? 'Single Choice' : normalizeType(q.type) === 'multiple' ? 'Multi-Select' : 'Written'}
                       </Badge>
                       <span>{q.topic}</span>
-                      <Badge tone={q.difficulty === 1 ? 'success' : q.difficulty === 2 ? 'warning' : 'danger'}>
-                        {q.difficulty === 1 ? 'Easy' : q.difficulty === 2 ? 'Medium' : 'Hard'}
+                      <Badge tone={normalizeDiff(q.difficulty) === 'easy' ? 'success' : normalizeDiff(q.difficulty) === 'medium' ? 'warning' : 'danger'}>
+                        {normalizeDiff(q.difficulty)}
                       </Badge>
                       <span>{q.marks} marks</span>
                     </div>
@@ -473,8 +510,8 @@ export const QuestionBankPage = () => {
 
           <div className="grid grid-cols-2 gap-3">
             <Select label="Type" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
-              <option value="mcq_single">Single MCQ</option>
-              <option value="mcq_multi">Multi-Select MCQ</option>
+              <option value="single">Single MCQ</option>
+              <option value="multiple">Multi-Select MCQ</option>
               <option value="written">Written Response</option>
             </Select>
             <Input
@@ -491,16 +528,16 @@ export const QuestionBankPage = () => {
           <div>
             <span className="block text-xs font-semibold text-ink mb-1">Difficulty</span>
             <div className="grid grid-cols-3 gap-2">
-              {[1, 2, 3].map((d) => (
+              {['easy', 'medium', 'hard'].map((d) => (
                 <button
                   key={d}
                   type="button"
                   onClick={() => setForm({ ...form, difficulty: d })}
-                  className={`py-2 rounded-lg text-xs font-mono border ${
+                  className={`py-2 rounded-lg text-xs font-mono border capitalize ${
                     form.difficulty === d ? 'bg-cobalt text-white border-cobalt' : 'bg-canvas border-line'
                   }`}
                 >
-                  Level {d}
+                  {d}
                 </button>
               ))}
             </div>
@@ -510,7 +547,8 @@ export const QuestionBankPage = () => {
             <Input
               label="Marks"
               type="number"
-              min={1}
+              min={0.25}
+              step={0.25}
               value={form.marks}
               onChange={(e) => setForm({ ...form, marks: Number(e.target.value) })}
             />
@@ -531,7 +569,7 @@ export const QuestionBankPage = () => {
             onChange={(e) => setForm({ ...form, text: e.target.value })}
           />
 
-          {form.type === 'mcq_multi' && (
+          {form.type === 'multiple' && (
             <Select
               label="Multi-Select Marking Rule (Partial = (correct - wrong) / totalCorrect)"
               value={form.multiSelectRule}
@@ -562,12 +600,12 @@ export const QuestionBankPage = () => {
               {form.options.map((opt, idx) => (
                 <div key={opt.id} className="flex items-center gap-2">
                   <input
-                    type={form.type === 'mcq_single' ? 'radio' : 'checkbox'}
+                    type={form.type === 'single' ? 'radio' : 'checkbox'}
                     name="correct-opt"
                     checked={opt.isCorrect}
                     onChange={(e) => {
                       const next = form.options.map((o, i) =>
-                        form.type === 'mcq_single'
+                        form.type === 'single'
                           ? { ...o, isCorrect: i === idx }
                           : i === idx
                           ? { ...o, isCorrect: e.target.checked }

@@ -62,7 +62,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     const res = await authService.login(email, password);
-    const receivedToken = res.token;
+    const receivedToken = res.data?.token || res.token;
     const userData = res.data?.user || res.user;
     setMemoryToken(receivedToken);
     sessionStorage.setItem('sems_token', receivedToken);
