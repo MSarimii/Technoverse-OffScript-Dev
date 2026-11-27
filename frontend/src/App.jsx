@@ -22,6 +22,7 @@ const ExamWorkspacePage = lazy(() => import('./pages/candidate/ExamWorkspacePage
 const CandidateResultsPage = lazy(() => import('./pages/candidate/CandidateResultsPage').then((m) => ({ default: m.CandidateResultsPage })));
 const ResultDetailPage = lazy(() => import('./pages/candidate/ResultDetailPage').then((m) => ({ default: m.ResultDetailPage })));
 const ExaminerDashboardPage = lazy(() => import('./pages/examiner/ExaminerDashboardPage').then((m) => ({ default: m.ExaminerDashboardPage })));
+const ExamDetailPage = lazy(() => import('./pages/examiner/ExamDetailPage').then((m) => ({ default: m.ExamDetailPage })));
 const QuestionBankPage = lazy(() => import('./pages/examiner/QuestionBankPage').then((m) => ({ default: m.QuestionBankPage })));
 const ExamWizardPage = lazy(() => import('./pages/examiner/ExamWizardPage').then((m) => ({ default: m.ExamWizardPage })));
 const ExamMonitorPage = lazy(() => import('./pages/examiner/ExamMonitorPage').then((m) => ({ default: m.ExamMonitorPage })));
@@ -99,7 +100,19 @@ function AnimatedRoutes() {
           path="/examiner/exams/new"
           element={
             <ProtectedRoute allowedRoles={['examiner']}>
-              <ExamWizardPage />
+              <AppLayout>
+                <ExamWizardPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/examiner/exams/:id"
+          element={
+            <ProtectedRoute allowedRoles={['examiner']}>
+              <AppLayout>
+                <ExamDetailPage />
+              </AppLayout>
             </ProtectedRoute>
           }
         />
@@ -107,7 +120,9 @@ function AnimatedRoutes() {
           path="/examiner/exams/:id/edit"
           element={
             <ProtectedRoute allowedRoles={['examiner']}>
-              <ExamWizardPage />
+              <AppLayout>
+                <ExamWizardPage />
+              </AppLayout>
             </ProtectedRoute>
           }
         />
